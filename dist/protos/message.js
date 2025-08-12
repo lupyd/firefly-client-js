@@ -5,7 +5,7 @@
 //   protoc               v6.31.1
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ServerMessage = exports.ClientMessage = exports.Response = exports.Error = exports.Request = exports.GroupMembers = exports.GroupChannelMessages = exports.GroupChannelMessage = exports.GroupMember = exports.RemoveUser = exports.AddUser = exports.GetGroupMessages = exports.GetGroupMembers = exports.GroupChat = exports.GroupChannel = exports.GroupChats = exports.AuthenticationToken = exports.VersionedMessage = exports.protobufPackage = void 0;
+exports.UserMessages = exports.UserMessage = exports.ServerMessage = exports.ClientMessage = exports.Response = exports.Error = exports.Request = exports.GetUserMessages = exports.GroupMembers = exports.GroupChannelMessages = exports.GroupChannelMessage = exports.GroupMember = exports.RemoveUser = exports.AddUser = exports.GetGroupMessages = exports.GetGroupMembers = exports.GroupChat = exports.GroupChannel = exports.GroupChats = exports.AuthenticationToken = exports.VersionedMessage = exports.protobufPackage = void 0;
 /* eslint-disable */
 const wire_1 = require("@bufbuild/protobuf/wire");
 exports.protobufPackage = "firefly";
@@ -1066,6 +1066,89 @@ exports.GroupMembers = {
         return message;
     },
 };
+function createBaseGetUserMessages() {
+    return { before: new Uint8Array(0), count: 0, from: "" };
+}
+exports.GetUserMessages = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.before.length !== 0) {
+            writer.uint32(10).bytes(message.before);
+        }
+        if (message.count !== 0) {
+            writer.uint32(16).int32(message.count);
+        }
+        if (message.from !== "") {
+            writer.uint32(26).string(message.from);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGetUserMessages();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.before = reader.bytes();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.count = reader.int32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.from = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            before: isSet(object.before) ? bytesFromBase64(object.before) : new Uint8Array(0),
+            count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+            from: isSet(object.from) ? globalThis.String(object.from) : "",
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.before.length !== 0) {
+            obj.before = base64FromBytes(message.before);
+        }
+        if (message.count !== 0) {
+            obj.count = Math.round(message.count);
+        }
+        if (message.from !== "") {
+            obj.from = message.from;
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GetUserMessages.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGetUserMessages();
+        message.before = object.before ?? new Uint8Array(0);
+        message.count = object.count ?? 0;
+        message.from = object.from ?? "";
+        return message;
+    },
+};
 function createBaseRequest() {
     return {
         id: 0,
@@ -1075,6 +1158,7 @@ function createBaseRequest() {
         removeUser: undefined,
         addChannel: undefined,
         deleteChannel: undefined,
+        getUserMessages: undefined,
     };
 }
 exports.Request = {
@@ -1099,6 +1183,9 @@ exports.Request = {
         }
         if (message.deleteChannel !== undefined) {
             exports.GroupChannel.encode(message.deleteChannel, writer.uint32(58).fork()).join();
+        }
+        if (message.getUserMessages !== undefined) {
+            exports.GetUserMessages.encode(message.getUserMessages, writer.uint32(66).fork()).join();
         }
         return writer;
     },
@@ -1158,6 +1245,13 @@ exports.Request = {
                     message.deleteChannel = exports.GroupChannel.decode(reader, reader.uint32());
                     continue;
                 }
+                case 8: {
+                    if (tag !== 66) {
+                        break;
+                    }
+                    message.getUserMessages = exports.GetUserMessages.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -1175,6 +1269,7 @@ exports.Request = {
             removeUser: isSet(object.removeUser) ? exports.RemoveUser.fromJSON(object.removeUser) : undefined,
             addChannel: isSet(object.addChannel) ? exports.GroupChannel.fromJSON(object.addChannel) : undefined,
             deleteChannel: isSet(object.deleteChannel) ? exports.GroupChannel.fromJSON(object.deleteChannel) : undefined,
+            getUserMessages: isSet(object.getUserMessages) ? exports.GetUserMessages.fromJSON(object.getUserMessages) : undefined,
         };
     },
     toJSON(message) {
@@ -1199,6 +1294,9 @@ exports.Request = {
         }
         if (message.deleteChannel !== undefined) {
             obj.deleteChannel = exports.GroupChannel.toJSON(message.deleteChannel);
+        }
+        if (message.getUserMessages !== undefined) {
+            obj.getUserMessages = exports.GetUserMessages.toJSON(message.getUserMessages);
         }
         return obj;
     },
@@ -1225,6 +1323,9 @@ exports.Request = {
             : undefined;
         message.deleteChannel = (object.deleteChannel !== undefined && object.deleteChannel !== null)
             ? exports.GroupChannel.fromPartial(object.deleteChannel)
+            : undefined;
+        message.getUserMessages = (object.getUserMessages !== undefined && object.getUserMessages !== null)
+            ? exports.GetUserMessages.fromPartial(object.getUserMessages)
             : undefined;
         return message;
     },
@@ -1298,21 +1399,24 @@ exports.Error = {
     },
 };
 function createBaseResponse() {
-    return { id: 0, members: undefined, messages: undefined, error: undefined };
+    return { id: 0, error: undefined, groupMembers: undefined, groupMessages: undefined, userMessages: undefined };
 }
 exports.Response = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0) {
             writer.uint32(8).int32(message.id);
         }
-        if (message.members !== undefined) {
-            exports.GroupMembers.encode(message.members, writer.uint32(18).fork()).join();
-        }
-        if (message.messages !== undefined) {
-            exports.GroupChannelMessages.encode(message.messages, writer.uint32(26).fork()).join();
-        }
         if (message.error !== undefined) {
-            exports.Error.encode(message.error, writer.uint32(34).fork()).join();
+            exports.Error.encode(message.error, writer.uint32(18).fork()).join();
+        }
+        if (message.groupMembers !== undefined) {
+            exports.GroupMembers.encode(message.groupMembers, writer.uint32(26).fork()).join();
+        }
+        if (message.groupMessages !== undefined) {
+            exports.GroupChannelMessages.encode(message.groupMessages, writer.uint32(34).fork()).join();
+        }
+        if (message.userMessages !== undefined) {
+            exports.UserMessages.encode(message.userMessages, writer.uint32(42).fork()).join();
         }
         return writer;
     },
@@ -1334,21 +1438,28 @@ exports.Response = {
                     if (tag !== 18) {
                         break;
                     }
-                    message.members = exports.GroupMembers.decode(reader, reader.uint32());
+                    message.error = exports.Error.decode(reader, reader.uint32());
                     continue;
                 }
                 case 3: {
                     if (tag !== 26) {
                         break;
                     }
-                    message.messages = exports.GroupChannelMessages.decode(reader, reader.uint32());
+                    message.groupMembers = exports.GroupMembers.decode(reader, reader.uint32());
                     continue;
                 }
                 case 4: {
                     if (tag !== 34) {
                         break;
                     }
-                    message.error = exports.Error.decode(reader, reader.uint32());
+                    message.groupMessages = exports.GroupChannelMessages.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.userMessages = exports.UserMessages.decode(reader, reader.uint32());
                     continue;
                 }
             }
@@ -1362,9 +1473,10 @@ exports.Response = {
     fromJSON(object) {
         return {
             id: isSet(object.id) ? globalThis.Number(object.id) : 0,
-            members: isSet(object.members) ? exports.GroupMembers.fromJSON(object.members) : undefined,
-            messages: isSet(object.messages) ? exports.GroupChannelMessages.fromJSON(object.messages) : undefined,
             error: isSet(object.error) ? exports.Error.fromJSON(object.error) : undefined,
+            groupMembers: isSet(object.groupMembers) ? exports.GroupMembers.fromJSON(object.groupMembers) : undefined,
+            groupMessages: isSet(object.groupMessages) ? exports.GroupChannelMessages.fromJSON(object.groupMessages) : undefined,
+            userMessages: isSet(object.userMessages) ? exports.UserMessages.fromJSON(object.userMessages) : undefined,
         };
     },
     toJSON(message) {
@@ -1372,14 +1484,17 @@ exports.Response = {
         if (message.id !== 0) {
             obj.id = Math.round(message.id);
         }
-        if (message.members !== undefined) {
-            obj.members = exports.GroupMembers.toJSON(message.members);
-        }
-        if (message.messages !== undefined) {
-            obj.messages = exports.GroupChannelMessages.toJSON(message.messages);
-        }
         if (message.error !== undefined) {
             obj.error = exports.Error.toJSON(message.error);
+        }
+        if (message.groupMembers !== undefined) {
+            obj.groupMembers = exports.GroupMembers.toJSON(message.groupMembers);
+        }
+        if (message.groupMessages !== undefined) {
+            obj.groupMessages = exports.GroupChannelMessages.toJSON(message.groupMessages);
+        }
+        if (message.userMessages !== undefined) {
+            obj.userMessages = exports.UserMessages.toJSON(message.userMessages);
         }
         return obj;
     },
@@ -1389,18 +1504,27 @@ exports.Response = {
     fromPartial(object) {
         const message = createBaseResponse();
         message.id = object.id ?? 0;
-        message.members = (object.members !== undefined && object.members !== null)
-            ? exports.GroupMembers.fromPartial(object.members)
-            : undefined;
-        message.messages = (object.messages !== undefined && object.messages !== null)
-            ? exports.GroupChannelMessages.fromPartial(object.messages)
-            : undefined;
         message.error = (object.error !== undefined && object.error !== null) ? exports.Error.fromPartial(object.error) : undefined;
+        message.groupMembers = (object.groupMembers !== undefined && object.groupMembers !== null)
+            ? exports.GroupMembers.fromPartial(object.groupMembers)
+            : undefined;
+        message.groupMessages = (object.groupMessages !== undefined && object.groupMessages !== null)
+            ? exports.GroupChannelMessages.fromPartial(object.groupMessages)
+            : undefined;
+        message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
+            ? exports.UserMessages.fromPartial(object.userMessages)
+            : undefined;
         return message;
     },
 };
 function createBaseClientMessage() {
-    return { request: undefined, groupMessage: undefined, authToken: undefined, currentGroup: undefined };
+    return {
+        request: undefined,
+        groupMessage: undefined,
+        authToken: undefined,
+        currentGroup: undefined,
+        userMessage: undefined,
+    };
 }
 exports.ClientMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -1415,6 +1539,9 @@ exports.ClientMessage = {
         }
         if (message.currentGroup !== undefined) {
             writer.uint32(40).int32(message.currentGroup);
+        }
+        if (message.userMessage !== undefined) {
+            exports.UserMessage.encode(message.userMessage, writer.uint32(50).fork()).join();
         }
         return writer;
     },
@@ -1453,6 +1580,13 @@ exports.ClientMessage = {
                     message.currentGroup = reader.int32();
                     continue;
                 }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.userMessage = exports.UserMessage.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -1467,6 +1601,7 @@ exports.ClientMessage = {
             groupMessage: isSet(object.groupMessage) ? exports.GroupChannelMessage.fromJSON(object.groupMessage) : undefined,
             authToken: isSet(object.authToken) ? exports.AuthenticationToken.fromJSON(object.authToken) : undefined,
             currentGroup: isSet(object.currentGroup) ? globalThis.Number(object.currentGroup) : undefined,
+            userMessage: isSet(object.userMessage) ? exports.UserMessage.fromJSON(object.userMessage) : undefined,
         };
     },
     toJSON(message) {
@@ -1482,6 +1617,9 @@ exports.ClientMessage = {
         }
         if (message.currentGroup !== undefined) {
             obj.currentGroup = Math.round(message.currentGroup);
+        }
+        if (message.userMessage !== undefined) {
+            obj.userMessage = exports.UserMessage.toJSON(message.userMessage);
         }
         return obj;
     },
@@ -1500,11 +1638,21 @@ exports.ClientMessage = {
             ? exports.AuthenticationToken.fromPartial(object.authToken)
             : undefined;
         message.currentGroup = object.currentGroup ?? undefined;
+        message.userMessage = (object.userMessage !== undefined && object.userMessage !== null)
+            ? exports.UserMessage.fromPartial(object.userMessage)
+            : undefined;
         return message;
     },
 };
 function createBaseServerMessage() {
-    return { response: undefined, groupChats: undefined, groupChat: undefined, groupMessage: undefined };
+    return {
+        response: undefined,
+        groupChats: undefined,
+        groupChat: undefined,
+        groupMessage: undefined,
+        userMessage: undefined,
+        userChats: undefined,
+    };
 }
 exports.ServerMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -1519,6 +1667,12 @@ exports.ServerMessage = {
         }
         if (message.groupMessage !== undefined) {
             exports.GroupChannelMessage.encode(message.groupMessage, writer.uint32(34).fork()).join();
+        }
+        if (message.userMessage !== undefined) {
+            exports.UserMessage.encode(message.userMessage, writer.uint32(42).fork()).join();
+        }
+        if (message.userChats !== undefined) {
+            exports.UserMessages.encode(message.userChats, writer.uint32(50).fork()).join();
         }
         return writer;
     },
@@ -1557,6 +1711,20 @@ exports.ServerMessage = {
                     message.groupMessage = exports.GroupChannelMessage.decode(reader, reader.uint32());
                     continue;
                 }
+                case 5: {
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.userMessage = exports.UserMessage.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.userChats = exports.UserMessages.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -1571,6 +1739,8 @@ exports.ServerMessage = {
             groupChats: isSet(object.groupChats) ? exports.GroupChats.fromJSON(object.groupChats) : undefined,
             groupChat: isSet(object.groupChat) ? exports.GroupChat.fromJSON(object.groupChat) : undefined,
             groupMessage: isSet(object.groupMessage) ? exports.GroupChannelMessage.fromJSON(object.groupMessage) : undefined,
+            userMessage: isSet(object.userMessage) ? exports.UserMessage.fromJSON(object.userMessage) : undefined,
+            userChats: isSet(object.userChats) ? exports.UserMessages.fromJSON(object.userChats) : undefined,
         };
     },
     toJSON(message) {
@@ -1586,6 +1756,12 @@ exports.ServerMessage = {
         }
         if (message.groupMessage !== undefined) {
             obj.groupMessage = exports.GroupChannelMessage.toJSON(message.groupMessage);
+        }
+        if (message.userMessage !== undefined) {
+            obj.userMessage = exports.UserMessage.toJSON(message.userMessage);
+        }
+        if (message.userChats !== undefined) {
+            obj.userChats = exports.UserMessages.toJSON(message.userChats);
         }
         return obj;
     },
@@ -1606,6 +1782,180 @@ exports.ServerMessage = {
         message.groupMessage = (object.groupMessage !== undefined && object.groupMessage !== null)
             ? exports.GroupChannelMessage.fromPartial(object.groupMessage)
             : undefined;
+        message.userMessage = (object.userMessage !== undefined && object.userMessage !== null)
+            ? exports.UserMessage.fromPartial(object.userMessage)
+            : undefined;
+        message.userChats = (object.userChats !== undefined && object.userChats !== null)
+            ? exports.UserMessages.fromPartial(object.userChats)
+            : undefined;
+        return message;
+    },
+};
+function createBaseUserMessage() {
+    return { id: new Uint8Array(0), version: 0, text: "", to: "", from: "" };
+}
+exports.UserMessage = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.id.length !== 0) {
+            writer.uint32(10).bytes(message.id);
+        }
+        if (message.version !== 0) {
+            writer.uint32(16).int32(message.version);
+        }
+        if (message.text !== "") {
+            writer.uint32(26).string(message.text);
+        }
+        if (message.to !== "") {
+            writer.uint32(34).string(message.to);
+        }
+        if (message.from !== "") {
+            writer.uint32(42).string(message.from);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseUserMessage();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.id = reader.bytes();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.version = reader.int32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.text = reader.string();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.to = reader.string();
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.from = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            id: isSet(object.id) ? bytesFromBase64(object.id) : new Uint8Array(0),
+            version: isSet(object.version) ? globalThis.Number(object.version) : 0,
+            text: isSet(object.text) ? globalThis.String(object.text) : "",
+            to: isSet(object.to) ? globalThis.String(object.to) : "",
+            from: isSet(object.from) ? globalThis.String(object.from) : "",
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.id.length !== 0) {
+            obj.id = base64FromBytes(message.id);
+        }
+        if (message.version !== 0) {
+            obj.version = Math.round(message.version);
+        }
+        if (message.text !== "") {
+            obj.text = message.text;
+        }
+        if (message.to !== "") {
+            obj.to = message.to;
+        }
+        if (message.from !== "") {
+            obj.from = message.from;
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.UserMessage.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseUserMessage();
+        message.id = object.id ?? new Uint8Array(0);
+        message.version = object.version ?? 0;
+        message.text = object.text ?? "";
+        message.to = object.to ?? "";
+        message.from = object.from ?? "";
+        return message;
+    },
+};
+function createBaseUserMessages() {
+    return { messages: [] };
+}
+exports.UserMessages = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        for (const v of message.messages) {
+            exports.UserMessage.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseUserMessages();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.messages.push(exports.UserMessage.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            messages: globalThis.Array.isArray(object?.messages)
+                ? object.messages.map((e) => exports.UserMessage.fromJSON(e))
+                : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.messages?.length) {
+            obj.messages = message.messages.map((e) => exports.UserMessage.toJSON(e));
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.UserMessages.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseUserMessages();
+        message.messages = object.messages?.map((e) => exports.UserMessage.fromPartial(e)) || [];
         return message;
     },
 };

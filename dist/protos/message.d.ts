@@ -63,6 +63,11 @@ export interface GroupChannelMessages {
 export interface GroupMembers {
     members: GroupMember[];
 }
+export interface GetUserMessages {
+    before: Uint8Array;
+    count: number;
+    from: string;
+}
 export interface Request {
     id: number;
     getGroupMembers?: GetGroupMembers | undefined;
@@ -71,6 +76,7 @@ export interface Request {
     removeUser?: RemoveUser | undefined;
     addChannel?: GroupChannel | undefined;
     deleteChannel?: GroupChannel | undefined;
+    getUserMessages?: GetUserMessages | undefined;
 }
 export interface Error {
     status: number;
@@ -78,21 +84,35 @@ export interface Error {
 }
 export interface Response {
     id: number;
-    members?: GroupMembers | undefined;
-    messages?: GroupChannelMessages | undefined;
     error?: Error | undefined;
+    groupMembers?: GroupMembers | undefined;
+    groupMessages?: GroupChannelMessages | undefined;
+    userMessages?: UserMessages | undefined;
 }
 export interface ClientMessage {
     request?: Request | undefined;
     groupMessage?: GroupChannelMessage | undefined;
     authToken?: AuthenticationToken | undefined;
     currentGroup?: number | undefined;
+    userMessage?: UserMessage | undefined;
 }
 export interface ServerMessage {
     response?: Response | undefined;
     groupChats?: GroupChats | undefined;
     groupChat?: GroupChat | undefined;
     groupMessage?: GroupChannelMessage | undefined;
+    userMessage?: UserMessage | undefined;
+    userChats?: UserMessages | undefined;
+}
+export interface UserMessage {
+    id: Uint8Array;
+    version: number;
+    text: string;
+    to: string;
+    from: string;
+}
+export interface UserMessages {
+    messages: UserMessage[];
 }
 export declare const VersionedMessage: MessageFns<VersionedMessage>;
 export declare const AuthenticationToken: MessageFns<AuthenticationToken>;
@@ -107,11 +127,14 @@ export declare const GroupMember: MessageFns<GroupMember>;
 export declare const GroupChannelMessage: MessageFns<GroupChannelMessage>;
 export declare const GroupChannelMessages: MessageFns<GroupChannelMessages>;
 export declare const GroupMembers: MessageFns<GroupMembers>;
+export declare const GetUserMessages: MessageFns<GetUserMessages>;
 export declare const Request: MessageFns<Request>;
 export declare const Error: MessageFns<Error>;
 export declare const Response: MessageFns<Response>;
 export declare const ClientMessage: MessageFns<ClientMessage>;
 export declare const ServerMessage: MessageFns<ServerMessage>;
+export declare const UserMessage: MessageFns<UserMessage>;
+export declare const UserMessages: MessageFns<UserMessages>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
     [K in keyof T]?: DeepPartial<T[K]>;

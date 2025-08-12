@@ -37,30 +37,35 @@ exports.FireflyClient = exports.protos = void 0;
 const protos = __importStar(require("./protos/message"));
 exports.protos = __importStar(require("./protos/message"));
 class FireflyClient {
-    url;
-    authToken;
-    ws;
-    pendingRequests = new Map();
-    requestIdCounter = 0;
     maxRetries = 3;
-    retriesLeft = this.maxRetries;
     waitTimeBeforeReconnectingFromLastConnection = 5 * 1000;
     connectionTimeout = 5 * 1000;
+    responseTimeout = 5 * 1000;
+    pendingRequests = new Map();
+    url;
+    authToken;
     onMessageCallback;
+    onRetryLimitExceeded;
+    ws = undefined;
+    requestIdCounter = 0;
+    retriesLeft = this.maxRetries;
     lastConnectionAttemptTimestamp = 0;
-    constructor(url, authToken, onMessageCallback) {
+    constructor(url, authToken, onMessageCallback, onRetryLimitExceeded) {
         this.url = url;
         this.authToken = authToken;
         this.onMessageCallback = onMessageCallback;
+        this.onRetryLimitExceeded = onRetryLimitExceeded;
     }
     initialize() {
-        this.connect();
+        this.retriesLeft = this.maxRetries;
+        return this.connect();
     }
     async connect() {
         await new Promise((res, _) => setTimeout(() => res(0), Math.min(this.waitTimeBeforeReconnectingFromLastConnection, Date.now() -
             this.lastConnectionAttemptTimestamp -
             this.waitTimeBeforeReconnectingFromLastConnection)));
         const ws = new WebSocket(this.url);
+        ws.binaryType = "arraybuffer";
         this.lastConnectionAttemptTimestamp = Date.now();
         this.ws = ws;
         setTimeout(() => {
@@ -68,7 +73,6 @@ class FireflyClient {
                 ws.close();
             }
         }, this.connectionTimeout);
-        ws.binaryType = "arraybuffer";
         ws.addEventListener("message", (ev) => {
             if (ev.data instanceof ArrayBuffer) {
                 this.onMessage(ev.data);
@@ -82,9 +86,13 @@ class FireflyClient {
         });
         ws.addEventListener("close", (ev) => {
             console.log(`Websocket closed with code: ${ev.code}`);
+            this.ws = undefined;
             if (this.retriesLeft > 0) {
-                setTimeout(() => this.connect());
+                this.connect();
                 this.retriesLeft--;
+            }
+            else {
+                this.onRetryLimitExceeded();
             }
         });
         ws.addEventListener("open", async () => {
@@ -108,7 +116,12 @@ class FireflyClient {
         }
     }
     sendData(data) {
-        this.ws.send(data);
+        if (this.ws) {
+            this.ws.send(data);
+        }
+        else {
+            console.warn(`websocket not initialized`);
+        }
     }
     sendMessage(message) {
         this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ groupMessage: message })).finish().buffer);
@@ -118,10 +131,17 @@ class FireflyClient {
         return this.requestIdCounter;
     }
     sendRequest(request) {
-        return new Promise((resolve, _reject) => {
+        return new Promise((resolve, reject) => {
             request.id = this.getNewRequestId();
-            this.pendingRequests.set(request.id, (response) => resolve(response));
+            this.pendingRequests.set(request.id, resolve);
             this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ request })).finish().buffer);
+            setTimeout(() => {
+                const cb = this.pendingRequests.get(request.id);
+                if (cb) {
+                    reject(Error(`Didn't receive response in the time ${this.responseTimeout}ms`));
+                    this.pendingRequests.delete(request.id);
+                }
+            }, this.responseTimeout);
         });
     }
 }

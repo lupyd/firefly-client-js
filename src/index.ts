@@ -19,7 +19,7 @@ export class FireflyClient {
 
   private readonly onRetryLimitExceeded: () => void;
 
-  private ws: WebSocket;
+  private ws: WebSocket | undefined = undefined;
 
   private requestIdCounter = 0;
   private retriesLeft = this.maxRetries;
@@ -56,6 +56,7 @@ export class FireflyClient {
     );
 
     const ws = new WebSocket(this.url);
+    ws.binaryType = "arraybuffer";
     this.lastConnectionAttemptTimestamp = Date.now();
     this.ws = ws;
 
@@ -65,7 +66,6 @@ export class FireflyClient {
       }
     }, this.connectionTimeout);
 
-    ws.binaryType = "arraybuffer";
     ws.addEventListener("message", (ev) => {
       if (ev.data instanceof ArrayBuffer) {
         this.onMessage(ev.data);
@@ -80,6 +80,7 @@ export class FireflyClient {
 
     ws.addEventListener("close", (ev) => {
       console.log(`Websocket closed with code: ${ev.code}`);
+      this.ws = undefined;
 
       if (this.retriesLeft > 0) {
         this.connect();
@@ -117,7 +118,11 @@ export class FireflyClient {
   }
 
   private sendData(data: ArrayBufferLike) {
-    this.ws.send(data);
+    if (this.ws) {
+      this.ws!.send(data);
+    } else {
+      console.warn(`websocket not initialized`);
+    }
   }
 
   sendMessage(message: protos.GroupChannelMessage) {

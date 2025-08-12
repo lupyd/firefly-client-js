@@ -85,6 +85,12 @@ export interface GroupMembers {
   members: GroupMember[];
 }
 
+export interface GetUserMessages {
+  before: Uint8Array;
+  count: number;
+  from: string;
+}
+
 export interface Request {
   id: number;
   getGroupMembers?: GetGroupMembers | undefined;
@@ -93,6 +99,7 @@ export interface Request {
   removeUser?: RemoveUser | undefined;
   addChannel?: GroupChannel | undefined;
   deleteChannel?: GroupChannel | undefined;
+  getUserMessages?: GetUserMessages | undefined;
 }
 
 export interface Error {
@@ -102,9 +109,10 @@ export interface Error {
 
 export interface Response {
   id: number;
-  members?: GroupMembers | undefined;
-  messages?: GroupChannelMessages | undefined;
   error?: Error | undefined;
+  groupMembers?: GroupMembers | undefined;
+  groupMessages?: GroupChannelMessages | undefined;
+  userMessages?: UserMessages | undefined;
 }
 
 export interface ClientMessage {
@@ -112,6 +120,7 @@ export interface ClientMessage {
   groupMessage?: GroupChannelMessage | undefined;
   authToken?: AuthenticationToken | undefined;
   currentGroup?: number | undefined;
+  userMessage?: UserMessage | undefined;
 }
 
 export interface ServerMessage {
@@ -119,6 +128,20 @@ export interface ServerMessage {
   groupChats?: GroupChats | undefined;
   groupChat?: GroupChat | undefined;
   groupMessage?: GroupChannelMessage | undefined;
+  userMessage?: UserMessage | undefined;
+  userChats?: UserMessages | undefined;
+}
+
+export interface UserMessage {
+  id: Uint8Array;
+  version: number;
+  text: string;
+  to: string;
+  from: string;
+}
+
+export interface UserMessages {
+  messages: UserMessage[];
 }
 
 function createBaseVersionedMessage(): VersionedMessage {
@@ -1293,6 +1316,98 @@ export const GroupMembers: MessageFns<GroupMembers> = {
   },
 };
 
+function createBaseGetUserMessages(): GetUserMessages {
+  return { before: new Uint8Array(0), count: 0, from: "" };
+}
+
+export const GetUserMessages: MessageFns<GetUserMessages> = {
+  encode(message: GetUserMessages, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.before.length !== 0) {
+      writer.uint32(10).bytes(message.before);
+    }
+    if (message.count !== 0) {
+      writer.uint32(16).int32(message.count);
+    }
+    if (message.from !== "") {
+      writer.uint32(26).string(message.from);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserMessages {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserMessages();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.before = reader.bytes();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.from = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserMessages {
+    return {
+      before: isSet(object.before) ? bytesFromBase64(object.before) : new Uint8Array(0),
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+      from: isSet(object.from) ? globalThis.String(object.from) : "",
+    };
+  },
+
+  toJSON(message: GetUserMessages): unknown {
+    const obj: any = {};
+    if (message.before.length !== 0) {
+      obj.before = base64FromBytes(message.before);
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    if (message.from !== "") {
+      obj.from = message.from;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUserMessages>, I>>(base?: I): GetUserMessages {
+    return GetUserMessages.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUserMessages>, I>>(object: I): GetUserMessages {
+    const message = createBaseGetUserMessages();
+    message.before = object.before ?? new Uint8Array(0);
+    message.count = object.count ?? 0;
+    message.from = object.from ?? "";
+    return message;
+  },
+};
+
 function createBaseRequest(): Request {
   return {
     id: 0,
@@ -1302,6 +1417,7 @@ function createBaseRequest(): Request {
     removeUser: undefined,
     addChannel: undefined,
     deleteChannel: undefined,
+    getUserMessages: undefined,
   };
 }
 
@@ -1327,6 +1443,9 @@ export const Request: MessageFns<Request> = {
     }
     if (message.deleteChannel !== undefined) {
       GroupChannel.encode(message.deleteChannel, writer.uint32(58).fork()).join();
+    }
+    if (message.getUserMessages !== undefined) {
+      GetUserMessages.encode(message.getUserMessages, writer.uint32(66).fork()).join();
     }
     return writer;
   },
@@ -1394,6 +1513,14 @@ export const Request: MessageFns<Request> = {
           message.deleteChannel = GroupChannel.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.getUserMessages = GetUserMessages.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1412,6 +1539,7 @@ export const Request: MessageFns<Request> = {
       removeUser: isSet(object.removeUser) ? RemoveUser.fromJSON(object.removeUser) : undefined,
       addChannel: isSet(object.addChannel) ? GroupChannel.fromJSON(object.addChannel) : undefined,
       deleteChannel: isSet(object.deleteChannel) ? GroupChannel.fromJSON(object.deleteChannel) : undefined,
+      getUserMessages: isSet(object.getUserMessages) ? GetUserMessages.fromJSON(object.getUserMessages) : undefined,
     };
   },
 
@@ -1437,6 +1565,9 @@ export const Request: MessageFns<Request> = {
     }
     if (message.deleteChannel !== undefined) {
       obj.deleteChannel = GroupChannel.toJSON(message.deleteChannel);
+    }
+    if (message.getUserMessages !== undefined) {
+      obj.getUserMessages = GetUserMessages.toJSON(message.getUserMessages);
     }
     return obj;
   },
@@ -1464,6 +1595,9 @@ export const Request: MessageFns<Request> = {
       : undefined;
     message.deleteChannel = (object.deleteChannel !== undefined && object.deleteChannel !== null)
       ? GroupChannel.fromPartial(object.deleteChannel)
+      : undefined;
+    message.getUserMessages = (object.getUserMessages !== undefined && object.getUserMessages !== null)
+      ? GetUserMessages.fromPartial(object.getUserMessages)
       : undefined;
     return message;
   },
@@ -1546,7 +1680,7 @@ export const Error: MessageFns<Error> = {
 };
 
 function createBaseResponse(): Response {
-  return { id: 0, members: undefined, messages: undefined, error: undefined };
+  return { id: 0, error: undefined, groupMembers: undefined, groupMessages: undefined, userMessages: undefined };
 }
 
 export const Response: MessageFns<Response> = {
@@ -1554,14 +1688,17 @@ export const Response: MessageFns<Response> = {
     if (message.id !== 0) {
       writer.uint32(8).int32(message.id);
     }
-    if (message.members !== undefined) {
-      GroupMembers.encode(message.members, writer.uint32(18).fork()).join();
-    }
-    if (message.messages !== undefined) {
-      GroupChannelMessages.encode(message.messages, writer.uint32(26).fork()).join();
-    }
     if (message.error !== undefined) {
-      Error.encode(message.error, writer.uint32(34).fork()).join();
+      Error.encode(message.error, writer.uint32(18).fork()).join();
+    }
+    if (message.groupMembers !== undefined) {
+      GroupMembers.encode(message.groupMembers, writer.uint32(26).fork()).join();
+    }
+    if (message.groupMessages !== undefined) {
+      GroupChannelMessages.encode(message.groupMessages, writer.uint32(34).fork()).join();
+    }
+    if (message.userMessages !== undefined) {
+      UserMessages.encode(message.userMessages, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -1586,7 +1723,7 @@ export const Response: MessageFns<Response> = {
             break;
           }
 
-          message.members = GroupMembers.decode(reader, reader.uint32());
+          message.error = Error.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -1594,7 +1731,7 @@ export const Response: MessageFns<Response> = {
             break;
           }
 
-          message.messages = GroupChannelMessages.decode(reader, reader.uint32());
+          message.groupMembers = GroupMembers.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -1602,7 +1739,15 @@ export const Response: MessageFns<Response> = {
             break;
           }
 
-          message.error = Error.decode(reader, reader.uint32());
+          message.groupMessages = GroupChannelMessages.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.userMessages = UserMessages.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1617,9 +1762,10 @@ export const Response: MessageFns<Response> = {
   fromJSON(object: any): Response {
     return {
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
-      members: isSet(object.members) ? GroupMembers.fromJSON(object.members) : undefined,
-      messages: isSet(object.messages) ? GroupChannelMessages.fromJSON(object.messages) : undefined,
       error: isSet(object.error) ? Error.fromJSON(object.error) : undefined,
+      groupMembers: isSet(object.groupMembers) ? GroupMembers.fromJSON(object.groupMembers) : undefined,
+      groupMessages: isSet(object.groupMessages) ? GroupChannelMessages.fromJSON(object.groupMessages) : undefined,
+      userMessages: isSet(object.userMessages) ? UserMessages.fromJSON(object.userMessages) : undefined,
     };
   },
 
@@ -1628,14 +1774,17 @@ export const Response: MessageFns<Response> = {
     if (message.id !== 0) {
       obj.id = Math.round(message.id);
     }
-    if (message.members !== undefined) {
-      obj.members = GroupMembers.toJSON(message.members);
-    }
-    if (message.messages !== undefined) {
-      obj.messages = GroupChannelMessages.toJSON(message.messages);
-    }
     if (message.error !== undefined) {
       obj.error = Error.toJSON(message.error);
+    }
+    if (message.groupMembers !== undefined) {
+      obj.groupMembers = GroupMembers.toJSON(message.groupMembers);
+    }
+    if (message.groupMessages !== undefined) {
+      obj.groupMessages = GroupChannelMessages.toJSON(message.groupMessages);
+    }
+    if (message.userMessages !== undefined) {
+      obj.userMessages = UserMessages.toJSON(message.userMessages);
     }
     return obj;
   },
@@ -1646,19 +1795,28 @@ export const Response: MessageFns<Response> = {
   fromPartial<I extends Exact<DeepPartial<Response>, I>>(object: I): Response {
     const message = createBaseResponse();
     message.id = object.id ?? 0;
-    message.members = (object.members !== undefined && object.members !== null)
-      ? GroupMembers.fromPartial(object.members)
-      : undefined;
-    message.messages = (object.messages !== undefined && object.messages !== null)
-      ? GroupChannelMessages.fromPartial(object.messages)
-      : undefined;
     message.error = (object.error !== undefined && object.error !== null) ? Error.fromPartial(object.error) : undefined;
+    message.groupMembers = (object.groupMembers !== undefined && object.groupMembers !== null)
+      ? GroupMembers.fromPartial(object.groupMembers)
+      : undefined;
+    message.groupMessages = (object.groupMessages !== undefined && object.groupMessages !== null)
+      ? GroupChannelMessages.fromPartial(object.groupMessages)
+      : undefined;
+    message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
+      ? UserMessages.fromPartial(object.userMessages)
+      : undefined;
     return message;
   },
 };
 
 function createBaseClientMessage(): ClientMessage {
-  return { request: undefined, groupMessage: undefined, authToken: undefined, currentGroup: undefined };
+  return {
+    request: undefined,
+    groupMessage: undefined,
+    authToken: undefined,
+    currentGroup: undefined,
+    userMessage: undefined,
+  };
 }
 
 export const ClientMessage: MessageFns<ClientMessage> = {
@@ -1674,6 +1832,9 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     }
     if (message.currentGroup !== undefined) {
       writer.uint32(40).int32(message.currentGroup);
+    }
+    if (message.userMessage !== undefined) {
+      UserMessage.encode(message.userMessage, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -1717,6 +1878,14 @@ export const ClientMessage: MessageFns<ClientMessage> = {
           message.currentGroup = reader.int32();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.userMessage = UserMessage.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1732,6 +1901,7 @@ export const ClientMessage: MessageFns<ClientMessage> = {
       groupMessage: isSet(object.groupMessage) ? GroupChannelMessage.fromJSON(object.groupMessage) : undefined,
       authToken: isSet(object.authToken) ? AuthenticationToken.fromJSON(object.authToken) : undefined,
       currentGroup: isSet(object.currentGroup) ? globalThis.Number(object.currentGroup) : undefined,
+      userMessage: isSet(object.userMessage) ? UserMessage.fromJSON(object.userMessage) : undefined,
     };
   },
 
@@ -1748,6 +1918,9 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     }
     if (message.currentGroup !== undefined) {
       obj.currentGroup = Math.round(message.currentGroup);
+    }
+    if (message.userMessage !== undefined) {
+      obj.userMessage = UserMessage.toJSON(message.userMessage);
     }
     return obj;
   },
@@ -1767,12 +1940,22 @@ export const ClientMessage: MessageFns<ClientMessage> = {
       ? AuthenticationToken.fromPartial(object.authToken)
       : undefined;
     message.currentGroup = object.currentGroup ?? undefined;
+    message.userMessage = (object.userMessage !== undefined && object.userMessage !== null)
+      ? UserMessage.fromPartial(object.userMessage)
+      : undefined;
     return message;
   },
 };
 
 function createBaseServerMessage(): ServerMessage {
-  return { response: undefined, groupChats: undefined, groupChat: undefined, groupMessage: undefined };
+  return {
+    response: undefined,
+    groupChats: undefined,
+    groupChat: undefined,
+    groupMessage: undefined,
+    userMessage: undefined,
+    userChats: undefined,
+  };
 }
 
 export const ServerMessage: MessageFns<ServerMessage> = {
@@ -1788,6 +1971,12 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     }
     if (message.groupMessage !== undefined) {
       GroupChannelMessage.encode(message.groupMessage, writer.uint32(34).fork()).join();
+    }
+    if (message.userMessage !== undefined) {
+      UserMessage.encode(message.userMessage, writer.uint32(42).fork()).join();
+    }
+    if (message.userChats !== undefined) {
+      UserMessages.encode(message.userChats, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -1831,6 +2020,22 @@ export const ServerMessage: MessageFns<ServerMessage> = {
           message.groupMessage = GroupChannelMessage.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.userMessage = UserMessage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.userChats = UserMessages.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1846,6 +2051,8 @@ export const ServerMessage: MessageFns<ServerMessage> = {
       groupChats: isSet(object.groupChats) ? GroupChats.fromJSON(object.groupChats) : undefined,
       groupChat: isSet(object.groupChat) ? GroupChat.fromJSON(object.groupChat) : undefined,
       groupMessage: isSet(object.groupMessage) ? GroupChannelMessage.fromJSON(object.groupMessage) : undefined,
+      userMessage: isSet(object.userMessage) ? UserMessage.fromJSON(object.userMessage) : undefined,
+      userChats: isSet(object.userChats) ? UserMessages.fromJSON(object.userChats) : undefined,
     };
   },
 
@@ -1862,6 +2069,12 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     }
     if (message.groupMessage !== undefined) {
       obj.groupMessage = GroupChannelMessage.toJSON(message.groupMessage);
+    }
+    if (message.userMessage !== undefined) {
+      obj.userMessage = UserMessage.toJSON(message.userMessage);
+    }
+    if (message.userChats !== undefined) {
+      obj.userChats = UserMessages.toJSON(message.userChats);
     }
     return obj;
   },
@@ -1883,6 +2096,198 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     message.groupMessage = (object.groupMessage !== undefined && object.groupMessage !== null)
       ? GroupChannelMessage.fromPartial(object.groupMessage)
       : undefined;
+    message.userMessage = (object.userMessage !== undefined && object.userMessage !== null)
+      ? UserMessage.fromPartial(object.userMessage)
+      : undefined;
+    message.userChats = (object.userChats !== undefined && object.userChats !== null)
+      ? UserMessages.fromPartial(object.userChats)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUserMessage(): UserMessage {
+  return { id: new Uint8Array(0), version: 0, text: "", to: "", from: "" };
+}
+
+export const UserMessage: MessageFns<UserMessage> = {
+  encode(message: UserMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id.length !== 0) {
+      writer.uint32(10).bytes(message.id);
+    }
+    if (message.version !== 0) {
+      writer.uint32(16).int32(message.version);
+    }
+    if (message.text !== "") {
+      writer.uint32(26).string(message.text);
+    }
+    if (message.to !== "") {
+      writer.uint32(34).string(message.to);
+    }
+    if (message.from !== "") {
+      writer.uint32(42).string(message.from);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserMessage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserMessage();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.bytes();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.version = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.to = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.from = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserMessage {
+    return {
+      id: isSet(object.id) ? bytesFromBase64(object.id) : new Uint8Array(0),
+      version: isSet(object.version) ? globalThis.Number(object.version) : 0,
+      text: isSet(object.text) ? globalThis.String(object.text) : "",
+      to: isSet(object.to) ? globalThis.String(object.to) : "",
+      from: isSet(object.from) ? globalThis.String(object.from) : "",
+    };
+  },
+
+  toJSON(message: UserMessage): unknown {
+    const obj: any = {};
+    if (message.id.length !== 0) {
+      obj.id = base64FromBytes(message.id);
+    }
+    if (message.version !== 0) {
+      obj.version = Math.round(message.version);
+    }
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    if (message.to !== "") {
+      obj.to = message.to;
+    }
+    if (message.from !== "") {
+      obj.from = message.from;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserMessage>, I>>(base?: I): UserMessage {
+    return UserMessage.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserMessage>, I>>(object: I): UserMessage {
+    const message = createBaseUserMessage();
+    message.id = object.id ?? new Uint8Array(0);
+    message.version = object.version ?? 0;
+    message.text = object.text ?? "";
+    message.to = object.to ?? "";
+    message.from = object.from ?? "";
+    return message;
+  },
+};
+
+function createBaseUserMessages(): UserMessages {
+  return { messages: [] };
+}
+
+export const UserMessages: MessageFns<UserMessages> = {
+  encode(message: UserMessages, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.messages) {
+      UserMessage.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserMessages {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserMessages();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.messages.push(UserMessage.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserMessages {
+    return {
+      messages: globalThis.Array.isArray(object?.messages)
+        ? object.messages.map((e: any) => UserMessage.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: UserMessages): unknown {
+    const obj: any = {};
+    if (message.messages?.length) {
+      obj.messages = message.messages.map((e) => UserMessage.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserMessages>, I>>(base?: I): UserMessages {
+    return UserMessages.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserMessages>, I>>(object: I): UserMessages {
+    const message = createBaseUserMessages();
+    message.messages = object.messages?.map((e) => UserMessage.fromPartial(e)) || [];
     return message;
   },
 };
