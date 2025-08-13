@@ -12,26 +12,30 @@ export class FireflyClient {
     (response: protos.Response) => void
   >();
 
-  private readonly url: string;
+  private readonly apiUrl: string;
+  private readonly websocketUrl: string;
   private readonly authToken: () => Promise<string>;
 
   private readonly onMessageCallback: (message: protos.ClientMessage) => void;
 
   private readonly onRetryLimitExceeded: () => void;
 
-  private ws: WebSocket;
+  private ws: WebSocket | undefined = undefined;
 
   private requestIdCounter = 0;
   private retriesLeft = this.maxRetries;
   private lastConnectionAttemptTimestamp = 0;
+  private disposed = false;
 
   constructor(
-    url: string,
+    apiUrl: string,
+    websocketUrl: string,
     authToken: () => Promise<string>,
     onMessageCallback: (message: protos.ClientMessage) => void,
     onRetryLimitExceeded: () => void,
   ) {
-    this.url = url;
+    this.apiUrl = apiUrl;
+    this.websocketUrl = websocketUrl;
     this.authToken = authToken;
     this.onMessageCallback = onMessageCallback;
     this.onRetryLimitExceeded = onRetryLimitExceeded;
@@ -39,6 +43,7 @@ export class FireflyClient {
 
   initialize() {
     this.retriesLeft = this.maxRetries;
+    this.disposed = false;
     return this.connect();
   }
 
@@ -46,16 +51,17 @@ export class FireflyClient {
     await new Promise((res, _) =>
       setTimeout(
         () => res(0),
-        Math.min(
-          this.waitTimeBeforeReconnectingFromLastConnection,
-          Date.now() -
-            this.lastConnectionAttemptTimestamp -
-            this.waitTimeBeforeReconnectingFromLastConnection,
+        Math.max(
+          0,
+          this.waitTimeBeforeReconnectingFromLastConnection -
+            (Date.now() - this.lastConnectionAttemptTimestamp),
         ),
       ),
     );
 
-    const ws = new WebSocket(this.url);
+    console.log(`Connecting to websocket ${this.websocketUrl}`);
+    const ws = new WebSocket(this.websocketUrl);
+    ws.binaryType = "arraybuffer";
     this.lastConnectionAttemptTimestamp = Date.now();
     this.ws = ws;
 
@@ -65,7 +71,6 @@ export class FireflyClient {
       }
     }, this.connectionTimeout);
 
-    ws.binaryType = "arraybuffer";
     ws.addEventListener("message", (ev) => {
       if (ev.data instanceof ArrayBuffer) {
         this.onMessage(ev.data);
@@ -80,6 +85,11 @@ export class FireflyClient {
 
     ws.addEventListener("close", (ev) => {
       console.log(`Websocket closed with code: ${ev.code}`);
+      this.ws = undefined;
+
+      if (this.disposed) {
+        return;
+      }
 
       if (this.retriesLeft > 0) {
         this.connect();
@@ -102,6 +112,13 @@ export class FireflyClient {
     });
   }
 
+  dispose() {
+    if (this.ws) {
+      this.disposed = true;
+      this.ws.close();
+    }
+  }
+
   private onMessage(data: ArrayBuffer) {
     const message = protos.ServerMessage.decode(new Uint8Array(data));
 
@@ -117,13 +134,25 @@ export class FireflyClient {
   }
 
   private sendData(data: ArrayBufferLike) {
-    this.ws.send(data);
+    if (this.ws) {
+      this.ws!.send(data);
+    } else {
+      console.warn(`websocket not initialized`);
+    }
   }
 
-  sendMessage(message: protos.GroupChannelMessage) {
+  sendGroupMessage(message: protos.GroupChannelMessage) {
     this.sendData(
       protos.ClientMessage.encode(
         protos.ClientMessage.create({ groupMessage: message }),
+      ).finish().buffer,
+    );
+  }
+
+  sendUserMessage(message: protos.UserMessage) {
+    this.sendData(
+      protos.ClientMessage.encode(
+        protos.ClientMessage.create({ userMessage: message }),
       ).finish().buffer,
     );
   }
@@ -155,5 +184,84 @@ export class FireflyClient {
         }
       }, this.responseTimeout);
     });
+  }
+
+  async createUserChat(other: string) {
+    const token = await this.authToken();
+    const url = `${this.apiUrl}/user`;
+
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+      method: "POST",
+      body: other,
+    });
+
+    if (response.status != 200 && response.status != 201) {
+      throw new Error(
+        `unexpected statuc: ${response.status} ${await response.text()}`,
+      );
+    }
+
+    const chatId = new Uint8Array(await response.arrayBuffer());
+
+    return chatId;
+  }
+
+  async getUserChats() {
+    const token = await this.authToken();
+    const url = `${this.apiUrl}/users`;
+
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    if (response.status != 200) {
+      throw new Error(
+        `unexpected statuc: ${response.status} ${await response.text()}`,
+      );
+    }
+    const msgs = protos.UserMessages.decode(
+      new Uint8Array(await response.arrayBuffer()),
+    );
+    return msgs.messages;
+  }
+
+  async createGroupChat(chat: protos.GroupChat) {
+    const token = await this.authToken();
+    const url = `${this.apiUrl}/group`;
+
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+      method: "POST",
+      body: new Uint8Array(protos.GroupChat.encode(chat).finish()),
+    });
+
+    if (response.status != 200 && response.status != 201) {
+      throw new Error(
+        `unexpected statuc: ${response.status} ${await response.text()}`,
+      );
+    }
+    return protos.GroupChat.decode(
+      new Uint8Array(await response.arrayBuffer()),
+    );
+  }
+
+  async getGroupChats() {
+    const token = await this.authToken();
+    const url = `${this.apiUrl}/groups`;
+
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    if (response.status != 200) {
+      throw new Error(
+        `unexpected statuc: ${response.status} ${await response.text()}`,
+      );
+    }
+    const chats = protos.GroupChats.decode(
+      new Uint8Array(await response.arrayBuffer()),
+    );
+    return chats.chats;
   }
 }
