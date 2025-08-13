@@ -42,7 +42,7 @@ class FireflyClient {
     connectionTimeout = 5 * 1000;
     responseTimeout = 5 * 1000;
     pendingRequests = new Map();
-    url;
+    baseUrl;
     authToken;
     onMessageCallback;
     onRetryLimitExceeded;
@@ -50,21 +50,23 @@ class FireflyClient {
     requestIdCounter = 0;
     retriesLeft = this.maxRetries;
     lastConnectionAttemptTimestamp = 0;
-    constructor(url, authToken, onMessageCallback, onRetryLimitExceeded) {
-        this.url = url;
+    disposed = false;
+    constructor(baseUrl, authToken, onMessageCallback, onRetryLimitExceeded) {
+        this.baseUrl = baseUrl;
         this.authToken = authToken;
         this.onMessageCallback = onMessageCallback;
         this.onRetryLimitExceeded = onRetryLimitExceeded;
     }
     initialize() {
         this.retriesLeft = this.maxRetries;
+        this.disposed = false;
         return this.connect();
     }
     async connect() {
         await new Promise((res, _) => setTimeout(() => res(0), Math.min(this.waitTimeBeforeReconnectingFromLastConnection, Date.now() -
             this.lastConnectionAttemptTimestamp -
             this.waitTimeBeforeReconnectingFromLastConnection)));
-        const ws = new WebSocket(this.url);
+        const ws = new WebSocket(this.baseUrl + "/ws");
         ws.binaryType = "arraybuffer";
         this.lastConnectionAttemptTimestamp = Date.now();
         this.ws = ws;
@@ -87,6 +89,9 @@ class FireflyClient {
         ws.addEventListener("close", (ev) => {
             console.log(`Websocket closed with code: ${ev.code}`);
             this.ws = undefined;
+            if (this.disposed) {
+                return;
+            }
             if (this.retriesLeft > 0) {
                 this.connect();
                 this.retriesLeft--;
@@ -101,6 +106,12 @@ class FireflyClient {
             const token = await this.authToken();
             this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ authToken: { token } })).finish().buffer);
         });
+    }
+    dispose() {
+        if (this.ws) {
+            this.disposed = true;
+            this.ws.close();
+        }
     }
     onMessage(data) {
         const message = protos.ServerMessage.decode(new Uint8Array(data));
@@ -143,6 +154,57 @@ class FireflyClient {
                 }
             }, this.responseTimeout);
         });
+    }
+    async createUserChat(other) {
+        const token = await this.authToken();
+        const url = `${this.baseUrl}/user`;
+        const response = await fetch(url, {
+            headers: { authorization: `Bearer ${token}` },
+            method: "POST",
+            body: other,
+        });
+        if (response.status != 200 && response.status != 201) {
+            throw new Error(`unexpected statuc: ${response.status} ${await response.text()}`);
+        }
+        const chatId = new Uint8Array(await response.arrayBuffer());
+        return chatId;
+    }
+    async getUserChats() {
+        const token = await this.authToken();
+        const url = `${this.baseUrl}/users`;
+        const response = await fetch(url, {
+            headers: { authorization: `Bearer ${token}` },
+        });
+        if (response.status != 200) {
+            throw new Error(`unexpected statuc: ${response.status} ${await response.text()}`);
+        }
+        const msgs = protos.UserMessages.decode(new Uint8Array(await response.arrayBuffer()));
+        return msgs.messages;
+    }
+    async createGroupChat(chat) {
+        const token = await this.authToken();
+        const url = `${this.baseUrl}/group`;
+        const response = await fetch(url, {
+            headers: { authorization: `Bearer ${token}` },
+            method: "POST",
+            body: new Uint8Array(protos.GroupChat.encode(chat).finish()),
+        });
+        if (response.status != 200 && response.status != 201) {
+            throw new Error(`unexpected statuc: ${response.status} ${await response.text()}`);
+        }
+        return protos.GroupChat.decode(new Uint8Array(await response.arrayBuffer()));
+    }
+    async getGroupChats() {
+        const token = await this.authToken();
+        const url = `${this.baseUrl}/groups`;
+        const response = await fetch(url, {
+            headers: { authorization: `Bearer ${token}` },
+        });
+        if (response.status != 200) {
+            throw new Error(`unexpected statuc: ${response.status} ${await response.text()}`);
+        }
+        const chats = protos.GroupChats.decode(new Uint8Array(await response.arrayBuffer()));
+        return chats.chats;
     }
 }
 exports.FireflyClient = FireflyClient;

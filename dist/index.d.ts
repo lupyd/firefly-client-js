@@ -6,7 +6,7 @@ export declare class FireflyClient {
     private readonly connectionTimeout;
     private readonly responseTimeout;
     private readonly pendingRequests;
-    private readonly url;
+    private readonly baseUrl;
     private readonly authToken;
     private readonly onMessageCallback;
     private readonly onRetryLimitExceeded;
@@ -14,12 +14,18 @@ export declare class FireflyClient {
     private requestIdCounter;
     private retriesLeft;
     private lastConnectionAttemptTimestamp;
-    constructor(url: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ClientMessage) => void, onRetryLimitExceeded: () => void);
+    private disposed;
+    constructor(baseUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ClientMessage) => void, onRetryLimitExceeded: () => void);
     initialize(): Promise<void>;
     private connect;
+    dispose(): void;
     private onMessage;
     private sendData;
     sendMessage(message: protos.GroupChannelMessage): void;
     private getNewRequestId;
     sendRequest(request: protos.Request): Promise<protos.Response>;
+    createUserChat(other: string): Promise<Uint8Array<ArrayBuffer>>;
+    getUserChats(): Promise<protos.UserMessage[]>;
+    createGroupChat(chat: protos.GroupChat): Promise<protos.GroupChat>;
+    getGroupChats(): Promise<protos.GroupChat[]>;
 }
