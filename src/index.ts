@@ -12,7 +12,8 @@ export class FireflyClient {
     (response: protos.Response) => void
   >();
 
-  private readonly baseUrl: string;
+  private readonly apiUrl: string;
+  private readonly websocketUrl: string;
   private readonly authToken: () => Promise<string>;
 
   private readonly onMessageCallback: (message: protos.ClientMessage) => void;
@@ -27,12 +28,14 @@ export class FireflyClient {
   private disposed = false;
 
   constructor(
-    baseUrl: string,
+    apiUrl: string,
+    websocketUrl: string,
     authToken: () => Promise<string>,
     onMessageCallback: (message: protos.ClientMessage) => void,
     onRetryLimitExceeded: () => void,
   ) {
-    this.baseUrl = baseUrl;
+    this.apiUrl = apiUrl;
+    this.websocketUrl = websocketUrl;
     this.authToken = authToken;
     this.onMessageCallback = onMessageCallback;
     this.onRetryLimitExceeded = onRetryLimitExceeded;
@@ -48,16 +51,16 @@ export class FireflyClient {
     await new Promise((res, _) =>
       setTimeout(
         () => res(0),
-        Math.min(
-          this.waitTimeBeforeReconnectingFromLastConnection,
-          Date.now() -
-            this.lastConnectionAttemptTimestamp -
-            this.waitTimeBeforeReconnectingFromLastConnection,
+        Math.max(
+          0,
+          this.waitTimeBeforeReconnectingFromLastConnection -
+            (Date.now() - this.lastConnectionAttemptTimestamp),
         ),
       ),
     );
 
-    const ws = new WebSocket(this.baseUrl + "/ws");
+    console.log(`Connecting to websocket ${this.websocketUrl}`);
+    const ws = new WebSocket(this.websocketUrl);
     ws.binaryType = "arraybuffer";
     this.lastConnectionAttemptTimestamp = Date.now();
     this.ws = ws;
@@ -138,10 +141,18 @@ export class FireflyClient {
     }
   }
 
-  sendMessage(message: protos.GroupChannelMessage) {
+  sendGroupMessage(message: protos.GroupChannelMessage) {
     this.sendData(
       protos.ClientMessage.encode(
         protos.ClientMessage.create({ groupMessage: message }),
+      ).finish().buffer,
+    );
+  }
+
+  sendUserMessage(message: protos.UserMessage) {
+    this.sendData(
+      protos.ClientMessage.encode(
+        protos.ClientMessage.create({ userMessage: message }),
       ).finish().buffer,
     );
   }
@@ -177,7 +188,7 @@ export class FireflyClient {
 
   async createUserChat(other: string) {
     const token = await this.authToken();
-    const url = `${this.baseUrl}/user`;
+    const url = `${this.apiUrl}/user`;
 
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
@@ -198,7 +209,7 @@ export class FireflyClient {
 
   async getUserChats() {
     const token = await this.authToken();
-    const url = `${this.baseUrl}/users`;
+    const url = `${this.apiUrl}/users`;
 
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
@@ -217,7 +228,7 @@ export class FireflyClient {
 
   async createGroupChat(chat: protos.GroupChat) {
     const token = await this.authToken();
-    const url = `${this.baseUrl}/group`;
+    const url = `${this.apiUrl}/group`;
 
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
@@ -237,7 +248,7 @@ export class FireflyClient {
 
   async getGroupChats() {
     const token = await this.authToken();
-    const url = `${this.baseUrl}/groups`;
+    const url = `${this.apiUrl}/groups`;
 
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
