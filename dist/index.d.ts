@@ -16,7 +16,7 @@ export declare class FireflyClient {
     private retriesLeft;
     private lastConnectionAttemptTimestamp;
     private disposed;
-    constructor(apiUrl: string, websocketUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ClientMessage) => void, onRetryLimitExceeded: () => void);
+    constructor(apiUrl: string, websocketUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ServerMessage) => void, onRetryLimitExceeded: () => void);
     initialize(): Promise<void>;
     private connect;
     dispose(): void;

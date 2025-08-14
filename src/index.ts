@@ -16,7 +16,7 @@ export class FireflyClient {
   private readonly websocketUrl: string;
   private readonly authToken: () => Promise<string>;
 
-  private readonly onMessageCallback: (message: protos.ClientMessage) => void;
+  private readonly onMessageCallback: (message: protos.ServerMessage) => void;
 
   private readonly onRetryLimitExceeded: () => void;
 
@@ -31,7 +31,7 @@ export class FireflyClient {
     apiUrl: string,
     websocketUrl: string,
     authToken: () => Promise<string>,
-    onMessageCallback: (message: protos.ClientMessage) => void,
+    onMessageCallback: (message: protos.ServerMessage) => void,
     onRetryLimitExceeded: () => void,
   ) {
     this.apiUrl = apiUrl;
