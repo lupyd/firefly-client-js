@@ -42,7 +42,8 @@ class FireflyClient {
     connectionTimeout = 5 * 1000;
     responseTimeout = 5 * 1000;
     pendingRequests = new Map();
-    baseUrl;
+    apiUrl;
+    websocketUrl;
     authToken;
     onMessageCallback;
     onRetryLimitExceeded;
@@ -51,8 +52,9 @@ class FireflyClient {
     retriesLeft = this.maxRetries;
     lastConnectionAttemptTimestamp = 0;
     disposed = false;
-    constructor(baseUrl, authToken, onMessageCallback, onRetryLimitExceeded) {
-        this.baseUrl = baseUrl;
+    constructor(apiUrl, websocketUrl, authToken, onMessageCallback, onRetryLimitExceeded) {
+        this.apiUrl = apiUrl;
+        this.websocketUrl = websocketUrl;
         this.authToken = authToken;
         this.onMessageCallback = onMessageCallback;
         this.onRetryLimitExceeded = onRetryLimitExceeded;
@@ -63,10 +65,10 @@ class FireflyClient {
         return this.connect();
     }
     async connect() {
-        await new Promise((res, _) => setTimeout(() => res(0), Math.min(this.waitTimeBeforeReconnectingFromLastConnection, Date.now() -
-            this.lastConnectionAttemptTimestamp -
-            this.waitTimeBeforeReconnectingFromLastConnection)));
-        const ws = new WebSocket(this.baseUrl + "/ws");
+        await new Promise((res, _) => setTimeout(() => res(0), Math.max(0, this.waitTimeBeforeReconnectingFromLastConnection -
+            (Date.now() - this.lastConnectionAttemptTimestamp))));
+        console.log(`Connecting to websocket ${this.websocketUrl}`);
+        const ws = new WebSocket(this.websocketUrl);
         ws.binaryType = "arraybuffer";
         this.lastConnectionAttemptTimestamp = Date.now();
         this.ws = ws;
@@ -134,8 +136,11 @@ class FireflyClient {
             console.warn(`websocket not initialized`);
         }
     }
-    sendMessage(message) {
+    sendGroupMessage(message) {
         this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ groupMessage: message })).finish().buffer);
+    }
+    sendUserMessage(message) {
+        this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ userMessage: message })).finish().buffer);
     }
     getNewRequestId() {
         this.requestIdCounter++;
@@ -157,7 +162,7 @@ class FireflyClient {
     }
     async createUserChat(other) {
         const token = await this.authToken();
-        const url = `${this.baseUrl}/user`;
+        const url = `${this.apiUrl}/user`;
         const response = await fetch(url, {
             headers: { authorization: `Bearer ${token}` },
             method: "POST",
@@ -171,7 +176,7 @@ class FireflyClient {
     }
     async getUserChats() {
         const token = await this.authToken();
-        const url = `${this.baseUrl}/users`;
+        const url = `${this.apiUrl}/users`;
         const response = await fetch(url, {
             headers: { authorization: `Bearer ${token}` },
         });
@@ -183,7 +188,7 @@ class FireflyClient {
     }
     async createGroupChat(chat) {
         const token = await this.authToken();
-        const url = `${this.baseUrl}/group`;
+        const url = `${this.apiUrl}/group`;
         const response = await fetch(url, {
             headers: { authorization: `Bearer ${token}` },
             method: "POST",
@@ -196,7 +201,7 @@ class FireflyClient {
     }
     async getGroupChats() {
         const token = await this.authToken();
-        const url = `${this.baseUrl}/groups`;
+        const url = `${this.apiUrl}/groups`;
         const response = await fetch(url, {
             headers: { authorization: `Bearer ${token}` },
         });

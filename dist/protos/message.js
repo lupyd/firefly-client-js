@@ -1399,7 +1399,14 @@ exports.Error = {
     },
 };
 function createBaseResponse() {
-    return { id: 0, error: undefined, groupMembers: undefined, groupMessages: undefined, userMessages: undefined };
+    return {
+        id: 0,
+        error: undefined,
+        groupMembers: undefined,
+        groupMessages: undefined,
+        userMessages: undefined,
+        channel: undefined,
+    };
 }
 exports.Response = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -1417,6 +1424,9 @@ exports.Response = {
         }
         if (message.userMessages !== undefined) {
             exports.UserMessages.encode(message.userMessages, writer.uint32(42).fork()).join();
+        }
+        if (message.channel !== undefined) {
+            exports.GroupChannel.encode(message.channel, writer.uint32(50).fork()).join();
         }
         return writer;
     },
@@ -1462,6 +1472,13 @@ exports.Response = {
                     message.userMessages = exports.UserMessages.decode(reader, reader.uint32());
                     continue;
                 }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.channel = exports.GroupChannel.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -1477,6 +1494,7 @@ exports.Response = {
             groupMembers: isSet(object.groupMembers) ? exports.GroupMembers.fromJSON(object.groupMembers) : undefined,
             groupMessages: isSet(object.groupMessages) ? exports.GroupChannelMessages.fromJSON(object.groupMessages) : undefined,
             userMessages: isSet(object.userMessages) ? exports.UserMessages.fromJSON(object.userMessages) : undefined,
+            channel: isSet(object.channel) ? exports.GroupChannel.fromJSON(object.channel) : undefined,
         };
     },
     toJSON(message) {
@@ -1496,6 +1514,9 @@ exports.Response = {
         if (message.userMessages !== undefined) {
             obj.userMessages = exports.UserMessages.toJSON(message.userMessages);
         }
+        if (message.channel !== undefined) {
+            obj.channel = exports.GroupChannel.toJSON(message.channel);
+        }
         return obj;
     },
     create(base) {
@@ -1513,6 +1534,9 @@ exports.Response = {
             : undefined;
         message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
             ? exports.UserMessages.fromPartial(object.userMessages)
+            : undefined;
+        message.channel = (object.channel !== undefined && object.channel !== null)
+            ? exports.GroupChannel.fromPartial(object.channel)
             : undefined;
         return message;
     },

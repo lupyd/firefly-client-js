@@ -88,6 +88,7 @@ export interface Response {
     groupMembers?: GroupMembers | undefined;
     groupMessages?: GroupChannelMessages | undefined;
     userMessages?: UserMessages | undefined;
+    channel?: GroupChannel | undefined;
 }
 export interface ClientMessage {
     request?: Request | undefined;

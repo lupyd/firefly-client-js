@@ -68,10 +68,34 @@ async function main() {
   );
 
   for (const message of response.userMessages!.messages) {
+    console.log(
+      JSON.stringify(protos.UserMessage.toJSON(message), undefined, " "),
+    );
     // add message to ui, probably sorted by "message.id"
   }
 
-  console.log(JSON.stringify(protos.Response.toJSON(response), undefined, " "));
+  // const group = await aliceClient.createGroupChat(
+  //   protos.GroupChat.create({ name: "AliceGroup" }),
+  // );
+
+  // console.log({ groupCreated: group });
+
+  {
+    const response = await aliceClient.sendRequest(
+      protos.Request.create({
+        addChannel: protos.GroupChannel.create({
+          name: "general",
+          groupId: 1,
+        }),
+      }),
+    );
+
+    console.log(response);
+  }
+}
+
+function prettyString(o: any) {
+  return JSON.stringify(o, undefined, " ");
 }
 
 main();

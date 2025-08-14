@@ -113,6 +113,7 @@ export interface Response {
   groupMembers?: GroupMembers | undefined;
   groupMessages?: GroupChannelMessages | undefined;
   userMessages?: UserMessages | undefined;
+  channel?: GroupChannel | undefined;
 }
 
 export interface ClientMessage {
@@ -1680,7 +1681,14 @@ export const Error: MessageFns<Error> = {
 };
 
 function createBaseResponse(): Response {
-  return { id: 0, error: undefined, groupMembers: undefined, groupMessages: undefined, userMessages: undefined };
+  return {
+    id: 0,
+    error: undefined,
+    groupMembers: undefined,
+    groupMessages: undefined,
+    userMessages: undefined,
+    channel: undefined,
+  };
 }
 
 export const Response: MessageFns<Response> = {
@@ -1699,6 +1707,9 @@ export const Response: MessageFns<Response> = {
     }
     if (message.userMessages !== undefined) {
       UserMessages.encode(message.userMessages, writer.uint32(42).fork()).join();
+    }
+    if (message.channel !== undefined) {
+      GroupChannel.encode(message.channel, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -1750,6 +1761,14 @@ export const Response: MessageFns<Response> = {
           message.userMessages = UserMessages.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.channel = GroupChannel.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1766,6 +1785,7 @@ export const Response: MessageFns<Response> = {
       groupMembers: isSet(object.groupMembers) ? GroupMembers.fromJSON(object.groupMembers) : undefined,
       groupMessages: isSet(object.groupMessages) ? GroupChannelMessages.fromJSON(object.groupMessages) : undefined,
       userMessages: isSet(object.userMessages) ? UserMessages.fromJSON(object.userMessages) : undefined,
+      channel: isSet(object.channel) ? GroupChannel.fromJSON(object.channel) : undefined,
     };
   },
 
@@ -1786,6 +1806,9 @@ export const Response: MessageFns<Response> = {
     if (message.userMessages !== undefined) {
       obj.userMessages = UserMessages.toJSON(message.userMessages);
     }
+    if (message.channel !== undefined) {
+      obj.channel = GroupChannel.toJSON(message.channel);
+    }
     return obj;
   },
 
@@ -1804,6 +1827,9 @@ export const Response: MessageFns<Response> = {
       : undefined;
     message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
       ? UserMessages.fromPartial(object.userMessages)
+      : undefined;
+    message.channel = (object.channel !== undefined && object.channel !== null)
+      ? GroupChannel.fromPartial(object.channel)
       : undefined;
     return message;
   },
