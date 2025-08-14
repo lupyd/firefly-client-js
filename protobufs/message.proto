@@ -120,6 +120,7 @@ message Response {
     GroupMembers groupMembers = 3;
     GroupChannelMessages groupMessages = 4;
     UserMessages userMessages = 5;
+    GroupChannel channel = 6;
   }
 }
 
