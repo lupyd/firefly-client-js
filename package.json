@@ -18,7 +18,9 @@
   ],
   "Type": "module",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@signalapp/libsignal-client": "^0.78.3"
+  },
   "devDependencies": {
     "ts-proto": "^2.7.5"
   }

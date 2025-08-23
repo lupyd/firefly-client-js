@@ -1,0 +1,2 @@
+ignoredBuiltDependencies:
+  - '@signalapp/libsignal-client'
