@@ -19,7 +19,8 @@
   "Type": "module",
   "license": "MIT",
   "dependencies": {
-    "@signalapp/libsignal-client": "^0.78.3"
+    "@signalapp/libsignal-client": "^0.78.3",
+    "firefly-mls": "https://github.com/lupyd/firefly-mls-js"
   },
   "devDependencies": {
     "ts-proto": "^2.7.5"
