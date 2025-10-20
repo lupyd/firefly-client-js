@@ -71,6 +71,10 @@ type-fest@^4.26.0:
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-4.41.0.tgz#6ae1c8e5731273c2bf1f58ad39cbae2c91a46c58"
   integrity sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==
 
+"ulid@https://github.com/ash-hashtag/ulid-js":
+  version "3.0.1"
+  resolved "https://github.com/ash-hashtag/ulid-js#283730e9fa74ebc387b9e498963f927ce0b0ed79"
+
 uuid@^11:
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.0.tgz#9549028be1753bb934fc96e2bca09bb4105ae912"
