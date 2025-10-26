@@ -1,220 +1,192 @@
-import * as libsignal from "@signalapp/libsignal-client";
-import { openDB } from "idb";
+import { IDBPDatabase, openDB } from "idb";
 
-function makeStore(name: string) {
-  const dbName = "firefly";
-  const storeName = name;
+import * as libsignal from "libsignal-protocol";
+let db: IDBPDatabase | undefined = undefined;
 
-  return {
-    async get(key: string | number) {
-      const db = await openDB(dbName, 1, {
-        upgrade(db) {
+const sessionsStoreName = "sessions";
+const identitesStoreName = "identities";
+const preKeysStoreName = "pre_keys";
+const signedPreKeysStoreName = "signed_pre_keys";
+const senderKeysStoreName = "sender_keys";
+const kyberPreKeysStoreName = "kyber_pre_keys";
+
+
+const getDb = async () => {
+  if (!db) {
+    db = await openDB("firefly-signal", 1, {
+      upgrade(db) {
+        const storeNames = [
+          sessionsStoreName,
+          identitesStoreName,
+          preKeysStoreName,
+          signedPreKeysStoreName,
+          senderKeysStoreName,
+          kyberPreKeysStoreName
+        ];
+
+        for (const storeName of storeNames) {
           if (!db.objectStoreNames.contains(storeName)) {
             db.createObjectStore(storeName);
           }
-        },
-      });
+        }
+      },
+    });
+  }
+  return db;
+};
+
+export async function resetDb() {
+  const db = await getDb();
+  for (const storeName of db.objectStoreNames) {
+    await db.clear(storeName);
+  }
+}
+
+function getStore(name: string) {
+  const storeName = name;
+  return {
+    async get(key: string) {
+      const db = await getDb();
       return db.get(storeName, key);
     },
-    async set(key: string | number, value: any) {
-      const db = await openDB(dbName, 1);
+    async set(key: string, value: any) {
+      const db = await getDb();
       return db.put(storeName, value, key);
     },
-    async remove(key: string | number) {
-      const db = await openDB(dbName, 1);
+    async remove(key: string) {
+      const db = await getDb();
       return db.delete(storeName, key);
     },
     async getAll() {
-      const db = await openDB(dbName, 1);
+      const db = await getDb();
       return db.getAll(storeName);
     },
+    async transaction() {
+      const db = await getDb();
+      return db.transaction(storeName, "readwrite");
+    }
   };
 }
 
-export class IndexedDbSessionStore extends libsignal.SessionStore {
-  async saveSession(
-    name: libsignal.ProtocolAddress,
-    record: libsignal.SessionRecord,
-  ): Promise<void> {
-    await this.store.set(name.toString(), record.serialize());
-  }
-  async getSession(
-    name: libsignal.ProtocolAddress,
-  ): Promise<libsignal.SessionRecord | null> {
-    const session = await this.store.get(name.toString());
-    if (session) {
-      return libsignal.SessionRecord.deserialize(session);
-    } else {
-      return null;
-    }
-  }
-  async getExistingSessions(
-    addresses: libsignal.ProtocolAddress[],
-  ): Promise<libsignal.SessionRecord[]> {
-    const sessions: libsignal.SessionRecord[] = [];
-    for (const address of addresses) {
-      const session = await this.store.get(address.toString());
-      if (session) {
-        sessions.push(libsignal.SessionRecord.deserialize(session));
-      }
-    }
-    return sessions;
-  }
-  store = makeStore("sessions");
-
-  async deleteSession(address: libsignal.ProtocolAddress) {
-    await this.store.remove(address.toString());
+export function isEqualBytes(bytes1: Uint8Array, bytes2: Uint8Array): boolean {
+  if (typeof window !== "undefined") {
+    return window.indexedDB.cmp(bytes1, bytes2) == 0;
   }
 
-  async getSubDeviceSessions(name: string) {
-    const all = await this.store.getAll();
-    return Object.keys(all).filter((k) => k.startsWith(`${name}.`));
+  if (bytes1.length !== bytes2.length) {
+    return false;
   }
-}
 
-export class IndexedDbIdentityKeyStore extends libsignal.IdentityKeyStore {
-  store = makeStore("identites");
-
-  async saveIdentity(
-    name: libsignal.ProtocolAddress,
-    key: libsignal.PublicKey,
-  ): Promise<libsignal.IdentityChange> {
-    const oldKey = await this.store.get(name.toString());
-    if (!oldKey) {
-      await this.store.set(name.toString(), key.serialize());
-      return libsignal.IdentityChange.NewOrUnchanged;
-    } else {
-      if (window.indexedDB.cmp(oldKey, key.serialize()) == 0) {
-        return libsignal.IdentityChange.NewOrUnchanged;
-      } else {
-        await this.store.set(name.toString(), key.serialize());
-        return libsignal.IdentityChange.ReplacedExisting;
-      }
-    }
-  }
-  async isTrustedIdentity(
-    name: libsignal.ProtocolAddress,
-    key: libsignal.PublicKey,
-    _direction: libsignal.Direction,
-  ): Promise<boolean> {
-    const publicKey = await this.store.get(name.toString());
-    if (!publicKey) {
+  for (let i = 0; i < bytes1.length; i++) {
+    if (bytes1[i] !== bytes2[i]) {
       return false;
     }
-
-    return key.compare(libsignal.PublicKey.deserialize(publicKey)) == 0;
-  }
-  async getIdentityKey(): Promise<libsignal.PrivateKey> {
-    const key = await this.store.get("identityKey");
-    if (!key) {
-      const newKey = libsignal.PrivateKey.generate();
-      console.log(`New Identity Key generated`);
-      await this.store.set("identityKey", newKey.serialize());
-      return newKey;
-    }
-
-    return libsignal.PrivateKey.deserialize(key);
-  }
-  async getIdentity(
-    name: libsignal.ProtocolAddress,
-  ): Promise<libsignal.PublicKey | null> {
-    const identity = await this.store.get(name.toString());
-    if (!identity) {
-      return null;
-    }
-    return libsignal.PublicKey.deserialize(identity);
   }
 
-  async getLocalRegistrationId() {
-    return this.store.get("registrationId") ?? 0;
-  }
+  return true;
 }
 
-export class IndexedDbPreKeyStore extends libsignal.PreKeyStore {
-  store = makeStore("prekeys");
-  async savePreKey(id: number, record: libsignal.PreKeyRecord): Promise<void> {
-    await this.store.set(id, record.serialize());
-  }
-  async getPreKey(id: number): Promise<libsignal.PreKeyRecord> {
-    const data = await this.store.get(id);
-    if (!data) {
-      throw new Error("Key doesn't exist");
+export function newJsSessionStore() {
+  return new libsignal.JsSessionStore(
+    (addr: string) => getStore(sessionsStoreName).get(addr),
+    (addr: string, value: any) => getStore(sessionsStoreName).set(addr, value),
+  );
+}
+
+
+export function newJsIdentityStore() {
+  return new libsignal.JsIdentityKeyStore(
+    async (addr: string, identity: Uint8Array, _direction: libsignal.Direction) => {
+      const value = await getStore(identitesStoreName).get(addr);
+      if (value) {
+        return isEqualBytes(value, identity);
+      } else {
+        return true;
+      }
+    },
+    async () => {
+      let key = await getStore(identitesStoreName).get("identityKey");
+      if (!key) {
+        const newKey = libsignal.PrivateKey.generate();
+        console.log(`New Identity Key generated`);
+        key = newKey.serialize();
+        newKey.free()
+        await getStore(identitesStoreName).set("identityKey", key);
+
+      }
+
+      return key
+    },
+    async () => (await getStore(identitesStoreName).get("registrationId")) ?? 1,
+    async (addr: string, identity: Uint8Array) => {
+      const oldValue = await getStore(identitesStoreName).get(addr);
+      await getStore(identitesStoreName).set(addr, identity);
+      if (oldValue) {
+        return isEqualBytes(oldValue, identity);
+      } else {
+        return true;
+      }
+    },
+    (addr: string) =>
+      getStore(identitesStoreName).get(addr)
+    ,
+  );
+}
+
+
+export function newJsPreKeyStore() {
+  return new libsignal.JsPreKeyStore(
+    (addr: string) =>
+      getStore(preKeysStoreName).get(addr),
+    (addr: string, record: Uint8Array) =>
+      getStore(preKeysStoreName).set(addr, record)
+    ,
+    (addr: string) =>
+      getStore(preKeysStoreName).remove(addr)
+    ,
+  );
+}
+
+export function newJsSignedPreKeyStore() {
+  return new libsignal.JsSignedPreKeyStore(
+    (addr: string) => getStore(signedPreKeysStoreName).get(addr),
+
+    (addr: string, record: Uint8Array) =>
+      getStore(signedPreKeysStoreName).set(addr, record)
+    ,
+  );
+}
+
+export function newJsKyberPreKeyStore() {
+  return new libsignal.JsKyberPreKeyStore(
+    async (addr: string) => {
+      const value = await getStore(kyberPreKeysStoreName).get(addr);
+      if (value && "record" in value) {
+        return value.record;
+      }
     }
-    return libsignal.PreKeyRecord.deserialize(data);
-  }
+    ,
+    (addr: string, record: Uint8Array) =>
+      getStore(kyberPreKeysStoreName).set(addr, { record })
+    ,
+    async (addr: string, preKeyId: string, publicKey: Uint8Array) => {
+      const store = getStore(kyberPreKeysStoreName)
 
-  async removePreKey(id: number) {
-    await this.store.remove(id);
-  }
+      const tx = await store.transaction();
+
+      const value = await tx.store.get(addr);
+      if (value) {
+        value["used"] = true;
+        value["pre_key"] = preKeyId;
+        value["public_key"] = publicKey;
+
+        await tx.store.put(value, addr);
+      }
+      
+      await tx.done;
+    },
+  );
 }
 
-export class IndexedDbSignedPreKeyStore extends libsignal.SignedPreKeyStore {
-  store = makeStore("signed_prekeys");
 
-  async saveSignedPreKey(
-    id: number,
-    record: libsignal.SignedPreKeyRecord,
-  ): Promise<void> {
-    await this.store.set(id, record.serialize());
-  }
-  async getSignedPreKey(id: number): Promise<libsignal.SignedPreKeyRecord> {
-    const data = await this.store.get(id);
-    if (!data) {
-      throw new Error("Key doesn't exist");
-    }
-    return libsignal.SignedPreKeyRecord.deserialize(data);
-  }
-
-  async removeSignedPreKey(id: number) {
-    await this.store.remove(id);
-  }
-}
-
-export class IndexedDbSenderKeyStore extends libsignal.SenderKeyStore {
-  store = makeStore("senderkeys");
-
-  async saveSenderKey(
-    sender: libsignal.ProtocolAddress,
-    distributionId: libsignal.Uuid,
-    record: libsignal.SenderKeyRecord,
-  ): Promise<void> {
-    await this.store.set(sender.toString(), record.serialize());
-  }
-  async getSenderKey(
-    sender: libsignal.ProtocolAddress,
-    distributionId: libsignal.Uuid,
-  ): Promise<libsignal.SenderKeyRecord | null> {
-    const data = await this.store.get(sender.toString());
-    return data ? libsignal.SenderKeyRecord.deserialize(data) : null;
-  }
-}
-
-export class IndexedDbKyberPreKeyStore extends libsignal.KyberPreKeyStore {
-  store = makeStore("kyber_prekeys");
-  usedStore = makeStore("used_kyber_prekeys");
-
-  async saveKyberPreKey(
-    id: number,
-    record: libsignal.KyberPreKeyRecord,
-  ): Promise<void> {
-    await this.store.set(id, record.serialize());
-  }
-  async getKyberPreKey(id: number): Promise<libsignal.KyberPreKeyRecord> {
-    const data = await this.store.get(id);
-    if (!data) {
-      throw new Error("Key doesn't exist");
-    }
-    return libsignal.KyberPreKeyRecord.deserialize(data);
-  }
-  async markKyberPreKeyUsed(id: number): Promise<void> {
-    await this.usedStore.set(id, Date.now());
-  }
-
-  async storeKyberPreKey(id: number, record: libsignal.KyberPreKeyRecord) {
-    await this.store.set(id, record.serialize());
-  }
-
-  async removeKyberPreKey(id: number) {
-    await this.store.remove(id);
-  }
-}
+export * as libsignal from "libsignal-protocol";

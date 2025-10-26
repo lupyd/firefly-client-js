@@ -15,6 +15,7 @@ export interface UserMessage {
   from: string;
   text: Uint8Array;
   conversationId: bigint;
+  type: number;
 }
 
 export interface Group {
@@ -166,6 +167,8 @@ export interface PreKeyBundle {
 
 export interface ConversationStart {
   conversationId: bigint;
+  startedBy: string;
+  other: string;
   bundle: PreKeyBundle | undefined;
 }
 
@@ -183,8 +186,13 @@ export interface Conversations {
   conversations: Conversation[];
 }
 
+export interface UserMessageInner {
+  plainText?: Uint8Array | undefined;
+  callMessage?: Uint8Array | undefined;
+}
+
 function createBaseUserMessage(): UserMessage {
-  return { id: new Uint8Array(0), to: "", from: "", text: new Uint8Array(0), conversationId: 0n };
+  return { id: new Uint8Array(0), to: "", from: "", text: new Uint8Array(0), conversationId: 0n, type: 0 };
 }
 
 export const UserMessage: MessageFns<UserMessage> = {
@@ -206,6 +214,9 @@ export const UserMessage: MessageFns<UserMessage> = {
         throw new globalThis.Error("value provided for field message.conversationId of type uint64 too large");
       }
       writer.uint32(40).uint64(message.conversationId);
+    }
+    if (message.type !== 0) {
+      writer.uint32(48).uint32(message.type);
     }
     return writer;
   },
@@ -257,6 +268,14 @@ export const UserMessage: MessageFns<UserMessage> = {
           message.conversationId = reader.uint64() as bigint;
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.type = reader.uint32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -273,6 +292,7 @@ export const UserMessage: MessageFns<UserMessage> = {
       from: isSet(object.from) ? globalThis.String(object.from) : "",
       text: isSet(object.text) ? bytesFromBase64(object.text) : new Uint8Array(0),
       conversationId: isSet(object.conversationId) ? BigInt(object.conversationId) : 0n,
+      type: isSet(object.type) ? globalThis.Number(object.type) : 0,
     };
   },
 
@@ -293,6 +313,9 @@ export const UserMessage: MessageFns<UserMessage> = {
     if (message.conversationId !== 0n) {
       obj.conversationId = message.conversationId.toString();
     }
+    if (message.type !== 0) {
+      obj.type = Math.round(message.type);
+    }
     return obj;
   },
 
@@ -306,6 +329,7 @@ export const UserMessage: MessageFns<UserMessage> = {
     message.from = object.from ?? "";
     message.text = object.text ?? new Uint8Array(0);
     message.conversationId = object.conversationId ?? 0n;
+    message.type = object.type ?? 0;
     return message;
   },
 };
@@ -2645,7 +2669,7 @@ export const PreKeyBundle: MessageFns<PreKeyBundle> = {
 };
 
 function createBaseConversationStart(): ConversationStart {
-  return { conversationId: 0n, bundle: undefined };
+  return { conversationId: 0n, startedBy: "", other: "", bundle: undefined };
 }
 
 export const ConversationStart: MessageFns<ConversationStart> = {
@@ -2656,8 +2680,14 @@ export const ConversationStart: MessageFns<ConversationStart> = {
       }
       writer.uint32(8).uint64(message.conversationId);
     }
+    if (message.startedBy !== "") {
+      writer.uint32(18).string(message.startedBy);
+    }
+    if (message.other !== "") {
+      writer.uint32(26).string(message.other);
+    }
     if (message.bundle !== undefined) {
-      PreKeyBundle.encode(message.bundle, writer.uint32(18).fork()).join();
+      PreKeyBundle.encode(message.bundle, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -2682,6 +2712,22 @@ export const ConversationStart: MessageFns<ConversationStart> = {
             break;
           }
 
+          message.startedBy = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.other = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
           message.bundle = PreKeyBundle.decode(reader, reader.uint32());
           continue;
         }
@@ -2697,6 +2743,8 @@ export const ConversationStart: MessageFns<ConversationStart> = {
   fromJSON(object: any): ConversationStart {
     return {
       conversationId: isSet(object.conversationId) ? BigInt(object.conversationId) : 0n,
+      startedBy: isSet(object.startedBy) ? globalThis.String(object.startedBy) : "",
+      other: isSet(object.other) ? globalThis.String(object.other) : "",
       bundle: isSet(object.bundle) ? PreKeyBundle.fromJSON(object.bundle) : undefined,
     };
   },
@@ -2705,6 +2753,12 @@ export const ConversationStart: MessageFns<ConversationStart> = {
     const obj: any = {};
     if (message.conversationId !== 0n) {
       obj.conversationId = message.conversationId.toString();
+    }
+    if (message.startedBy !== "") {
+      obj.startedBy = message.startedBy;
+    }
+    if (message.other !== "") {
+      obj.other = message.other;
     }
     if (message.bundle !== undefined) {
       obj.bundle = PreKeyBundle.toJSON(message.bundle);
@@ -2718,6 +2772,8 @@ export const ConversationStart: MessageFns<ConversationStart> = {
   fromPartial<I extends Exact<DeepPartial<ConversationStart>, I>>(object: I): ConversationStart {
     const message = createBaseConversationStart();
     message.conversationId = object.conversationId ?? 0n;
+    message.startedBy = object.startedBy ?? "";
+    message.other = object.other ?? "";
     message.bundle = (object.bundle !== undefined && object.bundle !== null)
       ? PreKeyBundle.fromPartial(object.bundle)
       : undefined;
@@ -2940,6 +2996,82 @@ export const Conversations: MessageFns<Conversations> = {
   fromPartial<I extends Exact<DeepPartial<Conversations>, I>>(object: I): Conversations {
     const message = createBaseConversations();
     message.conversations = object.conversations?.map((e) => Conversation.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseUserMessageInner(): UserMessageInner {
+  return { plainText: undefined, callMessage: undefined };
+}
+
+export const UserMessageInner: MessageFns<UserMessageInner> = {
+  encode(message: UserMessageInner, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.plainText !== undefined) {
+      writer.uint32(10).bytes(message.plainText);
+    }
+    if (message.callMessage !== undefined) {
+      writer.uint32(18).bytes(message.callMessage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserMessageInner {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserMessageInner();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.plainText = reader.bytes();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.callMessage = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserMessageInner {
+    return {
+      plainText: isSet(object.plainText) ? bytesFromBase64(object.plainText) : undefined,
+      callMessage: isSet(object.callMessage) ? bytesFromBase64(object.callMessage) : undefined,
+    };
+  },
+
+  toJSON(message: UserMessageInner): unknown {
+    const obj: any = {};
+    if (message.plainText !== undefined) {
+      obj.plainText = base64FromBytes(message.plainText);
+    }
+    if (message.callMessage !== undefined) {
+      obj.callMessage = base64FromBytes(message.callMessage);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserMessageInner>, I>>(base?: I): UserMessageInner {
+    return UserMessageInner.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserMessageInner>, I>>(object: I): UserMessageInner {
+    const message = createBaseUserMessageInner();
+    message.plainText = object.plainText ?? undefined;
+    message.callMessage = object.callMessage ?? undefined;
     return message;
   },
 };

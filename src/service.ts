@@ -11,6 +11,8 @@ import {
   Conversations,
   Groups,
   SignedToken,
+  Conversation,
+  GroupKeyPackage,
 } from "./protos/message";
 
 /**
@@ -37,16 +39,10 @@ function joinCsv(items: Array<string | number>) {
 export class FireflyService {
   baseUrl: string;
   getAuthToken: () => Promise<string>;
-  getUsername: () => Promise<string>;
 
-  constructor(
-    baseUrl: string,
-    getAuthToken: () => Promise<string>,
-    getUsername: () => Promise<string>,
-  ) {
+  constructor(baseUrl: string, getAuthToken: () => Promise<string>) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.getAuthToken = getAuthToken;
-    this.getUsername = getUsername;
   }
 
   private async req(path: string, opts: RequestInit = {}) {
@@ -59,7 +55,7 @@ export class FireflyService {
         ...(opts.headers || {}),
       },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${await res.text()}`);
     return res;
   }
 
@@ -108,7 +104,7 @@ export class FireflyService {
     url.searchParams.set("username", username);
     const res = await this.req(url.pathname + url.search);
     const arr = new Uint8Array(await res.arrayBuffer());
-    return arr; // raw protobuf bytes for a single GroupKeyPackage (server returns proto or empty)
+    return GroupKeyPackage.decode(arr);
   }
 
   async getUserMessages(opts: {
@@ -139,6 +135,13 @@ export class FireflyService {
   async getConversations() {
     const res = await this.req("/user/conversations");
     return Conversations.decode(new Uint8Array(await res.arrayBuffer()));
+  }
+
+  async getConversation(other: string) {
+    const url = new URL("/user/messages", this.baseUrl);
+    url.searchParams.set("other", other);
+    const res = await this.req(url.pathname + url.search);
+    return Conversation.decode(new Uint8Array(await res.arrayBuffer()));
   }
 
   async getGroups() {
@@ -221,8 +224,12 @@ export class FireflyService {
     await this.req("/user/preKeyBundles", { method: "POST", body });
   }
 
-  async postUserMessage(conversationId: bigint, text: Uint8Array) {
-    const msg = UserMessage.create({ conversationId, text });
+  async postUserMessage(
+    conversationId: bigint,
+    text: Uint8Array,
+    type: number,
+  ) {
+    const msg = UserMessage.create({ conversationId, text, type });
     const res = await this.req("/user/message", {
       method: "POST",
       body: UserMessage.encode(msg).finish(),
@@ -234,8 +241,10 @@ export class FireflyService {
     if (!otherUsername) throw new Error("other username required");
     const url = new URL("/user/conversation", this.baseUrl);
     url.searchParams.set("other", otherUsername);
-    const res = await this.req(url.pathname + url.search);
-    return ConversationStart.decode(new Uint8Array(await res.arrayBuffer()));
+    const res = await this.req(url.pathname + url.search, { method: "POST" });
+    const buffer = new Uint8Array(await res.arrayBuffer());
+
+    return ConversationStart.decode(buffer);
   }
 
   // ---------- DELETEs ----------

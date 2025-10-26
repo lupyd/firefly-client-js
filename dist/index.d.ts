@@ -1,33 +1,6 @@
-import * as protos from "./protos/message";
 export * as protos from "./protos/message";
-export declare class FireflyClient {
-    private readonly maxRetries;
-    private readonly waitTimeBeforeReconnectingFromLastConnection;
-    private readonly connectionTimeout;
-    private readonly responseTimeout;
-    private readonly pendingRequests;
-    private readonly apiUrl;
-    private readonly websocketUrl;
-    private readonly authToken;
-    private readonly onMessageCallback;
-    private readonly onRetryLimitExceeded;
-    private ws;
-    private requestIdCounter;
-    private retriesLeft;
-    private lastConnectionAttemptTimestamp;
-    private disposed;
-    constructor(apiUrl: string, websocketUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ServerMessage) => void, onRetryLimitExceeded: () => void);
-    initialize(): Promise<void>;
-    private connect;
-    dispose(): void;
-    private onMessage;
-    private sendData;
-    sendGroupMessage(message: protos.GroupChannelMessage): void;
-    sendUserMessage(message: protos.UserMessage): void;
-    private getNewRequestId;
-    sendRequest(request: protos.Request): Promise<protos.Response>;
-    createUserChat(other: string): Promise<Uint8Array<ArrayBuffer>>;
-    getUserChats(): Promise<protos.UserMessage[]>;
-    createGroupChat(chat: protos.GroupChat): Promise<protos.GroupChat>;
-    getGroupChats(): Promise<protos.GroupChat[]>;
-}
+export * from "./store";
+export * from "./service";
+export * as libsignal from "libsignal-protocol";
+export * as fireflyMls from "firefly-mls";
+export * from "./websocket";

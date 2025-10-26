@@ -1,54 +1,155 @@
 import { FireflyService } from "../src/service";
-import { FireflyClient, protos } from "../src/index";
-import * as libsignal from "@signalapp/libsignal-client";
-import { Conversation } from "../src/protos/message";
-import {
-  IndexedDbIdentityKeyStore,
-  IndexedDbKyberPreKeyStore,
-  IndexedDbPreKeyStore,
-  IndexedDbSessionStore,
-  IndexedDbSignedPreKeyStore,
-  resetDb,
-} from "../src/store";
-import {
-  crockfordDecode,
-  crockfordEncode,
-  ULID,
-  ULIDError,
-  ulidToUUID,
-} from "ulid";
-import {
-  InMemoryIdentityKeyStore,
-  InMemoryKyberKeyStore,
-  InMemoryPreKeyStore,
-  InMemorySessionStore,
-  InMemorySignedPreKeyStore,
-} from "./encrypted";
+import { FireflyWsClient, protos } from "../src/index";
+
+
+// import * as libsignal from "@signalapp/libsignal-client";
+import * as libsignal from "libsignal-protocol";
+
+import { crockfordEncode, ULID } from "ulid";
 
 const baseUrl = "http://localhost:39205";
+
+await libsignal.default();
+function isEqualBytes(bytes1: Uint8Array, bytes2: Uint8Array): boolean {
+  if (bytes1.length !== bytes2.length) {
+    return false;
+  }
+
+  for (let i = 0; i < bytes1.length; i++) {
+    if (bytes1[i] !== bytes2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 const randInt = () => Math.floor(Math.random() * 99999);
 const getAuthTokenByName = (name: string) => () => Promise.resolve(name);
 
-const myIdentityStore = new InMemoryIdentityKeyStore();
-const myPreKeys = new InMemoryPreKeyStore();
-const mySignedPreKeys = new InMemorySignedPreKeyStore();
-const myKyberPreKeys = new InMemoryKyberKeyStore();
-const mySessionStore = new InMemorySessionStore();
+// const inMemIdentityStore = new InMemoryIdentityKeyStore();
+// const inMemPreKeys = new InMemoryPreKeyStore();
+// const inMemSignedPreKeys = new InMemorySignedPreKeyStore();
+// const inMemKyberPreKeys = new InMemoryKyberKeyStore();
+// const inMemSessionStore = new InMemorySessionStore();
+
+const sessionsMap = new Map<string, Uint8Array>();
+const mySessionStore = new libsignal.JsSessionStore(
+  async (addr: string) => {
+    return sessionsMap.get(addr);
+  },
+  async (addr: string, record: Uint8Array) => {
+    sessionsMap.set(addr, record);
+  },
+);
+
+const identityMap = new Map<string, Uint8Array>();
+
+const getIdentity = () => {
+  const key = "identityKeyPair";
+  let pair = identityMap.get(key);
+  if (!pair) {
+    const keyPair = libsignal.IdentityKeyPairWrapper.generate();
+
+    pair = keyPair.serialize();
+    identityMap.set(key, pair);
+    keyPair.free();
+  }
+  return pair;
+};
+
+const getRegistrationId = () => 1;
+
+const myIdentityStore = new libsignal.JsIdentityKeyStore(
+  async (
+    addr: string,
+    identity: Uint8Array,
+    direction: libsignal.Direction,
+  ) => {
+    const value = identityMap.get(addr);
+    console.log({ addr, identity, value });
+    if (value) {
+      return isEqualBytes(value, identity);
+    } else {
+      return true;
+    }
+  },
+  async () => {
+    return getIdentity();
+  },
+  async () => {
+    return getRegistrationId();
+  },
+  async (addr: string, identity: Uint8Array) => {
+    const oldValue = identityMap.get(addr);
+    identityMap.set(addr, identity);
+    if (oldValue) {
+      return isEqualBytes(oldValue, identity);
+    } else {
+      return true;
+    }
+  },
+  async (addr: string) => {
+    return identityMap.get(addr);
+  },
+);
+
+const signedPreKeyMap = new Map<string, Uint8Array>();
+
+const mySignedPreKeys = new libsignal.JsSignedPreKeyStore(
+  async (addr: string) => {
+    return signedPreKeyMap.get(addr);
+  },
+  async (addr: string, record: Uint8Array) => {
+    signedPreKeyMap.set(addr, record);
+  },
+);
+
+const kyberPreKeyMap = new Map<
+  string,
+  { publicKey: Uint8Array; used: boolean }
+>();
+const myKyberPreKeys = new libsignal.JsKyberPreKeyStore(
+  async (addr: string) => {
+    return kyberPreKeyMap.get(addr)?.publicKey;
+  },
+  async (addr: string, record: Uint8Array) => {
+    kyberPreKeyMap.set(addr, { publicKey: record, used: false });
+  },
+  async (addr: string, preKeyId: string, publicKey: Uint8Array) => {
+    const value = kyberPreKeyMap.get(addr);
+    if (value) {
+      value.used = true;
+    }
+  },
+);
+
+const preKeyMap = new Map<string, Uint8Array>();
+const myPreKeys = new libsignal.JsPreKeyStore(
+  async (addr: string) => {
+    return preKeyMap.get(addr);
+  },
+  async (addr: string, record: Uint8Array) => {
+    preKeyMap.set(addr, record);
+  },
+  async (addr: string) => {
+    preKeyMap.delete(addr);
+  },
+);
 
 async function main(svc: FireflyService, me: string, other: string) {
   let conversationId = await getConversation(svc, other);
 
   // const msg = `Hi, I'm ${me}, Are you ${other}? Timestamp: ${new Date()}`;
 
-  const bobAddress = libsignal.ProtocolAddress.new(other, 1);
+  const bobAddress = new libsignal.ProtocolAddress(other, 1);
   return async (txt: string) => {
     const cipherText = await libsignal.signalEncrypt(
       utf8Encode(txt),
       bobAddress,
       mySessionStore,
       myIdentityStore,
-      new Date(),
+      BigInt(Date.now()),
     );
 
     let id: ULID = "";
@@ -70,7 +171,7 @@ async function main(svc: FireflyService, me: string, other: string) {
         bobAddress,
         mySessionStore,
         myIdentityStore,
-        new Date(),
+        BigInt(Date.now()),
       );
 
       id = ulidFromBytes(
@@ -101,14 +202,15 @@ function ulidFromBytes(bytes: Uint8Array): ULID {
   return crockfordEncode(bytes);
 }
 
-async function uploadBundles(svc: FireflyService) {
-  const myAddress = libsignal.ProtocolAddress.new(await svc.getUsername(), 1);
-  const identityKey = await myIdentityStore.getIdentityKey();
+async function uploadBundles(svc: FireflyService, username: string) {
+  const myAddress = new libsignal.ProtocolAddress(username, 1);
+  const identityKey =
+    libsignal.IdentityKeyPairWrapper.deserialize(getIdentity());
 
   const bundles = protos.PreKeyBundles.create();
 
   for (let i = 0; i < 8; i++) {
-    const registrationId = await myIdentityStore.getLocalRegistrationId();
+    const registrationId = getRegistrationId();
 
     const preKeyId = randInt();
     const signedPreKeyId = randInt();
@@ -148,31 +250,41 @@ async function uploadBundles(svc: FireflyService) {
 
     bundles.bundles.push(bundle);
 
-    await myPreKeys.savePreKey(
-      preKeyId,
-      libsignal.PreKeyRecord.new(preKeyId, preKey.getPublicKey(), preKey),
-    );
+    {
+      const record = new libsignal.PreKeyRecord(
+        preKeyId,
+        preKey.getPublicKey(),
+        preKey,
+      );
+      preKeyMap.set(preKeyId.toString(), record.serialize());
+      record.free();
+    }
 
-    await mySignedPreKeys.saveSignedPreKey(
-      signedPreKeyId,
-      libsignal.SignedPreKeyRecord.new(
+    {
+      const record = new libsignal.SignedPreKeyRecord(
         signedPreKeyId,
-        Date.now(),
+        BigInt(Date.now()),
         sPreKey.getPublicKey(),
         sPreKey,
         signedPreKeySignature,
-      ),
-    );
+      );
+      signedPreKeyMap.set(signedPreKeyId.toString(), record.serialize());
 
-    await myKyberPreKeys.saveKyberPreKey(
-      KEMPreKeyId,
-      libsignal.KyberPreKeyRecord.new(
+      record.free();
+    }
+    {
+      const record = new libsignal.KyberPreKeyRecord(
         KEMPreKeyId,
-        Date.now(),
+        BigInt(Date.now()),
         KEMPreKey,
         KEMPreKeySignature,
-      ),
-    );
+      );
+      kyberPreKeyMap.set(KEMPreKeyId.toString(), {
+        publicKey: record.serialize(),
+        used: false,
+      });
+      record.free();
+    }
   }
 
   await svc.uploadPreKeyBundles(bundles);
@@ -194,7 +306,7 @@ async function getConversation(svc: FireflyService, other: string) {
 
   console.log(`Created Conversation`);
   if (conversation.bundle) {
-    const bundle = libsignal.PreKeyBundle.new(
+    const bundle = new libsignal.PreKeyBundle(
       conversation.bundle!.registrationId,
       conversation.bundle!.deviceId,
       conversation.bundle!.preKeyId,
@@ -210,11 +322,11 @@ async function getConversation(svc: FireflyService, other: string) {
 
     await libsignal.processPreKeyBundle(
       bundle,
-      libsignal.ProtocolAddress.new(other, 1),
+      new libsignal.ProtocolAddress(other, 1),
       mySessionStore,
       myIdentityStore,
       libsignal.UsePQRatchet.Yes,
-      new Date(),
+      BigInt(Date.now()),
     );
   }
 
@@ -228,7 +340,7 @@ async function connectToWs(getAuthToken: () => Promise<string>) {
       const from = msg.userMessage.from;
       const convoId = msg.userMessage.conversationId;
       const msgId = ulidFromBytes(msg.userMessage.id);
-      const otherAddress = libsignal.ProtocolAddress.new(from, 1);
+      const otherAddress = new libsignal.ProtocolAddress(from, 1);
 
       switch (msg.userMessage.type) {
         case libsignal.CiphertextMessageType.PreKey: {
@@ -264,8 +376,7 @@ async function connectToWs(getAuthToken: () => Promise<string>) {
       }
     }
   };
-  const ws = new FireflyClient(
-    baseUrl,
+  const ws = new FireflyWsClient(
     "ws://localhost:39205",
     getAuthToken,
     onMsgCallback,
@@ -286,22 +397,20 @@ let sender: undefined | ((txt: string) => void);
 
 for await (const line of console) {
   if (line == "upload") {
-    await uploadBundles(svc!);
+    await uploadBundles(svc!, me);
   } else if (line === "main") {
     sender = await main(svc!, me, other);
     console.log(`Got Sender`);
   } else if (line == "alice") {
     me = "alice";
     other = "bob";
-    svc = new FireflyService(baseUrl, getAuthTokenByName(me), () =>
-      Promise.resolve(me),
+    svc = new FireflyService(baseUrl, getAuthTokenByName(me)
     );
     console.log({ me, other });
   } else if (line == "bob") {
     me = "bob";
     other = "alice";
-    svc = new FireflyService(baseUrl, getAuthTokenByName(me), () =>
-      Promise.resolve(me),
+    svc = new FireflyService(baseUrl, getAuthTokenByName(me), 
     );
     console.log({ me, other });
   } else if (line == "send") {

@@ -1,141 +1,187 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
-export interface VersionedMessage {
-    version: number;
-    ts: bigint;
-    data: Uint8Array;
-}
-export interface AuthenticationToken {
-    token: string;
-}
-export interface GroupChats {
-    chats: GroupChat[];
-}
-export interface GroupChannel {
-    groupId: number;
-    channelId: number;
-    channelType: number;
-    name: string;
-}
-export interface GroupChat {
-    name: string;
-    groupId: number;
-    channels: GroupChannel[];
-}
-export interface GetGroupMembers {
-    groupId: number;
-    channelId: number;
-}
-export interface GetGroupMessages {
-    groupId: number;
-    channelId: number;
-    before: Uint8Array;
-    count: number;
-}
-export interface AddUser {
-    username: string;
-    groupId: number;
-    channelId: number;
-    role: number;
-}
-export interface RemoveUser {
-    username: string;
-    channelId: number;
-    groupId: number;
-}
-export interface GroupMember {
-    username: string;
-    lastSeen: bigint;
-    isOnline: boolean;
-    role: number;
-    chanId: number;
-}
-export interface GroupChannelMessage {
-    id: Uint8Array;
-    groupId: number;
-    channelId: number;
-    content: string;
-    by: string;
-}
-export interface GroupChannelMessages {
-    messages: GroupChannelMessage[];
-}
-export interface GroupMembers {
-    members: GroupMember[];
-}
-export interface GetUserMessages {
-    before: Uint8Array;
-    count: number;
-    from: string;
-}
-export interface Request {
-    id: number;
-    getGroupMembers?: GetGroupMembers | undefined;
-    getGroupMessages?: GetGroupMessages | undefined;
-    addUser?: AddUser | undefined;
-    removeUser?: RemoveUser | undefined;
-    addChannel?: GroupChannel | undefined;
-    deleteChannel?: GroupChannel | undefined;
-    getUserMessages?: GetUserMessages | undefined;
-}
-export interface Error {
-    status: number;
-    error: string;
-}
-export interface Response {
-    id: number;
-    error?: Error | undefined;
-    groupMembers?: GroupMembers | undefined;
-    groupMessages?: GroupChannelMessages | undefined;
-    userMessages?: UserMessages | undefined;
-    channel?: GroupChannel | undefined;
-}
-export interface ClientMessage {
-    request?: Request | undefined;
-    groupMessage?: GroupChannelMessage | undefined;
-    authToken?: AuthenticationToken | undefined;
-    currentGroup?: number | undefined;
-    userMessage?: UserMessage | undefined;
-}
-export interface ServerMessage {
-    response?: Response | undefined;
-    groupChats?: GroupChats | undefined;
-    groupChat?: GroupChat | undefined;
-    groupMessage?: GroupChannelMessage | undefined;
-    userMessage?: UserMessage | undefined;
-    userChats?: UserMessages | undefined;
-}
 export interface UserMessage {
     id: Uint8Array;
-    version: number;
-    text: string;
     to: string;
     from: string;
+    text: Uint8Array;
+    conversationId: bigint;
+    type: number;
+}
+export interface Group {
+    id: bigint;
+    name: string;
+    description: string;
+    pfp: boolean;
+    state: Uint8Array;
+}
+export interface Groups {
+    groups: Group[];
 }
 export interface UserMessages {
     messages: UserMessage[];
 }
-export declare const VersionedMessage: MessageFns<VersionedMessage>;
-export declare const AuthenticationToken: MessageFns<AuthenticationToken>;
-export declare const GroupChats: MessageFns<GroupChats>;
-export declare const GroupChannel: MessageFns<GroupChannel>;
-export declare const GroupChat: MessageFns<GroupChat>;
-export declare const GetGroupMembers: MessageFns<GetGroupMembers>;
-export declare const GetGroupMessages: MessageFns<GetGroupMessages>;
-export declare const AddUser: MessageFns<AddUser>;
-export declare const RemoveUser: MessageFns<RemoveUser>;
-export declare const GroupMember: MessageFns<GroupMember>;
-export declare const GroupChannelMessage: MessageFns<GroupChannelMessage>;
-export declare const GroupChannelMessages: MessageFns<GroupChannelMessages>;
-export declare const GroupMembers: MessageFns<GroupMembers>;
-export declare const GetUserMessages: MessageFns<GetUserMessages>;
-export declare const Request: MessageFns<Request>;
-export declare const Error: MessageFns<Error>;
-export declare const Response: MessageFns<Response>;
-export declare const ClientMessage: MessageFns<ClientMessage>;
-export declare const ServerMessage: MessageFns<ServerMessage>;
+export interface GroupInvite {
+    groupId: bigint;
+    inviter: string;
+    invitee: string;
+    welcomeMessage: Uint8Array;
+    commitId: Uint8Array;
+}
+export interface GroupInvites {
+    invites: GroupInvite[];
+}
+export interface GroupMessage {
+    id: Uint8Array;
+    groupId: bigint;
+    message: Uint8Array;
+}
+export interface GroupKeyPackage {
+    id: number;
+    package: Uint8Array;
+}
+export interface GroupKeyPackages {
+    packages: GroupKeyPackage[];
+}
+export interface GroupMessages {
+    messages: GroupMessage[];
+}
+export interface ServerMessage {
+    userMessage?: UserMessage | undefined;
+    groupMessage?: GroupMessage | undefined;
+    userMessages?: UserMessages | undefined;
+    groupMessages?: GroupMessages | undefined;
+}
+export interface SubscribeGroup {
+    id: bigint;
+}
+export interface UnSubscribeGroup {
+    id: bigint;
+}
+export interface ClientMessage {
+    userMessage?: UserMessage | undefined;
+    groupMessage?: GroupMessage | undefined;
+    userMessages?: UserMessages | undefined;
+    groupMessages?: GroupMessages | undefined;
+    bearerToken?: string | undefined;
+    subscribeGroup?: SubscribeGroup | undefined;
+    unSubscribeGroup?: UnSubscribeGroup | undefined;
+}
+export interface GroupId {
+    id: bigint;
+}
+export interface AuthToken {
+    username: string;
+    validUntil: bigint;
+    issuer: string;
+    credential: Uint8Array;
+}
+export interface SignedToken {
+    kid: string;
+    payload: Uint8Array;
+    signature: Uint8Array;
+}
+export interface FireflyClient {
+    username: string;
+    secret: Uint8Array;
+    public: Uint8Array;
+    credential: Uint8Array;
+}
+export interface FireflyGroupExtension {
+    name: string;
+    roles: FireflyGroupRoles | undefined;
+    channels: FireflyGroupChannels | undefined;
+    members: FireflyGroupMembers | undefined;
+}
+export interface FireflyGroupRole {
+    id: number;
+    name: string;
+    permissions: bigint;
+}
+export interface FireflyGroupRoles {
+    roles: FireflyGroupRole[];
+}
+export interface FireflyGroupMember {
+    username: string;
+    role: number;
+}
+export interface FireflyGroupMembers {
+    members: FireflyGroupMember[];
+}
+export interface FireflyGroupChannel {
+    id: number;
+    name: string;
+    type: number;
+    roles: FireflyGroupRoles | undefined;
+}
+export interface FireflyGroupChannels {
+    channels: FireflyGroupChannel[];
+}
+export interface PreKeyBundle {
+    registrationId: number;
+    deviceId: number;
+    preKeyId: number;
+    prePublicKey: Uint8Array;
+    signedPreKeyId: number;
+    signedPrePublicKey: Uint8Array;
+    signedPreKeySignature: Uint8Array;
+    identityPublicKey: Uint8Array;
+    KEMPreKeyId: number;
+    KEMPrePublicKey: Uint8Array;
+    KEMPreKeySignature: Uint8Array;
+}
+export interface ConversationStart {
+    conversationId: bigint;
+    startedBy: string;
+    other: string;
+    bundle: PreKeyBundle | undefined;
+}
+export interface PreKeyBundles {
+    bundles: PreKeyBundle[];
+}
+export interface Conversation {
+    id: bigint;
+    startedBy: string;
+    other: string;
+}
+export interface Conversations {
+    conversations: Conversation[];
+}
+export interface UserMessageInner {
+    plainText?: Uint8Array | undefined;
+    callMessage?: Uint8Array | undefined;
+}
 export declare const UserMessage: MessageFns<UserMessage>;
+export declare const Group: MessageFns<Group>;
+export declare const Groups: MessageFns<Groups>;
 export declare const UserMessages: MessageFns<UserMessages>;
+export declare const GroupInvite: MessageFns<GroupInvite>;
+export declare const GroupInvites: MessageFns<GroupInvites>;
+export declare const GroupMessage: MessageFns<GroupMessage>;
+export declare const GroupKeyPackage: MessageFns<GroupKeyPackage>;
+export declare const GroupKeyPackages: MessageFns<GroupKeyPackages>;
+export declare const GroupMessages: MessageFns<GroupMessages>;
+export declare const ServerMessage: MessageFns<ServerMessage>;
+export declare const SubscribeGroup: MessageFns<SubscribeGroup>;
+export declare const UnSubscribeGroup: MessageFns<UnSubscribeGroup>;
+export declare const ClientMessage: MessageFns<ClientMessage>;
+export declare const GroupId: MessageFns<GroupId>;
+export declare const AuthToken: MessageFns<AuthToken>;
+export declare const SignedToken: MessageFns<SignedToken>;
+export declare const FireflyClient: MessageFns<FireflyClient>;
+export declare const FireflyGroupExtension: MessageFns<FireflyGroupExtension>;
+export declare const FireflyGroupRole: MessageFns<FireflyGroupRole>;
+export declare const FireflyGroupRoles: MessageFns<FireflyGroupRoles>;
+export declare const FireflyGroupMember: MessageFns<FireflyGroupMember>;
+export declare const FireflyGroupMembers: MessageFns<FireflyGroupMembers>;
+export declare const FireflyGroupChannel: MessageFns<FireflyGroupChannel>;
+export declare const FireflyGroupChannels: MessageFns<FireflyGroupChannels>;
+export declare const PreKeyBundle: MessageFns<PreKeyBundle>;
+export declare const ConversationStart: MessageFns<ConversationStart>;
+export declare const PreKeyBundles: MessageFns<PreKeyBundles>;
+export declare const Conversation: MessageFns<Conversation>;
+export declare const Conversations: MessageFns<Conversations>;
+export declare const UserMessageInner: MessageFns<UserMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
     [K in keyof T]?: DeepPartial<T[K]>;

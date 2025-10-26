@@ -42,7 +42,7 @@ export class InMemoryIdentityKeyStore extends libsignal.IdentityKeyStore {
   constructor(localRegistrationId?: number) {
     super();
     this.identityKey = libsignal.PrivateKey.generate();
-    this.localRegistrationId = localRegistrationId ?? 5;
+    this.localRegistrationId = localRegistrationId ?? 1;
   }
 
   async getIdentityKey(): Promise<libsignal.PrivateKey> {

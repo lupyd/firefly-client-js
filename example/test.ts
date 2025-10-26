@@ -1,4 +1,4 @@
-import { FireflyClient, protos } from "../src/index";
+import { FireflyWsClient, protos } from "../src/index";
 
 const authTokenGenerator = (username: string) => {
   // just for testing
@@ -28,8 +28,8 @@ async function main() {
     );
   };
 
-  const aliceClient = new FireflyClient(
-    apiUrl,
+  const aliceClient = new FireflyWsClient(
+
     wsUrl,
     authTokenGenerator("alice"),
     onMessageCallback,
@@ -38,8 +38,7 @@ async function main() {
     },
   );
 
-  const bobClient = new FireflyClient(
-    apiUrl,
+  const bobClient = new FireflyWsClient(
     wsUrl,
     authTokenGenerator("bob"),
     onMessageCallback,

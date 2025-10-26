@@ -8,6 +8,7 @@ message UserMessage {
   string from = 3;
   bytes text = 4;
   uint64 conversationId = 5;
+  uint32 type = 6;
 }
 
 message Group {
@@ -159,7 +160,9 @@ message PreKeyBundle {
 
 message ConversationStart {
   uint64 conversationId = 1;
-  PreKeyBundle bundle = 2;
+  string started_by = 2;
+  string other = 3;
+  PreKeyBundle bundle = 4;
 }
 
 message PreKeyBundles {
@@ -174,4 +177,11 @@ message Conversation {
 
 message Conversations {
   repeated Conversation conversations = 1;
+}
+
+message UserMessageInner {
+  oneof message {
+    bytes plainText = 1;
+    bytes callMessage = 2;
+  }
 }
