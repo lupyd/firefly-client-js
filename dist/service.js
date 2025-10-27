@@ -55,7 +55,7 @@ class FireflyService {
         if (!opts.groupId)
             throw new Error("groupId required");
         if (opts.startAfter && opts.startAfter < 0n)
-            throw new Error("invalid ULID");
+            throw new Error("invalid startAfter");
         const url = new URL("/group/messages", this.baseUrl);
         if (opts.groupId != null)
             url.searchParams.set("groupId", String(opts.groupId));
@@ -83,7 +83,7 @@ class FireflyService {
         if (!opts.conversationId && !opts.startAfter)
             throw new Error("conversationId or startAfter required");
         if (opts.startAfter && opts.startAfter < 0n)
-            throw new Error("invalid ULID");
+            throw new Error("invalid startAfter");
         const url = new URL("/user/messages", this.baseUrl);
         if (opts.conversationId != null)
             url.searchParams.set("conversationId", String(opts.conversationId));
@@ -117,14 +117,14 @@ class FireflyService {
         });
         return message_1.SignedToken.decode(new Uint8Array(await res.arrayBuffer()));
     }
-    async createGroup(protoBytes) {
+    async createGroup(group) {
         const res = await this.req("/group", {
             method: "POST",
-            headers: { "Content-Type": "application/octet-stream" },
-            body: new Uint8Array(protoBytes),
+            headers: { "Content-Type": "application/x-protobuf; proto=firefly.Group" },
+            body: new Uint8Array(message_1.Group.encode(group).finish()),
         });
-        const buf = await res.arrayBuffer(); // server returns u64 LE
-        return parseU64Le(buf);
+        const buf = await res.arrayBuffer();
+        return message_1.GroupId.decode(new Uint8Array(buf)).id;
     }
     async uploadKeyPackages(packages) {
         const body = message_1.GroupKeyPackages.encode(packages).finish();
@@ -137,7 +137,7 @@ class FireflyService {
             method: "POST",
             body: message_1.GroupMessage.encode(msg).finish(),
         });
-        return new Uint8Array(await res.arrayBuffer()); // server returns UUID bytes of message id
+        return message_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async postCommit(groupId, message) {
         const msg = message_1.GroupMessage.create({ groupId, message });
@@ -145,7 +145,7 @@ class FireflyService {
             method: "POST",
             body: message_1.GroupMessage.encode(msg).finish(),
         });
-        return new Uint8Array(await res.arrayBuffer()); // commit id bytes
+        return message_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer())); // commit id bytes
     }
     async invite(groupId, invitee, welcomeMessage, commitId) {
         if (commitId < 0n)
@@ -156,7 +156,7 @@ class FireflyService {
             welcomeMessage,
             commitId,
         });
-        await this.req("/group/invite", {
+        const res = await this.req("/group/invite", {
             method: "POST",
             body: message_1.GroupInvite.encode(invite).finish(),
         });
@@ -176,7 +176,7 @@ class FireflyService {
             method: "POST",
             body: message_1.UserMessage.encode(msg).finish(),
         });
-        return new Uint8Array(await res.arrayBuffer()); // uuid bytes
+        return message_1.UserMessage.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async createConversation(otherUsername) {
         if (!otherUsername)

@@ -189,4 +189,3 @@ export function newJsKyberPreKeyStore() {
 }
 
 
-export * as libsignal from "libsignal-protocol";

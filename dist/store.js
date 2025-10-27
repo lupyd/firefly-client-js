@@ -33,7 +33,6 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.libsignal = void 0;
 exports.resetDb = resetDb;
 exports.isEqualBytes = isEqualBytes;
 exports.newJsSessionStore = newJsSessionStore;
@@ -175,4 +174,3 @@ function newJsKyberPreKeyStore() {
         await tx.done;
     });
 }
-exports.libsignal = __importStar(require("libsignal-protocol"));
