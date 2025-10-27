@@ -30,7 +30,7 @@ export class FireflyWsClient {
     this.onRetryLimitExceeded = onRetryLimitExceeded;
   }
 
-  initialize() {
+  async initialize() {
     this.retriesLeft = this.maxRetries;
     this.disposed = false;
 
@@ -38,7 +38,7 @@ export class FireflyWsClient {
       return;
     }
 
-    return this.connect();
+    return await this.connect();
   }
 
   private async connect() {

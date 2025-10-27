@@ -53,13 +53,13 @@ class FireflyWsClient {
         this.onMessageCallback = onMessageCallback;
         this.onRetryLimitExceeded = onRetryLimitExceeded;
     }
-    initialize() {
+    async initialize() {
         this.retriesLeft = this.maxRetries;
         this.disposed = false;
         if (!this.isDisconnected()) {
             return;
         }
-        return this.connect();
+        return await this.connect();
     }
     async connect() {
         await new Promise((res, _) => setTimeout(() => res(0), Math.max(0, this.waitTimeBeforeReconnectingFromLastConnection -

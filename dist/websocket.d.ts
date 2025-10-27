@@ -12,7 +12,7 @@ export declare class FireflyWsClient {
     private lastConnectionAttemptTimestamp;
     private disposed;
     constructor(websocketUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ServerMessage) => void, onRetryLimitExceeded: () => void);
-    initialize(): Promise<void> | undefined;
+    initialize(): Promise<void>;
     private connect;
     dispose(): void;
     private onMessage;
