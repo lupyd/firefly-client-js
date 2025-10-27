@@ -35,23 +35,20 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FireflyWsClient = void 0;
 const protos = __importStar(require("./protos/message"));
-class FireflyWsClient {
+class FireflyWsClient extends EventTarget {
     maxRetries = 3;
     waitTimeBeforeReconnectingFromLastConnection = 5 * 1000;
     connectionTimeout = 5 * 1000;
     websocketUrl;
     authToken;
-    onMessageCallback;
-    onRetryLimitExceeded;
     ws = undefined;
     retriesLeft = this.maxRetries;
     lastConnectionAttemptTimestamp = 0;
     disposed = false;
-    constructor(websocketUrl, authToken, onMessageCallback, onRetryLimitExceeded) {
+    constructor(websocketUrl, authToken) {
+        super();
         this.websocketUrl = websocketUrl;
         this.authToken = authToken;
-        this.onMessageCallback = onMessageCallback;
-        this.onRetryLimitExceeded = onRetryLimitExceeded;
     }
     async initialize() {
         this.retriesLeft = this.maxRetries;
@@ -88,6 +85,7 @@ class FireflyWsClient {
         ws.addEventListener("close", (ev) => {
             console.log(`Websocket closed with code: ${ev.code}`);
             this.ws = undefined;
+            this.dispatchEvent(new CustomEvent('onDisconnect', { detail: ev.code }));
             if (this.disposed) {
                 return;
             }
@@ -96,14 +94,15 @@ class FireflyWsClient {
                 this.retriesLeft--;
             }
             else {
-                this.onRetryLimitExceeded();
+                this.dispatchEvent(new CustomEvent('onRetryLimitExceeded'));
             }
         });
         ws.addEventListener("open", async () => {
             console.log(`Connection opened`);
             this.retriesLeft = this.maxRetries;
+            this.dispatchEvent(new CustomEvent('onConnect'));
             const token = await this.authToken();
-            this.sendData(protos.ClientMessage.encode(protos.ClientMessage.create({ bearerToken: token })).finish().buffer);
+            this.sendClientMessage(protos.ClientMessage.create({ bearerToken: token }));
         });
     }
     dispose() {
@@ -114,7 +113,7 @@ class FireflyWsClient {
     }
     onMessage(data) {
         const message = protos.ServerMessage.decode(new Uint8Array(data));
-        this.onMessageCallback(message);
+        this.dispatchEvent(new CustomEvent('onMessage', { detail: message }));
     }
     sendData(data) {
         if (this.ws) {

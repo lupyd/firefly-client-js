@@ -1,17 +1,15 @@
 import * as protos from "./protos/message";
-export declare class FireflyWsClient {
+export declare class FireflyWsClient extends EventTarget {
     private readonly maxRetries;
     private readonly waitTimeBeforeReconnectingFromLastConnection;
     private readonly connectionTimeout;
     private readonly websocketUrl;
     private readonly authToken;
-    private readonly onMessageCallback;
-    private readonly onRetryLimitExceeded;
     private ws;
     private retriesLeft;
     private lastConnectionAttemptTimestamp;
     private disposed;
-    constructor(websocketUrl: string, authToken: () => Promise<string>, onMessageCallback: (message: protos.ServerMessage) => void, onRetryLimitExceeded: () => void);
+    constructor(websocketUrl: string, authToken: () => Promise<string>);
     initialize(): Promise<void>;
     private connect;
     dispose(): void;
