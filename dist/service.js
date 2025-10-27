@@ -79,6 +79,10 @@ class FireflyService {
         const arr = new Uint8Array(await res.arrayBuffer());
         return message_1.GroupKeyPackage.decode(arr);
     }
+    async getPreKeyBundles() {
+        const res = await this.req("/user/preKeyBundles");
+        return message_1.PreKeyBundles.decode(new Uint8Array(await res.arrayBuffer()));
+    }
     async getUserMessages(opts) {
         if (!opts.conversationId && !opts.startAfter)
             throw new Error("conversationId or startAfter required");
@@ -120,7 +124,9 @@ class FireflyService {
     async createGroup(group) {
         const res = await this.req("/group", {
             method: "POST",
-            headers: { "Content-Type": "application/x-protobuf; proto=firefly.Group" },
+            headers: {
+                "Content-Type": "application/x-protobuf; proto=firefly.Group",
+            },
             body: new Uint8Array(message_1.Group.encode(group).finish()),
         });
         const buf = await res.arrayBuffer();

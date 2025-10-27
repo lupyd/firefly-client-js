@@ -12,6 +12,7 @@ export declare class FireflyService {
     }): Promise<GroupMessages>;
     getKeyPackages(): Promise<GroupKeyPackages>;
     getKeyPackage(username: string): Promise<GroupKeyPackage>;
+    getPreKeyBundles(): Promise<PreKeyBundles>;
     getUserMessages(opts: {
         conversationId?: number;
         startAfter?: bigint;

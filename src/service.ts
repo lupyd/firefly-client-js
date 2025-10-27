@@ -34,8 +34,7 @@ function parseU64Le(buf: ArrayBuffer) {
 }
 
 /** join array of numbers/strings into server-expected %2C encoded CSV */
-function joinCsv(items: Array<string | number |
-  bigint>) {
+function joinCsv(items: Array<string | number | bigint>) {
   return items.map(String).join("%2C");
 }
 
@@ -76,8 +75,7 @@ export class FireflyService {
     startAfter?: bigint;
     limit?: number;
   }) {
-    if (!opts.groupId)
-      throw new Error("groupId required");
+    if (!opts.groupId) throw new Error("groupId required");
     if (opts.startAfter && opts.startAfter < 0n)
       throw new Error("invalid startAfter");
 
@@ -108,6 +106,11 @@ export class FireflyService {
     const res = await this.req(url.pathname + url.search);
     const arr = new Uint8Array(await res.arrayBuffer());
     return GroupKeyPackage.decode(arr);
+  }
+
+  async getPreKeyBundles() {
+    const res = await this.req("/user/preKeyBundles");
+    return PreKeyBundles.decode(new Uint8Array(await res.arrayBuffer()));
   }
 
   async getUserMessages(opts: {
@@ -165,7 +168,9 @@ export class FireflyService {
   async createGroup(group: Group): Promise<bigint> {
     const res = await this.req("/group", {
       method: "POST",
-      headers: { "Content-Type": "application/x-protobuf; proto=firefly.Group" },
+      headers: {
+        "Content-Type": "application/x-protobuf; proto=firefly.Group",
+      },
       body: new Uint8Array(Group.encode(group).finish()),
     });
     const buf = await res.arrayBuffer();
