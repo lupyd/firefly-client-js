@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FireflyService = void 0;
+exports.FireflyService = exports.HttpError = void 0;
 // import { crockfordDecode, ULID } from "ulid";
 const message_1 = require("./protos/message");
 /**
@@ -9,18 +9,21 @@ const message_1 = require("./protos/message");
 // function isValidULID(u: string): u is ULID {
 //   return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i.test(u);
 // }
-/** parse little-endian u64 bytes to bigint */
-function parseU64Le(buf) {
-    const dv = new DataView(buf);
-    // read low and high 32-bit parts and combine to BigInt
-    const low = BigInt(dv.getUint32(0, true));
-    const high = BigInt(dv.getUint32(4, true));
-    return (high << 32n) + low;
-}
 /** join array of numbers/strings into server-expected %2C encoded CSV */
 function joinCsv(items) {
     return items.map(String).join("%2C");
 }
+class HttpError extends Error {
+    statusCode;
+    responseText;
+    constructor(statusCode, responseText) {
+        super(`HTTP ${statusCode}: ${responseText}`);
+        this.statusCode = statusCode;
+        this.responseText = responseText;
+        this.name = 'HttpError';
+    }
+}
+exports.HttpError = HttpError;
 class FireflyService {
     baseUrl;
     getAuthToken;
@@ -38,8 +41,10 @@ class FireflyService {
                 ...(opts.headers || {}),
             },
         });
-        if (!res.ok)
-            throw new Error(`HTTP ${res.status} ${await res.text()}`);
+        if (!res.ok) {
+            const responseText = await res.text();
+            throw new HttpError(res.status, responseText);
+        }
         return res;
     }
     // ---------- GETs ----------
@@ -234,6 +239,17 @@ class FireflyService {
     async deleteConversation(id) {
         const url = new URL("/user/conversation", this.baseUrl);
         url.searchParams.set("id", String(id));
+        await this.req(url.pathname + url.search, { method: "DELETE" });
+    }
+    async syncUserMessages(since, limit) {
+        const url = new URL("/user/sync", this.baseUrl);
+        url.searchParams.set("since", since.toString());
+        url.searchParams.set("limit", limit.toString());
+        await this.req(url.pathname + url.search);
+    }
+    async deleteUserMessages(until) {
+        const url = new URL("/user/messages", this.baseUrl);
+        url.searchParams.set("until", until.toString());
         await this.req(url.pathname + url.search, { method: "DELETE" });
     }
 }

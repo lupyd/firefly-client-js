@@ -1,4 +1,9 @@
 import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessage, UserMessages, ConversationStart, Conversations, Groups, SignedToken, Conversation, GroupKeyPackage, Group } from "./protos/message";
+export declare class HttpError extends Error {
+    statusCode: number;
+    responseText: string;
+    constructor(statusCode: number, responseText: string);
+}
 export declare class FireflyService {
     baseUrl: string;
     getAuthToken: () => Promise<string>;
@@ -37,4 +42,6 @@ export declare class FireflyService {
     deleteKeyPackages(ids: number[]): Promise<void>;
     deletePreKeyBundles(ids: number[]): Promise<void>;
     deleteConversation(id: number): Promise<void>;
+    syncUserMessages(since: bigint, limit: number): Promise<void>;
+    deleteUserMessages(until: bigint): Promise<void>;
 }

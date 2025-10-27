@@ -24,18 +24,17 @@ import {
 //   return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i.test(u);
 // }
 
-/** parse little-endian u64 bytes to bigint */
-function parseU64Le(buf: ArrayBuffer) {
-  const dv = new DataView(buf);
-  // read low and high 32-bit parts and combine to BigInt
-  const low = BigInt(dv.getUint32(0, true));
-  const high = BigInt(dv.getUint32(4, true));
-  return (high << 32n) + low;
-}
 
 /** join array of numbers/strings into server-expected %2C encoded CSV */
 function joinCsv(items: Array<string | number | bigint>) {
   return items.map(String).join("%2C");
+}
+
+export class HttpError extends Error {
+  constructor(public statusCode: number, public responseText: string) {
+    super(`HTTP ${statusCode}: ${responseText}`);
+    this.name = 'HttpError';
+  }
 }
 
 export class FireflyService {
@@ -57,7 +56,10 @@ export class FireflyService {
         ...(opts.headers || {}),
       },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${await res.text()}`);
+    if (!res.ok) {
+      const responseText = await res.text();
+      throw new HttpError(res.status, responseText);
+    }
     return res;
   }
 
@@ -295,6 +297,21 @@ export class FireflyService {
   async deleteConversation(id: number) {
     const url = new URL("/user/conversation", this.baseUrl);
     url.searchParams.set("id", String(id));
+    await this.req(url.pathname + url.search, { method: "DELETE" });
+  }
+
+  async syncUserMessages(since: bigint, limit: number) {
+    const url = new URL("/user/sync", this.baseUrl);
+    url.searchParams.set("since", since.toString());
+    url.searchParams.set("limit", limit.toString());
+
+    await this.req(url.pathname + url.search);
+  }
+
+  async deleteUserMessages(until: bigint) {
+    const url = new URL("/user/messages", this.baseUrl);
+    url.searchParams.set("until", until.toString());
+
     await this.req(url.pathname + url.search, { method: "DELETE" });
   }
 }
