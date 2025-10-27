@@ -44,7 +44,6 @@ class FireflyWsClient {
     onMessageCallback;
     onRetryLimitExceeded;
     ws = undefined;
-    requestIdCounter = 0;
     retriesLeft = this.maxRetries;
     lastConnectionAttemptTimestamp = 0;
     disposed = false;
@@ -57,6 +56,9 @@ class FireflyWsClient {
     initialize() {
         this.retriesLeft = this.maxRetries;
         this.disposed = false;
+        if (!this.isDisconnected()) {
+            return;
+        }
         return this.connect();
     }
     async connect() {
@@ -130,6 +132,13 @@ class FireflyWsClient {
     }
     sendUserMessage(message) {
         this.sendClientMessage(protos.ClientMessage.create({ userMessage: message }));
+    }
+    isDisconnected() {
+        if (!this.ws) {
+            return true;
+        }
+        const state = this.ws.readyState;
+        return state == this.ws.CLOSING || state == this.ws.CLOSED;
     }
 }
 exports.FireflyWsClient = FireflyWsClient;
