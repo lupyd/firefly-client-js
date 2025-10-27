@@ -93,6 +93,19 @@ export function newJsSessionStore() {
   );
 }
 
+export function newJsSessionStoreExposed() {
+  const store = getStore(sessionsStoreName)
+  const load_session_handler = (addr: string) => store.get(addr);
+  const store_session_handler = (addr: string, value: Uint8Array) => store.set(addr, value)
+  return {
+    store,
+    sessionStore: new libsignal.JsSessionStore(
+      load_session_handler,
+      store_session_handler
+    ), load_session_handler, store_session_handler
+  };
+}
+
 
 export function newJsIdentityStore() {
   return new libsignal.JsIdentityKeyStore(
@@ -133,6 +146,47 @@ export function newJsIdentityStore() {
   );
 }
 
+export function newJsIdentityStoreExposed() {
+  const store = getStore(identitesStoreName);
+  const is_trusted_identity_handler = async (addr: string, identity: Uint8Array, _direction: libsignal.Direction) => {
+    const value = await store.get(addr);
+    return value ? isEqualBytes(value, identity) : true;
+  };
+  const get_identity_key_handler = async () => {
+    let key = await store.get("identityKey");
+    if (!key) {
+      const newKey = libsignal.PrivateKey.generate();
+      key = newKey.serialize();
+      newKey.free();
+      await store.set("identityKey", key);
+    }
+    return key;
+  };
+  const get_local_registration_id_handler = async () => (await store.get("registrationId")) ?? 1;
+  const save_identity_handler = async (addr: string, identity: Uint8Array) => {
+    const oldValue = await store.get(addr);
+    await store.set(addr, identity);
+    return oldValue ? isEqualBytes(oldValue, identity) : true;
+  };
+  const get_identity_handler = (addr: string) => store.get(addr);
+  
+  return {
+    store,
+    identityStore: new libsignal.JsIdentityKeyStore(
+      is_trusted_identity_handler,
+      get_identity_key_handler,
+      get_local_registration_id_handler,
+      save_identity_handler,
+      get_identity_handler
+    ),
+    is_trusted_identity_handler,
+    get_identity_key_handler,
+    get_local_registration_id_handler,
+    save_identity_handler,
+    get_identity_handler
+  };
+}
+
 
 export function newJsPreKeyStore() {
   return new libsignal.JsPreKeyStore(
@@ -147,6 +201,25 @@ export function newJsPreKeyStore() {
   );
 }
 
+export function newJsPreKeyStoreExposed() {
+  const store = getStore(preKeysStoreName);
+  const load_pre_key_handler = (addr: string) => store.get(addr);
+  const store_pre_key_handler = (addr: string, record: Uint8Array) => store.set(addr, record);
+  const remove_pre_key_handler = (addr: string) => store.remove(addr);
+  
+  return {
+    store,
+    preKeyStore: new libsignal.JsPreKeyStore(
+      load_pre_key_handler,
+      store_pre_key_handler,
+      remove_pre_key_handler
+    ),
+    load_pre_key_handler,
+    store_pre_key_handler,
+    remove_pre_key_handler
+  };
+}
+
 export function newJsSignedPreKeyStore() {
   return new libsignal.JsSignedPreKeyStore(
     (addr: string) => getStore(signedPreKeysStoreName).get(addr),
@@ -155,6 +228,22 @@ export function newJsSignedPreKeyStore() {
       getStore(signedPreKeysStoreName).set(addr, record)
     ,
   );
+}
+
+export function newJsSignedPreKeyStoreExposed() {
+  const store = getStore(signedPreKeysStoreName);
+  const load_signed_pre_key_handler = (addr: string) => store.get(addr);
+  const store_signed_pre_key_handler = (addr: string, record: Uint8Array) => store.set(addr, record);
+  
+  return {
+    store,
+    signedPreKeyStore: new libsignal.JsSignedPreKeyStore(
+      load_signed_pre_key_handler,
+      store_signed_pre_key_handler
+    ),
+    load_signed_pre_key_handler,
+    store_signed_pre_key_handler
+  };
 }
 
 export function newJsKyberPreKeyStore() {
@@ -182,10 +271,42 @@ export function newJsKyberPreKeyStore() {
 
         await tx.store.put(value, addr);
       }
-      
+
       await tx.done;
     },
   );
+}
+
+export function newJsKyberPreKeyStoreExposed() {
+  const store = getStore(kyberPreKeysStoreName);
+  const load_kyber_pre_key_handler = async (addr: string) => {
+    const value = await store.get(addr);
+    return value && "record" in value ? value.record : undefined;
+  };
+  const store_kyber_pre_key_handler = (addr: string, record: Uint8Array) => store.set(addr, { record });
+  const mark_kyber_pre_key_used_handler = async (addr: string, preKeyId: string, publicKey: Uint8Array) => {
+    const tx = await store.transaction();
+    const value = await tx.store.get(addr);
+    if (value) {
+      value["used"] = true;
+      value["pre_key"] = preKeyId;
+      value["public_key"] = publicKey;
+      await tx.store.put(value, addr);
+    }
+    await tx.done;
+  };
+  
+  return {
+    store,
+    kyberPreKeyStore: new libsignal.JsKyberPreKeyStore(
+      load_kyber_pre_key_handler,
+      store_kyber_pre_key_handler,
+      mark_kyber_pre_key_used_handler
+    ),
+    load_kyber_pre_key_handler,
+    store_kyber_pre_key_handler,
+    mark_kyber_pre_key_used_handler
+  };
 }
 
 
