@@ -99,7 +99,7 @@ class FireflyService {
         return message_1.Conversations.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getConversation(other) {
-        const url = new URL("/user/messages", this.baseUrl);
+        const url = new URL("/user/conversation", this.baseUrl);
         url.searchParams.set("other", other);
         const res = await this.req(url.pathname + url.search);
         return message_1.Conversation.decode(new Uint8Array(await res.arrayBuffer()));
