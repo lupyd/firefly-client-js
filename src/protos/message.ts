@@ -124,7 +124,7 @@ export interface FireflyGroupExtension {
 export interface FireflyGroupRole {
   id: number;
   name: string;
-  permissions: bigint;
+  permissions: number;
 }
 
 export interface FireflyGroupRoles {
@@ -1973,7 +1973,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
 };
 
 function createBaseFireflyGroupRole(): FireflyGroupRole {
-  return { id: 0, name: "", permissions: 0n };
+  return { id: 0, name: "", permissions: 0 };
 }
 
 export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
@@ -1984,11 +1984,8 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
     if (message.name !== "") {
       writer.uint32(18).string(message.name);
     }
-    if (message.permissions !== 0n) {
-      if (BigInt.asUintN(64, message.permissions) !== message.permissions) {
-        throw new globalThis.Error("value provided for field message.permissions of type uint64 too large");
-      }
-      writer.uint32(24).uint64(message.permissions);
+    if (message.permissions !== 0) {
+      writer.uint32(24).uint32(message.permissions);
     }
     return writer;
   },
@@ -2021,7 +2018,7 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
             break;
           }
 
-          message.permissions = reader.uint64() as bigint;
+          message.permissions = reader.uint32();
           continue;
         }
       }
@@ -2037,7 +2034,7 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
     return {
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
       name: isSet(object.name) ? globalThis.String(object.name) : "",
-      permissions: isSet(object.permissions) ? BigInt(object.permissions) : 0n,
+      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
     };
   },
 
@@ -2049,8 +2046,8 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
-    if (message.permissions !== 0n) {
-      obj.permissions = message.permissions.toString();
+    if (message.permissions !== 0) {
+      obj.permissions = Math.round(message.permissions);
     }
     return obj;
   },
@@ -2062,7 +2059,7 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
     const message = createBaseFireflyGroupRole();
     message.id = object.id ?? 0;
     message.name = object.name ?? "";
-    message.permissions = object.permissions ?? 0n;
+    message.permissions = object.permissions ?? 0;
     return message;
   },
 };

@@ -115,7 +115,7 @@ message FireflyGroupExtension {
 message FireflyGroupRole {
   uint32 id = 1;
   string name = 2;
-  uint64 permissions = 3;
+  uint32 permissions = 3;
 }
 
 message FireflyGroupRoles {

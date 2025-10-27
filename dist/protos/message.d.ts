@@ -96,7 +96,7 @@ export interface FireflyGroupExtension {
 export interface FireflyGroupRole {
     id: number;
     name: string;
-    permissions: bigint;
+    permissions: number;
 }
 export interface FireflyGroupRoles {
     roles: FireflyGroupRole[];

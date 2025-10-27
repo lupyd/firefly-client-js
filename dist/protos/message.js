@@ -1622,7 +1622,7 @@ exports.FireflyGroupExtension = {
     },
 };
 function createBaseFireflyGroupRole() {
-    return { id: 0, name: "", permissions: 0n };
+    return { id: 0, name: "", permissions: 0 };
 }
 exports.FireflyGroupRole = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -1632,11 +1632,8 @@ exports.FireflyGroupRole = {
         if (message.name !== "") {
             writer.uint32(18).string(message.name);
         }
-        if (message.permissions !== 0n) {
-            if (BigInt.asUintN(64, message.permissions) !== message.permissions) {
-                throw new globalThis.Error("value provided for field message.permissions of type uint64 too large");
-            }
-            writer.uint32(24).uint64(message.permissions);
+        if (message.permissions !== 0) {
+            writer.uint32(24).uint32(message.permissions);
         }
         return writer;
     },
@@ -1665,7 +1662,7 @@ exports.FireflyGroupRole = {
                     if (tag !== 24) {
                         break;
                     }
-                    message.permissions = reader.uint64();
+                    message.permissions = reader.uint32();
                     continue;
                 }
             }
@@ -1680,7 +1677,7 @@ exports.FireflyGroupRole = {
         return {
             id: isSet(object.id) ? globalThis.Number(object.id) : 0,
             name: isSet(object.name) ? globalThis.String(object.name) : "",
-            permissions: isSet(object.permissions) ? BigInt(object.permissions) : 0n,
+            permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
         };
     },
     toJSON(message) {
@@ -1691,8 +1688,8 @@ exports.FireflyGroupRole = {
         if (message.name !== "") {
             obj.name = message.name;
         }
-        if (message.permissions !== 0n) {
-            obj.permissions = message.permissions.toString();
+        if (message.permissions !== 0) {
+            obj.permissions = Math.round(message.permissions);
         }
         return obj;
     },
@@ -1703,7 +1700,7 @@ exports.FireflyGroupRole = {
         const message = createBaseFireflyGroupRole();
         message.id = object.id ?? 0;
         message.name = object.name ?? "";
-        message.permissions = object.permissions ?? 0n;
+        message.permissions = object.permissions ?? 0;
         return message;
     },
 };
