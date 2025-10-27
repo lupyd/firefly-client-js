@@ -52,7 +52,6 @@ const sessionsStoreName = "sessions";
 const identitesStoreName = "identities";
 const preKeysStoreName = "pre_keys";
 const signedPreKeysStoreName = "signed_pre_keys";
-const senderKeysStoreName = "sender_keys";
 const kyberPreKeysStoreName = "kyber_pre_keys";
 const getDb = async () => {
     if (!db) {
@@ -63,7 +62,6 @@ const getDb = async () => {
                     identitesStoreName,
                     preKeysStoreName,
                     signedPreKeysStoreName,
-                    senderKeysStoreName,
                     kyberPreKeysStoreName
                 ];
                 for (const storeName of storeNames) {
