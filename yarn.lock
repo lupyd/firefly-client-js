@@ -3,9 +3,9 @@
 
 
 "@bufbuild/protobuf@^2.0.0":
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-2.9.0.tgz#ff8827be3d8e56d74a03530cff8b0e1952aa115e"
-  integrity sha512-rnJenoStJ8nvmt9Gzye8nkYd6V22xUAnu4086ER7h1zJ508vStko4pMvDeQ446ilDTFpV5wnoc5YS7XvMwwMqA==
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-2.10.0.tgz#b444f8aafdfa8c497313c8c0f0e7e2e978c53df5"
+  integrity sha512-fdRs9PSrBF7QUntpZpq6BTw58fhgGJojgg39m9oFOJGZT+nip9b0so5cYY1oWl5pvemDLr0cPPsH46vwThEbpQ==
 
 "@signalapp/libsignal-client@^0.78.3":
   version "0.78.3"
@@ -33,9 +33,9 @@ dprint-node@^1.0.8:
   dependencies:
     detect-libc "^1.0.3"
 
-"firefly-mls@https://github.com/lupyd/firefly-mls-js":
+"firefly-mls@https://github.com/lupyd/firefly-mls-js.git":
   version "0.1.0"
-  resolved "https://github.com/lupyd/firefly-mls-js#9e74a423dd057bbe8b573a415b2a6e44d7ebe92b"
+  resolved "https://github.com/lupyd/firefly-mls-js.git#8b189eb5ae23dd7eff28791eb4bfa2620693d5e1"
 
 idb@^8.0.3:
   version "8.0.3"
@@ -44,7 +44,7 @@ idb@^8.0.3:
 
 "libsignal-protocol@https://github.com/lupyd/libsignal-wasm.git":
   version "0.1.0"
-  resolved "https://github.com/lupyd/libsignal-wasm.git#0974a2232b130b0082eb77ff0437ebbb34133312"
+  resolved "https://github.com/lupyd/libsignal-wasm.git#9161e1dad9ae7d51b831fe6360b07e7db8547d4a"
 
 node-gyp-build@^4.8.0:
   version "4.8.4"
@@ -66,9 +66,9 @@ ts-proto-descriptors@2.0.0:
     "@bufbuild/protobuf" "^2.0.0"
 
 ts-proto@^2.7.5:
-  version "2.7.7"
-  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-2.7.7.tgz#a30f164b3dc65123816fe0f6af4a7bd7caf99d75"
-  integrity sha512-/OfN9/Yriji2bbpOysZ/Jzc96isOKz+eBTJEcKaIZ0PR6x1TNgVm4Lz0zfbo+J0jwFO7fJjJyssefBPQ0o1V9A==
+  version "2.8.1"
+  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-2.8.1.tgz#79d16ab9752a67d5ab9efedc693774fb844bc154"
+  integrity sha512-suKxr/MaDwCZhWPykXGIanxqFUE79zwN5SUKMCmVzyf32ZZeKSt2aut9kcx9DmXFocf2v1Jpr2ITWIQH4Xz+Bw==
   dependencies:
     "@bufbuild/protobuf" "^2.0.0"
     case-anything "^2.1.13"

@@ -20,7 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@signalapp/libsignal-client": "^0.78.3",
-    "firefly-mls": "https://github.com/lupyd/firefly-mls-js",
+    "firefly-mls": "https://github.com/lupyd/firefly-mls-js.git",
     "idb": "^8.0.3",
     "libsignal-protocol": "https://github.com/lupyd/libsignal-wasm.git",
     "ulid": "https://github.com/ash-hashtag/ulid-js"

@@ -1,7 +1,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
 export interface UserMessage {
-    id: Uint8Array;
+    id: bigint;
     to: string;
     from: string;
     text: Uint8Array;
@@ -26,13 +26,13 @@ export interface GroupInvite {
     inviter: string;
     invitee: string;
     welcomeMessage: Uint8Array;
-    commitId: Uint8Array;
+    commitId: bigint;
 }
 export interface GroupInvites {
     invites: GroupInvite[];
 }
 export interface GroupMessage {
-    id: Uint8Array;
+    id: bigint;
     groupId: bigint;
     message: Uint8Array;
 }

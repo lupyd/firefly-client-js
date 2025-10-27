@@ -1,4 +1,4 @@
-import { crockfordDecode, ULID } from "ulid";
+// import { crockfordDecode, ULID } from "ulid";
 import {
   GroupMessages,
   GroupMessage,
@@ -18,9 +18,9 @@ import {
 /**
  * Minimal ULID validator (Crockford alphabet, 26 chars)
  */
-function isValidULID(u: string): u is ULID {
-  return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i.test(u);
-}
+// function isValidULID(u: string): u is ULID {
+//   return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i.test(u);
+// }
 
 /** parse little-endian u64 bytes to bigint */
 function parseU64Le(buf: ArrayBuffer) {
@@ -32,7 +32,8 @@ function parseU64Le(buf: ArrayBuffer) {
 }
 
 /** join array of numbers/strings into server-expected %2C encoded CSV */
-function joinCsv(items: Array<string | number>) {
+function joinCsv(items: Array<string | number |
+  bigint>) {
   return items.map(String).join("%2C");
 }
 
@@ -70,12 +71,12 @@ export class FireflyService {
 
   async getGroupMessages(opts: {
     groupId?: number;
-    startAfter?: ULID;
+    startAfter?: bigint;
     limit?: number;
   }) {
-    if (!opts.groupId && !opts.startAfter)
-      throw new Error("groupId or startAfter required");
-    if (opts.startAfter && !isValidULID(opts.startAfter))
+    if (!opts.groupId)
+      throw new Error("groupId required");
+    if (opts.startAfter && opts.startAfter < 0n)
       throw new Error("invalid ULID");
 
     const url = new URL("/group/messages", this.baseUrl);
@@ -109,12 +110,12 @@ export class FireflyService {
 
   async getUserMessages(opts: {
     conversationId?: number;
-    startAfter?: ULID;
+    startAfter?: bigint;
     limit?: number;
   }) {
     if (!opts.conversationId && !opts.startAfter)
       throw new Error("conversationId or startAfter required");
-    if (opts.startAfter && !isValidULID(opts.startAfter))
+    if (opts.startAfter && opts.startAfter < 0n)
       throw new Error("invalid ULID");
 
     const url = new URL("/user/messages", this.baseUrl);
@@ -197,15 +198,14 @@ export class FireflyService {
     groupId: bigint,
     invitee: string,
     welcomeMessage: Uint8Array,
-    commitId: ULID,
+    commitId: bigint,
   ) {
-    if (!isValidULID(commitId)) throw new Error("invalid commitId ULID");
-    const commitBytes = crockfordDecode(commitId); // assumes this yields 16 bytes (server expects UUID bytes)
+    if (commitId < 0n) throw new Error("invalid commitId ULID");
     const invite = GroupInvite.create({
       groupId,
       invitee,
       welcomeMessage,
-      commitId: commitBytes as any,
+      commitId,
     });
     await this.req("/group/invite", {
       method: "POST",
@@ -262,10 +262,10 @@ export class FireflyService {
     await this.req(url.pathname + url.search, { method: "DELETE" });
   }
 
-  async deleteGroupInvites(commitIds: ULID[]) {
+  async deleteGroupInvites(commitIds: bigint[]) {
     if (!commitIds.length) return;
     for (const c of commitIds)
-      if (!isValidULID(c)) throw new Error("invalid ULID in commitIds");
+      if (c < 0n) throw new Error("invalid ULID in commitIds");
     const url = new URL("/group/invites", this.baseUrl);
     url.searchParams.set("commitIds", joinCsv(commitIds));
     await this.req(url.pathname + url.search, { method: "DELETE" });

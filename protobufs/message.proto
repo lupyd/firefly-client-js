@@ -3,7 +3,7 @@ syntax = "proto3";
 package firefly;
 
 message UserMessage {
-  bytes id = 1;
+  uint64 id = 1;
   string to = 2;
   string from = 3;
   bytes text = 4;
@@ -30,7 +30,7 @@ message GroupInvite {
   string inviter = 2;
   string invitee = 3;
   bytes welcomeMessage = 4;
-  bytes commitId = 5;
+  uint64 commitId = 5;
 }
 
 message GroupInvites {
@@ -38,7 +38,7 @@ message GroupInvites {
 }
 
 message GroupMessage {
-  bytes id = 1;
+  uint64 id = 1;
   uint64 groupId = 2;
   bytes message = 3;
 }
