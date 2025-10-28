@@ -62,7 +62,8 @@ function getStore(name: string) {
     async transaction() {
       const db = await getDb();
       return db.transaction(storeName, "readwrite");
-    }
+    },
+    getStoreName() { return storeName }
   };
 }
 
@@ -167,7 +168,7 @@ export function newJsIdentityStoreExposed() {
     return oldValue ? isEqualBytes(oldValue, identity) : true;
   };
   const get_identity_handler = (addr: string) => store.get(addr);
-  
+
   return {
     store,
     identityStore: new libsignal.JsIdentityKeyStore(
@@ -204,7 +205,7 @@ export function newJsPreKeyStoreExposed() {
   const load_pre_key_handler = (addr: string) => store.get(addr);
   const store_pre_key_handler = (addr: string, record: Uint8Array) => store.set(addr, record);
   const remove_pre_key_handler = (addr: string) => store.remove(addr);
-  
+
   return {
     store,
     preKeyStore: new libsignal.JsPreKeyStore(
@@ -232,7 +233,7 @@ export function newJsSignedPreKeyStoreExposed() {
   const store = getStore(signedPreKeysStoreName);
   const load_signed_pre_key_handler = (addr: string) => store.get(addr);
   const store_signed_pre_key_handler = (addr: string, record: Uint8Array) => store.set(addr, record);
-  
+
   return {
     store,
     signedPreKeyStore: new libsignal.JsSignedPreKeyStore(
@@ -293,7 +294,7 @@ export function newJsKyberPreKeyStoreExposed() {
     }
     await tx.done;
   };
-  
+
   return {
     store,
     kyberPreKeyStore: new libsignal.JsKyberPreKeyStore(

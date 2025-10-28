@@ -9,6 +9,7 @@ export declare function newJsSessionStoreExposed(): {
         remove(key: string): Promise<void>;
         getAll(): Promise<any[]>;
         transaction(): Promise<import("idb").IDBPTransaction<unknown, [string], "readwrite">>;
+        getStoreName(): string;
     };
     sessionStore: libsignal.JsSessionStore;
     load_session_handler: (addr: string) => Promise<any>;
@@ -22,6 +23,7 @@ export declare function newJsIdentityStoreExposed(): {
         remove(key: string): Promise<void>;
         getAll(): Promise<any[]>;
         transaction(): Promise<import("idb").IDBPTransaction<unknown, [string], "readwrite">>;
+        getStoreName(): string;
     };
     identityStore: libsignal.JsIdentityKeyStore;
     is_trusted_identity_handler: (addr: string, identity: Uint8Array, _direction: libsignal.Direction) => Promise<boolean>;
@@ -38,6 +40,7 @@ export declare function newJsPreKeyStoreExposed(): {
         remove(key: string): Promise<void>;
         getAll(): Promise<any[]>;
         transaction(): Promise<import("idb").IDBPTransaction<unknown, [string], "readwrite">>;
+        getStoreName(): string;
     };
     preKeyStore: libsignal.JsPreKeyStore;
     load_pre_key_handler: (addr: string) => Promise<any>;
@@ -52,6 +55,7 @@ export declare function newJsSignedPreKeyStoreExposed(): {
         remove(key: string): Promise<void>;
         getAll(): Promise<any[]>;
         transaction(): Promise<import("idb").IDBPTransaction<unknown, [string], "readwrite">>;
+        getStoreName(): string;
     };
     signedPreKeyStore: libsignal.JsSignedPreKeyStore;
     load_signed_pre_key_handler: (addr: string) => Promise<any>;
@@ -65,6 +69,7 @@ export declare function newJsKyberPreKeyStoreExposed(): {
         remove(key: string): Promise<void>;
         getAll(): Promise<any[]>;
         transaction(): Promise<import("idb").IDBPTransaction<unknown, [string], "readwrite">>;
+        getStoreName(): string;
     };
     kyberPreKeyStore: libsignal.JsKyberPreKeyStore;
     load_kyber_pre_key_handler: (addr: string) => Promise<any>;

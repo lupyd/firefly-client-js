@@ -15,6 +15,7 @@ import {
   GroupKeyPackage,
   Group,
   GroupId,
+  PreKeyBundle,
 } from "./protos/message";
 
 /**
@@ -150,6 +151,13 @@ export class FireflyService {
     url.searchParams.set("other", other);
     const res = await this.req(url.pathname + url.search);
     return Conversation.decode(new Uint8Array(await res.arrayBuffer()));
+  }
+
+  async getPreKeyBundle(other: string) {
+    const url = new URL("/user/preKeyBundle", this.baseUrl);
+    url.searchParams.set("other", other);
+    const res = await this.req(url.pathname + url.search);
+    return PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()))
   }
 
   async getGroups() {
@@ -294,9 +302,9 @@ export class FireflyService {
     await this.req(url.pathname + url.search, { method: "DELETE" });
   }
 
-  async deleteConversation(id: number) {
-    const url = new URL("/user/conversation", this.baseUrl);
-    url.searchParams.set("id", String(id));
+  async deleteConversations(ids: number[]) {
+    const url = new URL("/user/conversations", this.baseUrl);
+    url.searchParams.set("ids", joinCsv(ids));
     await this.req(url.pathname + url.search, { method: "DELETE" });
   }
 

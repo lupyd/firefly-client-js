@@ -113,6 +113,12 @@ class FireflyService {
         const res = await this.req(url.pathname + url.search);
         return message_1.Conversation.decode(new Uint8Array(await res.arrayBuffer()));
     }
+    async getPreKeyBundle(other) {
+        const url = new URL("/user/preKeyBundle", this.baseUrl);
+        url.searchParams.set("other", other);
+        const res = await this.req(url.pathname + url.search);
+        return message_1.PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()));
+    }
     async getGroups() {
         const res = await this.req("/groups");
         return message_1.Groups.decode(new Uint8Array(await res.arrayBuffer()));
@@ -236,9 +242,9 @@ class FireflyService {
         url.searchParams.set("ids", joinCsv(ids));
         await this.req(url.pathname + url.search, { method: "DELETE" });
     }
-    async deleteConversation(id) {
-        const url = new URL("/user/conversation", this.baseUrl);
-        url.searchParams.set("id", String(id));
+    async deleteConversations(ids) {
+        const url = new URL("/user/conversations", this.baseUrl);
+        url.searchParams.set("ids", joinCsv(ids));
         await this.req(url.pathname + url.search, { method: "DELETE" });
     }
     async syncUserMessages(since, limit) {

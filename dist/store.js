@@ -102,7 +102,8 @@ function getStore(name) {
         async transaction() {
             const db = await getDb();
             return db.transaction(storeName, "readwrite");
-        }
+        },
+        getStoreName() { return storeName; }
     };
 }
 function isEqualBytes(bytes1, bytes2) {

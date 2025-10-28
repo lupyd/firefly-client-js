@@ -1,4 +1,4 @@
-import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessage, UserMessages, ConversationStart, Conversations, Groups, SignedToken, Conversation, GroupKeyPackage, Group } from "./protos/message";
+import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessage, UserMessages, ConversationStart, Conversations, Groups, SignedToken, Conversation, GroupKeyPackage, Group, PreKeyBundle } from "./protos/message";
 export declare class HttpError extends Error {
     statusCode: number;
     responseText: string;
@@ -25,6 +25,7 @@ export declare class FireflyService {
     }): Promise<UserMessages>;
     getConversations(): Promise<Conversations>;
     getConversation(other: string): Promise<Conversation>;
+    getPreKeyBundle(other: string): Promise<PreKeyBundle>;
     getGroups(): Promise<Groups>;
     sign(credential: Uint8Array): Promise<SignedToken>;
     createGroup(group: Group): Promise<bigint>;
@@ -41,7 +42,7 @@ export declare class FireflyService {
     deleteGroupInvites(commitIds: bigint[]): Promise<void>;
     deleteKeyPackages(ids: number[]): Promise<void>;
     deletePreKeyBundles(ids: number[]): Promise<void>;
-    deleteConversation(id: number): Promise<void>;
+    deleteConversations(ids: number[]): Promise<void>;
     syncUserMessages(since: bigint, limit: number): Promise<void>;
     deleteUserMessages(until: bigint): Promise<void>;
 }
