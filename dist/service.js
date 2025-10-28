@@ -107,11 +107,14 @@ class FireflyService {
         const res = await this.req("/user/conversations");
         return message_1.Conversations.decode(new Uint8Array(await res.arrayBuffer()));
     }
-    async getConversation(other) {
+    async getConversation(other, preKeyBundleRequired = false) {
         const url = new URL("/user/conversation", this.baseUrl);
         url.searchParams.set("other", other);
+        if (preKeyBundleRequired) {
+            url.searchParams.set("preKeyBundleRequired", "true");
+        }
         const res = await this.req(url.pathname + url.search);
-        return message_1.Conversation.decode(new Uint8Array(await res.arrayBuffer()));
+        return message_1.ConversationStart.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getPreKeyBundle(other) {
         const url = new URL("/user/preKeyBundle", this.baseUrl);

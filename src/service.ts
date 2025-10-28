@@ -146,11 +146,14 @@ export class FireflyService {
     return Conversations.decode(new Uint8Array(await res.arrayBuffer()));
   }
 
-  async getConversation(other: string) {
+  async getConversation(other: string, preKeyBundleRequired = false) {
     const url = new URL("/user/conversation", this.baseUrl);
     url.searchParams.set("other", other);
+    if (preKeyBundleRequired) {
+      url.searchParams.set("preKeyBundleRequired", "true");
+    }
     const res = await this.req(url.pathname + url.search);
-    return Conversation.decode(new Uint8Array(await res.arrayBuffer()));
+    return ConversationStart.decode(new Uint8Array(await res.arrayBuffer()));
   }
 
   async getPreKeyBundle(other: string) {
