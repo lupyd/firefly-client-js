@@ -45,4 +45,5 @@ export declare class FireflyService {
     deleteConversations(ids: number[]): Promise<void>;
     syncUserMessages(since: bigint, limit: number): Promise<UserMessages>;
     deleteUserMessages(until: bigint): Promise<void>;
+    recreateConversations(): Promise<void>;
 }

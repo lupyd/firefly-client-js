@@ -259,5 +259,8 @@ class FireflyService {
         url.searchParams.set("until", until.toString());
         await this.req(url.pathname + url.search, { method: "DELETE" });
     }
+    async recreateConversations() {
+        await this.req("/user/conversations", { method: "PATCH" });
+    }
 }
 exports.FireflyService = FireflyService;

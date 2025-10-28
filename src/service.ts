@@ -324,4 +324,8 @@ export class FireflyService {
 
     await this.req(url.pathname + url.search, { method: "DELETE" });
   }
+
+  async recreateConversations() {
+    await this.req("/user/conversations", { method: "PATCH" });
+  }
 }
