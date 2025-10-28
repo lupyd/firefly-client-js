@@ -313,7 +313,9 @@ export class FireflyService {
     url.searchParams.set("since", since.toString());
     url.searchParams.set("limit", limit.toString());
 
-    await this.req(url.pathname + url.search);
+    const response = await this.req(url.pathname + url.search);
+
+    return UserMessages.decode(new Uint8Array(await response.arrayBuffer()));
   }
 
   async deleteUserMessages(until: bigint) {

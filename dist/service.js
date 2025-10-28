@@ -251,7 +251,8 @@ class FireflyService {
         const url = new URL("/user/sync", this.baseUrl);
         url.searchParams.set("since", since.toString());
         url.searchParams.set("limit", limit.toString());
-        await this.req(url.pathname + url.search);
+        const response = await this.req(url.pathname + url.search);
+        return message_1.UserMessages.decode(new Uint8Array(await response.arrayBuffer()));
     }
     async deleteUserMessages(until) {
         const url = new URL("/user/messages", this.baseUrl);

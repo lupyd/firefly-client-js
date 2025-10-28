@@ -43,6 +43,6 @@ export declare class FireflyService {
     deleteKeyPackages(ids: number[]): Promise<void>;
     deletePreKeyBundles(ids: number[]): Promise<void>;
     deleteConversations(ids: number[]): Promise<void>;
-    syncUserMessages(since: bigint, limit: number): Promise<void>;
+    syncUserMessages(since: bigint, limit: number): Promise<UserMessages>;
     deleteUserMessages(until: bigint): Promise<void>;
 }
