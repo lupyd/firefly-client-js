@@ -62,7 +62,7 @@ const getDb = async () => {
                     identitesStoreName,
                     preKeysStoreName,
                     signedPreKeysStoreName,
-                    kyberPreKeysStoreName
+                    kyberPreKeysStoreName,
                 ];
                 for (const storeName of storeNames) {
                     if (!db.objectStoreNames.contains(storeName)) {
@@ -103,7 +103,9 @@ function getStore(name) {
             const db = await getDb();
             return db.transaction(storeName, "readwrite");
         },
-        getStoreName() { return storeName; }
+        getStoreName() {
+            return storeName;
+        },
     };
 }
 function isEqualBytes(bytes1, bytes2) {
@@ -129,7 +131,9 @@ function newJsSessionStoreExposed() {
     const store_session_handler = (addr, value) => store.set(addr, value);
     return {
         store,
-        sessionStore: new libsignal.JsSessionStore(load_session_handler, store_session_handler), load_session_handler, store_session_handler
+        sessionStore: new libsignal.JsSessionStore(load_session_handler, store_session_handler),
+        load_session_handler,
+        store_session_handler,
     };
 }
 function newJsIdentityStore() {
@@ -144,7 +148,7 @@ function newJsIdentityStore() {
     }, async () => {
         let key = await getStore(identitesStoreName).get("identityKey");
         if (!key) {
-            const newKey = libsignal.PrivateKey.generate();
+            const newKey = libsignal.IdentityKeyPairWrapper.generate();
             console.log(`New Identity Key generated`);
             key = newKey.serialize();
             newKey.free();
@@ -192,7 +196,7 @@ function newJsIdentityStoreExposed() {
         get_identity_key_handler,
         get_local_registration_id_handler,
         save_identity_handler,
-        get_identity_handler
+        get_identity_handler,
     };
 }
 function newJsPreKeyStore() {
@@ -208,7 +212,7 @@ function newJsPreKeyStoreExposed() {
         preKeyStore: new libsignal.JsPreKeyStore(load_pre_key_handler, store_pre_key_handler, remove_pre_key_handler),
         load_pre_key_handler,
         store_pre_key_handler,
-        remove_pre_key_handler
+        remove_pre_key_handler,
     };
 }
 function newJsSignedPreKeyStore() {
@@ -222,7 +226,7 @@ function newJsSignedPreKeyStoreExposed() {
         store,
         signedPreKeyStore: new libsignal.JsSignedPreKeyStore(load_signed_pre_key_handler, store_signed_pre_key_handler),
         load_signed_pre_key_handler,
-        store_signed_pre_key_handler
+        store_signed_pre_key_handler,
     };
 }
 function newJsKyberPreKeyStore() {
@@ -267,6 +271,6 @@ function newJsKyberPreKeyStoreExposed() {
         kyberPreKeyStore: new libsignal.JsKyberPreKeyStore(load_kyber_pre_key_handler, store_kyber_pre_key_handler, mark_kyber_pre_key_used_handler),
         load_kyber_pre_key_handler,
         store_kyber_pre_key_handler,
-        mark_kyber_pre_key_used_handler
+        mark_kyber_pre_key_used_handler,
     };
 }
