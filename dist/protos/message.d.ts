@@ -147,9 +147,27 @@ export interface Conversation {
 export interface Conversations {
     conversations: Conversation[];
 }
+export interface EncryptedFile {
+    url: string;
+    contentType: number;
+    secretKey: Uint8Array;
+    secretKeyType: number;
+}
+export interface EncryptedFiles {
+    files: EncryptedFile[];
+}
+export interface MessagePayload {
+    text: string;
+    replyingTo: bigint;
+    files: EncryptedFiles | undefined;
+}
+export interface CallMessage {
+    message: Uint8Array;
+}
 export interface UserMessageInner {
     plainText?: Uint8Array | undefined;
-    callMessage?: Uint8Array | undefined;
+    callMessage?: CallMessage | undefined;
+    messagePayload?: MessagePayload | undefined;
 }
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
@@ -181,6 +199,10 @@ export declare const ConversationStart: MessageFns<ConversationStart>;
 export declare const PreKeyBundles: MessageFns<PreKeyBundles>;
 export declare const Conversation: MessageFns<Conversation>;
 export declare const Conversations: MessageFns<Conversations>;
+export declare const EncryptedFile: MessageFns<EncryptedFile>;
+export declare const EncryptedFiles: MessageFns<EncryptedFiles>;
+export declare const MessagePayload: MessageFns<MessagePayload>;
+export declare const CallMessage: MessageFns<CallMessage>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {

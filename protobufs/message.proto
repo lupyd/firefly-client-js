@@ -179,9 +179,31 @@ message Conversations {
   repeated Conversation conversations = 1;
 }
 
+
+message EncryptedFile {
+  string url = 1;
+  uint32 contentType = 2;
+  bytes secretKey = 3;
+  uint32 secretKeyType = 4;
+}
+
+message EncryptedFiles {
+  repeated EncryptedFile files = 1;
+}
+message MessagePayload {
+  string text = 1;
+  uint64 replyingTo = 2;
+  EncryptedFiles files = 3;
+}
+
+message CallMessage {
+  bytes message = 1;
+}
+
 message UserMessageInner {
   oneof message {
     bytes plainText = 1;
-    bytes callMessage = 2;
+    CallMessage callMessage = 2;
+    MessagePayload messagePayload = 3;
   }
 }

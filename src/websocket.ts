@@ -1,14 +1,12 @@
 import * as protos from "./protos/message";
 
 export class FireflyWsClient extends EventTarget {
-  private readonly maxRetries = 3;
-  private readonly waitTimeBeforeReconnectingFromLastConnection = 5 * 1000;
+  private maxRetries = 3;
+  private waitTimeBeforeReconnectingFromLastConnection = 5 * 1000;
 
-  private readonly connectionTimeout = 5 * 1000;
+  private connectionTimeout = 5 * 1000;
   private readonly websocketUrl: string;
   private readonly authToken: () => Promise<string>;
-
-
 
   private ws: WebSocket | undefined = undefined;
 
@@ -19,10 +17,17 @@ export class FireflyWsClient extends EventTarget {
   constructor(
     websocketUrl: string,
     authToken: () => Promise<string>,
+    maxRetries = 3,
+    waitTimeBeforeReconnectingFromLastConnectionInMs = 5 * 1000,
+    connectionTimeoutInMs = 5 * 1000,
   ) {
     super();
     this.websocketUrl = websocketUrl;
     this.authToken = authToken;
+    this.connectionTimeout = connectionTimeoutInMs;
+    this.maxRetries = maxRetries;
+    this.waitTimeBeforeReconnectingFromLastConnection =
+      waitTimeBeforeReconnectingFromLastConnectionInMs;
   }
 
   async initialize() {
@@ -48,8 +53,10 @@ export class FireflyWsClient extends EventTarget {
       ),
     );
 
-    console.log(`Connecting to websocket ${this.websocketUrl}`);
-    const ws = new WebSocket(this.websocketUrl);
+    const url = new URL(this.websocketUrl);
+    url.searchParams.set("authToken", await this.authToken());
+
+    const ws = new WebSocket(url);
     ws.binaryType = "arraybuffer";
     this.lastConnectionAttemptTimestamp = Date.now();
     this.ws = ws;
@@ -75,7 +82,7 @@ export class FireflyWsClient extends EventTarget {
     ws.addEventListener("close", (ev) => {
       console.log(`Websocket closed with code: ${ev.code}`);
       this.ws = undefined;
-      this.dispatchEvent(new CustomEvent('onDisconnect', { detail: ev.code }));
+      this.dispatchEvent(new CustomEvent("onDisconnect", { detail: ev.code }));
 
       if (this.disposed) {
         return;
@@ -85,17 +92,19 @@ export class FireflyWsClient extends EventTarget {
         this.connect();
         this.retriesLeft--;
       } else {
-        this.dispatchEvent(new CustomEvent('onRetryLimitExceeded'));
+        this.dispatchEvent(new CustomEvent("onRetryLimitExceeded"));
       }
     });
 
     ws.addEventListener("open", async () => {
       console.log(`Connection opened`);
       this.retriesLeft = this.maxRetries;
-      this.dispatchEvent(new CustomEvent('onConnect'));
+      this.dispatchEvent(new CustomEvent("onConnect"));
 
-      const token = await this.authToken();
-      this.sendClientMessage(protos.ClientMessage.create({ bearerToken: token }),)
+      // const token = await this.authToken();
+      // this.sendClientMessage(
+      //   protos.ClientMessage.create({ bearerToken: token }),
+      // );
     });
   }
 
@@ -108,7 +117,7 @@ export class FireflyWsClient extends EventTarget {
 
   private onMessage(data: ArrayBuffer) {
     const message = protos.ServerMessage.decode(new Uint8Array(data));
-    this.dispatchEvent(new CustomEvent('onMessage', { detail: message }));
+    this.dispatchEvent(new CustomEvent("onMessage", { detail: message }));
   }
 
   private sendData(data: ArrayBufferLike) {
@@ -123,17 +132,17 @@ export class FireflyWsClient extends EventTarget {
     this.sendData(protos.ClientMessage.encode(message).finish().buffer);
   }
 
-  sendGroupMessage(message: protos.GroupMessage) {
-    this.sendClientMessage(
-      protos.ClientMessage.create({ groupMessage: message }),
-    );
-  }
+  // sendGroupMessage(message: protos.GroupMessage) {
+  //   this.sendClientMessage(
+  //     protos.ClientMessage.create({ groupMessage: message }),
+  //   );
+  // }
 
-  sendUserMessage(message: protos.UserMessage) {
-    this.sendClientMessage(
-      protos.ClientMessage.create({ userMessage: message }),
-    );
-  }
+  // sendUserMessage(message: protos.UserMessage) {
+  //   this.sendClientMessage(
+  //     protos.ClientMessage.create({ userMessage: message }),
+  //   );
+  // }
 
   isDisconnected() {
     if (!this.ws) {

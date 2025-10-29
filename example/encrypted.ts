@@ -166,7 +166,9 @@ export class InMemoryKyberKeyStore extends libsignal.KyberPreKeyStore {
   async getKyberPreKey(
     kyberPreKeyId: number,
   ): Promise<libsignal.KyberPreKeyRecord> {
-    return this.state.get(kyberPreKeyId);
+    const value = this.state.get(kyberPreKeyId);
+    console.log({ kyberPreKeyId, value });
+    return value;
   }
   async markKyberPreKeyUsed(kyberPreKeyId: number): Promise<void> {
     this.usedKyberKeyIds.add(kyberPreKeyId);
@@ -367,4 +369,4 @@ const main = async () => {
   console.log(new TextDecoder().decode(result));
 };
 
-// main();
+main();
