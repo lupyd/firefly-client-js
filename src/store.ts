@@ -162,7 +162,7 @@ export function newJsIdentityStoreExposed() {
   const get_identity_key_handler = async () => {
     let key = await store.get("identityKey");
     if (!key) {
-      const newKey = libsignal.PrivateKey.generate();
+      const newKey = libsignal.IdentityKeyPairWrapper.generate();
       key = newKey.serialize();
       newKey.free();
       await store.set("identityKey", key);
