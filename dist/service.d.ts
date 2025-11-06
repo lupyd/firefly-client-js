@@ -46,4 +46,5 @@ export declare class FireflyService {
     syncUserMessages(since: bigint, limit: number): Promise<UserMessages>;
     deleteUserMessages(until: bigint): Promise<void>;
     recreateConversations(): Promise<void>;
+    getWebrtcConfig(): Promise<RTCConfiguration>;
 }

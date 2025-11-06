@@ -11,7 +11,6 @@ import {
   Conversations,
   Groups,
   SignedToken,
-  Conversation,
   GroupKeyPackage,
   Group,
   GroupId,
@@ -25,16 +24,18 @@ import {
 //   return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i.test(u);
 // }
 
-
 /** join array of numbers/strings into server-expected %2C encoded CSV */
 function joinCsv(items: Array<string | number | bigint>) {
   return items.map(String).join("%2C");
 }
 
 export class HttpError extends Error {
-  constructor(public statusCode: number, public responseText: string) {
+  constructor(
+    public statusCode: number,
+    public responseText: string,
+  ) {
     super(`HTTP ${statusCode}: ${responseText}`);
-    this.name = 'HttpError';
+    this.name = "HttpError";
   }
 }
 
@@ -160,7 +161,7 @@ export class FireflyService {
     const url = new URL("/user/preKeyBundle", this.baseUrl);
     url.searchParams.set("other", other);
     const res = await this.req(url.pathname + url.search);
-    return PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()))
+    return PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()));
   }
 
   async getGroups() {
@@ -330,5 +331,12 @@ export class FireflyService {
 
   async recreateConversations() {
     await this.req("/user/conversations", { method: "PATCH" });
+  }
+
+  async getWebrtcConfig() {
+    const response = await this.req("/webrtcConfig");
+    const body = await response.text();
+
+    return JSON.parse(body) as RTCConfiguration;
   }
 }

@@ -20,7 +20,7 @@ class HttpError extends Error {
         super(`HTTP ${statusCode}: ${responseText}`);
         this.statusCode = statusCode;
         this.responseText = responseText;
-        this.name = 'HttpError';
+        this.name = "HttpError";
     }
 }
 exports.HttpError = HttpError;
@@ -264,6 +264,11 @@ class FireflyService {
     }
     async recreateConversations() {
         await this.req("/user/conversations", { method: "PATCH" });
+    }
+    async getWebrtcConfig() {
+        const response = await this.req("/webrtcConfig");
+        const body = await response.text();
+        return JSON.parse(body);
     }
 }
 exports.FireflyService = FireflyService;

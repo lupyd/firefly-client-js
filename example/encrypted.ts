@@ -2,6 +2,12 @@ import * as libsignal from "@signalapp/libsignal-client";
 
 export class InMemorySessionStore extends libsignal.SessionStore {
   private state = new Map<string, Uint8Array>();
+
+  async deleteSession(name: libsignal.ProtocolAddress) {
+    const idx = name.name() + "::" + name.deviceId();
+    this.state.delete(idx);
+  }
+
   async saveSession(
     name: libsignal.ProtocolAddress,
     record: libsignal.SessionRecord,
@@ -167,7 +173,6 @@ export class InMemoryKyberKeyStore extends libsignal.KyberPreKeyStore {
     kyberPreKeyId: number,
   ): Promise<libsignal.KyberPreKeyRecord> {
     const value = this.state.get(kyberPreKeyId);
-    console.log({ kyberPreKeyId, value });
     return value;
   }
   async markKyberPreKeyUsed(kyberPreKeyId: number): Promise<void> {
@@ -198,27 +203,20 @@ function uuidv4(): string {
   ].join("-");
 }
 
-const main = async () => {
-  const aKeys = new InMemoryIdentityKeyStore();
-  const bKeys = new InMemoryIdentityKeyStore();
-
-  const aSess = new InMemorySessionStore();
-  const bSess = new InMemorySessionStore();
-
-  const bPreK = new InMemoryPreKeyStore();
-  const bsPreK = new InMemorySignedPreKeyStore();
-
+const newPreKeyBundle = async (
+  bAddress: libsignal.ProtocolAddress,
+  bKeys: libsignal.IdentityKeyStore,
+  bPreK: libsignal.PreKeyStore,
+  bsPreK: libsignal.SignedPreKeyStore,
+  bKyberStore: libsignal.KyberPreKeyStore,
+) => {
+  const bIdentityKey = await bKeys.getIdentityKey();
   const bPreKey = libsignal.PrivateKey.generate();
   const bsPreKey = libsignal.PrivateKey.generate();
-
-  const bIdentityKey = await bKeys.getIdentityKey();
 
   const bSignedPreKeySig = bIdentityKey.sign(
     bsPreKey.getPublicKey().serialize(),
   );
-
-  const aAddress = libsignal.ProtocolAddress.new("alice", 1);
-  const bAddress = libsignal.ProtocolAddress.new("bob", 2);
 
   const bRegistrationId = await bKeys.getLocalRegistrationId();
   const bPreKeyId = randInt();
@@ -260,32 +258,6 @@ const main = async () => {
   );
   bsPreK.saveSignedPreKey(bSignedPreKeyId, bSPreKeyRecord);
 
-  await libsignal.processPreKeyBundle(
-    bPreKeyBundle,
-    bAddress,
-    aSess,
-    aKeys,
-    libsignal.UsePQRatchet.Yes,
-    new Date(),
-  );
-  console.log(`processed pre key bundle`);
-
-  const aMessage = new TextEncoder().encode("Hello World");
-
-  const aCipherText = await libsignal.signalEncrypt(
-    aMessage,
-    bAddress,
-    aSess,
-    aKeys,
-  );
-
-  console.log({ aCipherTextTy: aCipherText.type() });
-
-  const aCiphertextR = libsignal.PreKeySignalMessage.deserialize(
-    aCipherText.serialize(),
-  );
-
-  const bKyberStore = new InMemoryKyberKeyStore();
   bKyberStore.saveKyberPreKey(
     bKEMPreKeyId,
     libsignal.KyberPreKeyRecord.new(
@@ -296,77 +268,282 @@ const main = async () => {
     ),
   );
 
-  const bDPlaintext = await libsignal.signalDecryptPreKey(
-    aCiphertextR,
-    aAddress,
-    bSess,
+  return bPreKeyBundle;
+};
+
+const main = async () => {
+  const aKeys = new InMemoryIdentityKeyStore();
+  const bKeys = new InMemoryIdentityKeyStore();
+
+  const aSess = new InMemorySessionStore();
+  const bSess = new InMemorySessionStore();
+
+  const bPreK = new InMemoryPreKeyStore();
+  const bsPreK = new InMemorySignedPreKeyStore();
+  const bKyberStore = new InMemoryKyberKeyStore();
+  const aPreK = new InMemoryPreKeyStore();
+  const asPreK = new InMemorySignedPreKeyStore();
+  const aKyberStore = new InMemoryKyberKeyStore();
+
+  const aAddress = libsignal.ProtocolAddress.new("alice", 1);
+  const bAddress = libsignal.ProtocolAddress.new("bob", 2);
+
+  const bPreKeyBundle = await newPreKeyBundle(
+    bAddress,
     bKeys,
     bPreK,
     bsPreK,
     bKyberStore,
-    libsignal.UsePQRatchet.Yes,
   );
 
-  // libsignal.signalDecrypt(aCiphertext, aAddress, bSess, bKeys)
-
-  console.log({ msg: new TextDecoder().decode(bDPlaintext) });
-  const bMessage = new TextEncoder().encode("Shun the world");
-
-  const bCiphertext = await libsignal.signalEncrypt(
-    bMessage,
-    aAddress,
-    bSess,
-    bKeys,
-  );
-
-  console.log({ bCiphertextTy: bCiphertext.type() });
-
-  const bCiphertextR = libsignal.SignalMessage.deserialize(
-    bCiphertext.serialize(),
-  );
-
-  const aDPlaintext = await libsignal.signalDecrypt(
-    bCiphertextR,
+  await libsignal.processPreKeyBundle(
+    bPreKeyBundle,
     bAddress,
     aSess,
     aKeys,
+    libsignal.UsePQRatchet.Yes,
+    new Date(),
   );
+  console.log(`processed pre key bundle`);
 
-  console.log({ msg: new TextDecoder().decode(aDPlaintext) });
-
-  const distributionId = uuidv4();
-
-  const aSenderKeyStore = new InMemorySenderKeyStore();
-
-  const senderDistributionMessage =
-    await libsignal.SenderKeyDistributionMessage.create(
-      aAddress,
-      distributionId,
-      aSenderKeyStore,
+  {
+    const aCipherText = await encrypt(
+      "Hello, I'm Alice",
+      bAddress,
+      aSess,
+      aKeys,
     );
 
-  const bSenderKeyStore = new InMemorySenderKeyStore();
+    console.log({ aCipherTextTy: aCipherText.type() });
+    const msg = await decrypt(
+      aCipherText.serialize(),
+      aCipherText.type(),
+      aAddress,
+      bSess,
+      bKeys,
+      bPreK,
+      bsPreK,
+      bKyberStore,
+    );
+    console.log({ msg });
+  }
+  {
+    const bCiphertext = await encrypt("Hi, I'm Bob", aAddress, bSess, bKeys);
 
-  await libsignal.processSenderKeyDistributionMessage(
+    console.log({ bCiphertextTy: bCiphertext.type() });
+
+    const msg = await decrypt(
+      bCiphertext.serialize(),
+      bCiphertext.type(),
+      bAddress,
+      aSess,
+      aKeys,
+      aPreK,
+      asPreK,
+      aKyberStore,
+    );
+
+    console.log({ msg });
+  }
+  {
+    const aCipherText = await encrypt(
+      "Hello, I'm Alice",
+      bAddress,
+      aSess,
+      aKeys,
+    );
+
+    console.log({ aCipherTextTy: aCipherText.type() });
+    const msg = await decrypt(
+      aCipherText.serialize(),
+      aCipherText.type(),
+      aAddress,
+      bSess,
+      bKeys,
+      bPreK,
+      bsPreK,
+      bKyberStore,
+    );
+    console.log({ msg });
+  }
+
+  const aPreKeyBundle2 = await newPreKeyBundle(
     aAddress,
-    senderDistributionMessage,
-    bSenderKeyStore,
+    aKeys,
+    aPreK,
+    asPreK,
+    aKyberStore,
   );
 
-  const aGroupCipher = await libsignal.groupEncrypt(
+  // (bSess as InMemorySessionStore).deleteSession(aAddress);
+  await libsignal.processPreKeyBundle(
+    aPreKeyBundle2,
     aAddress,
-    distributionId,
-    aSenderKeyStore,
-    aMessage,
+    bSess,
+    bKeys,
+    libsignal.UsePQRatchet.Yes,
+    new Date(),
   );
-  console.log({ ty: aGroupCipher.type() });
+  console.log(`processed pre key bundle`);
 
-  const result = await libsignal.groupDecrypt(
-    aAddress,
-    bSenderKeyStore,
-    aGroupCipher.serialize(),
-  );
-  console.log(new TextDecoder().decode(result));
+  {
+    const bCiphertext = await encrypt("Hi, I'm Bob", aAddress, bSess, bKeys);
+
+    console.log({ bCiphertextTy: bCiphertext.type() });
+
+    // aSess.deleteSession(bAddress);
+
+    const msg = await decrypt(
+      bCiphertext.serialize(),
+      bCiphertext.type(),
+      bAddress,
+      aSess,
+      aKeys,
+      aPreK,
+      asPreK,
+      aKyberStore,
+    );
+
+    console.log({ msg });
+  }
+  {
+    const aCipherText = await encrypt(
+      "Hello, I'm Alice",
+      bAddress,
+      aSess,
+      aKeys,
+    );
+
+    console.log({ aCipherTextTy: aCipherText.type() });
+    const msg = await decrypt(
+      aCipherText.serialize(),
+      aCipherText.type(),
+      aAddress,
+      bSess,
+      bKeys,
+      bPreK,
+      bsPreK,
+      bKyberStore,
+    );
+    console.log({ msg });
+  }
+
+  {
+    const bCiphertext = await encrypt("Hi, I'm Bob", aAddress, bSess, bKeys);
+
+    console.log({ bCiphertextTy: bCiphertext.type() });
+
+    const msg = await decrypt(
+      bCiphertext.serialize(),
+      bCiphertext.type(),
+      bAddress,
+      aSess,
+      aKeys,
+      aPreK,
+      asPreK,
+      aKyberStore,
+    );
+
+    console.log({ msg });
+  } // const distributionId = uuidv4();
+
+  // const aSenderKeyStore = new InMemorySenderKeyStore();
+
+  // const senderDistributionMessage =
+  //   await libsignal.SenderKeyDistributionMessage.create(
+  //     aAddress,
+  //     distributionId,
+  //     aSenderKeyStore,
+  //   );
+
+  // const bSenderKeyStore = new InMemorySenderKeyStore();
+
+  // await libsignal.processSenderKeyDistributionMessage(
+  //   aAddress,
+  //   senderDistributionMessage,
+  //   bSenderKeyStore,
+  // );
+
+  // const aGroupCipher = await libsignal.groupEncrypt(
+  //   aAddress,
+  //   distributionId,
+  //   aSenderKeyStore,
+  //   aMessage,
+  // );
+  // console.log({ ty: aGroupCipher.type() });
+
+  // const result = await libsignal.groupDecrypt(
+  //   aAddress,
+  //   bSenderKeyStore,
+  //   aGroupCipher.serialize(),
+  // );
+  // console.log(new TextDecoder().decode(result));
 };
 
 main();
+
+function utf8Decode(b: Uint8Array) {
+  return new TextDecoder().decode(b);
+}
+function utf8Encode(b: string) {
+  return new TextEncoder().encode(b);
+}
+
+async function encrypt(
+  t: string,
+  otherAddress: libsignal.ProtocolAddress,
+  mySessionStore: libsignal.SessionStore,
+  myKeyStore: libsignal.IdentityKeyStore,
+) {
+  const bCiphertext = await libsignal.signalEncrypt(
+    utf8Encode(t),
+    otherAddress,
+    mySessionStore,
+    myKeyStore,
+  );
+
+  return bCiphertext;
+}
+
+async function decrypt(
+  t: Uint8Array,
+  ty: number,
+  otherAddress: libsignal.ProtocolAddress,
+  mySessionStore: libsignal.SessionStore,
+  myKeyStore: libsignal.IdentityKeyStore,
+  myPreKeyStore: libsignal.PreKeyStore,
+  mySignedPreKeyStore: libsignal.SignedPreKeyStore,
+  myKyberStore: libsignal.KyberPreKeyStore,
+) {
+  try {
+    if (ty == libsignal.CiphertextMessageType.Whisper) {
+      const bCiphertextR = libsignal.SignalMessage.deserialize(t);
+      const aDPlaintext = await libsignal.signalDecrypt(
+        bCiphertextR,
+        otherAddress,
+        mySessionStore,
+        myKeyStore,
+      );
+
+      return utf8Decode(aDPlaintext);
+    }
+
+    if (ty == libsignal.CiphertextMessageType.PreKey) {
+      const aCiphertextR = libsignal.PreKeySignalMessage.deserialize(t);
+      const bDPlaintext = await libsignal.signalDecryptPreKey(
+        aCiphertextR,
+        otherAddress,
+        mySessionStore,
+        myKeyStore,
+        myPreKeyStore,
+        mySignedPreKeyStore,
+        myKyberStore,
+        libsignal.UsePQRatchet.Yes,
+      );
+
+      return utf8Decode(bDPlaintext);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
