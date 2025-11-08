@@ -270,5 +270,8 @@ class FireflyService {
         const body = await response.text();
         return JSON.parse(body);
     }
+    async deleteUserMessage(convoId, msgId) {
+        return await this.req(`/user/message?conversationId=${convoId}&messageId=${msgId}`, { method: "DELETE" });
+    }
 }
 exports.FireflyService = FireflyService;

@@ -120,6 +120,13 @@ class FireflyWsClient extends EventTarget {
     }
     onMessage(data) {
         const message = protos.ServerMessage.decode(new Uint8Array(data));
+        if (message.response) {
+            const resolve = this.pendingRequests.get(message.response.id);
+            if (resolve) {
+                resolve(message.response);
+            }
+            return;
+        }
         this.dispatchEvent(new CustomEvent("onMessage", { detail: message }));
     }
     sendData(data) {
@@ -132,6 +139,32 @@ class FireflyWsClient extends EventTarget {
     }
     sendClientMessage(message) {
         this.sendData(protos.ClientMessage.encode(message).finish().buffer);
+    }
+    pendingRequests = new Map();
+    sendRequest(request, responseTimeout) {
+        const newId = this.newRequestId();
+        request.id = newId;
+        this.sendClientMessage(protos.ClientMessage.create({
+            request,
+        }));
+        return new Promise((resolve, reject) => {
+            this.pendingRequests.set(newId, resolve);
+            if (responseTimeout > 0) {
+                setTimeout(() => {
+                    if (this.pendingRequests.has(newId)) {
+                        reject("response timed out");
+                        this.pendingRequests.delete(newId);
+                    }
+                }, responseTimeout);
+            }
+        });
+    }
+    newRequestId() {
+        const newId = Math.floor(Math.random() * 2 ** 16);
+        if (this.pendingRequests.has(newId)) {
+            return this.newRequestId();
+        }
+        return newId;
     }
     // sendGroupMessage(message: protos.GroupMessage) {
     //   this.sendClientMessage(

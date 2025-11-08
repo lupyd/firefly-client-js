@@ -339,4 +339,11 @@ export class FireflyService {
 
     return JSON.parse(body) as RTCConfiguration;
   }
+
+  async deleteUserMessage(convoId: bigint, msgId: bigint) {
+    return await this.req(
+      `/user/message?conversationId=${convoId}&messageId=${msgId}`,
+      { method: "DELETE" },
+    );
+  }
 }

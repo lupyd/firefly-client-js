@@ -16,5 +16,8 @@ export declare class FireflyWsClient extends EventTarget {
     private onMessage;
     private sendData;
     sendClientMessage(message: protos.ClientMessage): void;
+    private readonly pendingRequests;
+    sendRequest(request: protos.Request, responseTimeout: number): Promise<unknown>;
+    newRequestId(): any;
     isDisconnected(): boolean;
 }

@@ -47,4 +47,5 @@ export declare class FireflyService {
     deleteUserMessages(until: bigint): Promise<void>;
     recreateConversations(): Promise<void>;
     getWebrtcConfig(): Promise<RTCConfiguration>;
+    deleteUserMessage(convoId: bigint, msgId: bigint): Promise<Response>;
 }

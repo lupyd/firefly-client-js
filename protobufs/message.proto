@@ -52,12 +52,39 @@ message GroupKeyPackages { repeated GroupKeyPackage packages = 1; }
 
 message GroupMessages { repeated GroupMessage messages = 2; }
 
+
+message Request {
+  uint32 id = 1;
+  oneof payload {
+    UserMessage createUserMessage = 2;
+  }
+}
+
+message Error {
+  uint32 errorCode = 1;
+  string error = 2;
+}
+
+message Result {
+  uint32 resultCode = 1;
+  bytes body = 2;
+}
+
+message Response {
+  uint32 id = 1;
+  Error error = 2;
+  oneof body {
+    UserMessage createdUserMessage = 3;
+  }
+}
+
 message ServerMessage {
   oneof message {
     UserMessage userMessage = 1;
     GroupMessage groupMessage = 2;
     UserMessages userMessages = 3;
     GroupMessages groupMessages = 4;
+    Response response = 10;
   }
 }
 
@@ -77,6 +104,7 @@ message ClientMessage {
     string bearerToken = 5;
     SubscribeGroup subscribeGroup = 6;
     UnSubscribeGroup unSubscribeGroup = 7;
+    Request request = 10;
   }
 }
 
@@ -179,31 +207,9 @@ message Conversations {
   repeated Conversation conversations = 1;
 }
 
-
-message EncryptedFile {
-  string url = 1;
-  uint32 contentType = 2;
-  bytes secretKey = 3;
-  uint32 secretKeyType = 4;
-}
-
-message EncryptedFiles {
-  repeated EncryptedFile files = 1;
-}
-message MessagePayload {
-  string text = 1;
-  uint64 replyingTo = 2;
-  EncryptedFiles files = 3;
-}
-
-message CallMessage {
-  bytes message = 1;
-}
-
 message UserMessageInner {
   oneof message {
     bytes plainText = 1;
-    CallMessage callMessage = 2;
-    MessagePayload messagePayload = 3;
+    bytes callMessage = 2;
   }
 }

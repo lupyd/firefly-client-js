@@ -46,11 +46,29 @@ export interface GroupKeyPackages {
 export interface GroupMessages {
     messages: GroupMessage[];
 }
+export interface Request {
+    id: number;
+    createUserMessage?: UserMessage | undefined;
+}
+export interface Error {
+    errorCode: number;
+    error: string;
+}
+export interface Result {
+    resultCode: number;
+    body: Uint8Array;
+}
+export interface Response {
+    id: number;
+    error: Error | undefined;
+    createdUserMessage?: UserMessage | undefined;
+}
 export interface ServerMessage {
     userMessage?: UserMessage | undefined;
     groupMessage?: GroupMessage | undefined;
     userMessages?: UserMessages | undefined;
     groupMessages?: GroupMessages | undefined;
+    response?: Response | undefined;
 }
 export interface SubscribeGroup {
     id: bigint;
@@ -66,6 +84,7 @@ export interface ClientMessage {
     bearerToken?: string | undefined;
     subscribeGroup?: SubscribeGroup | undefined;
     unSubscribeGroup?: UnSubscribeGroup | undefined;
+    request?: Request | undefined;
 }
 export interface GroupId {
     id: bigint;
@@ -147,27 +166,9 @@ export interface Conversation {
 export interface Conversations {
     conversations: Conversation[];
 }
-export interface EncryptedFile {
-    url: string;
-    contentType: number;
-    secretKey: Uint8Array;
-    secretKeyType: number;
-}
-export interface EncryptedFiles {
-    files: EncryptedFile[];
-}
-export interface MessagePayload {
-    text: string;
-    replyingTo: bigint;
-    files: EncryptedFiles | undefined;
-}
-export interface CallMessage {
-    message: Uint8Array;
-}
 export interface UserMessageInner {
     plainText?: Uint8Array | undefined;
-    callMessage?: CallMessage | undefined;
-    messagePayload?: MessagePayload | undefined;
+    callMessage?: Uint8Array | undefined;
 }
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
@@ -179,6 +180,10 @@ export declare const GroupMessage: MessageFns<GroupMessage>;
 export declare const GroupKeyPackage: MessageFns<GroupKeyPackage>;
 export declare const GroupKeyPackages: MessageFns<GroupKeyPackages>;
 export declare const GroupMessages: MessageFns<GroupMessages>;
+export declare const Request: MessageFns<Request>;
+export declare const Error: MessageFns<Error>;
+export declare const Result: MessageFns<Result>;
+export declare const Response: MessageFns<Response>;
 export declare const ServerMessage: MessageFns<ServerMessage>;
 export declare const SubscribeGroup: MessageFns<SubscribeGroup>;
 export declare const UnSubscribeGroup: MessageFns<UnSubscribeGroup>;
@@ -199,10 +204,6 @@ export declare const ConversationStart: MessageFns<ConversationStart>;
 export declare const PreKeyBundles: MessageFns<PreKeyBundles>;
 export declare const Conversation: MessageFns<Conversation>;
 export declare const Conversations: MessageFns<Conversations>;
-export declare const EncryptedFile: MessageFns<EncryptedFile>;
-export declare const EncryptedFiles: MessageFns<EncryptedFiles>;
-export declare const MessagePayload: MessageFns<MessagePayload>;
-export declare const CallMessage: MessageFns<CallMessage>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
