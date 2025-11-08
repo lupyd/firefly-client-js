@@ -6,7 +6,7 @@ export class FireflyWsClient extends EventTarget {
 
   private connectionTimeout = 5 * 1000;
   private readonly websocketUrl: string;
-  private readonly authToken: () => Promise<string>;
+  authToken: () => Promise<string>;
 
   private ws: WebSocket | undefined = undefined;
 

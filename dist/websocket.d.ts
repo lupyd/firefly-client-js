@@ -4,7 +4,7 @@ export declare class FireflyWsClient extends EventTarget {
     private waitTimeBeforeReconnectingFromLastConnection;
     private connectionTimeout;
     private readonly websocketUrl;
-    private readonly authToken;
+    authToken: () => Promise<string>;
     private ws;
     private retriesLeft;
     private lastConnectionAttemptTimestamp;
