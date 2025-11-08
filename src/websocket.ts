@@ -147,7 +147,10 @@ export class FireflyWsClient extends EventTarget {
     (response: protos.Response) => void
   >();
 
-  sendRequest(request: protos.Request, responseTimeout: number) {
+  sendRequest(
+    request: protos.Request,
+    responseTimeout: number,
+  ): Promise<protos.Response> {
     const newId = this.newRequestId();
     request.id = newId;
     this.sendClientMessage(
