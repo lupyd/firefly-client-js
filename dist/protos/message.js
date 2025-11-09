@@ -5,7 +5,7 @@
 //   protoc               v6.33.0
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserMessageInner = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundle = exports.FireflyGroupChannels = exports.FireflyGroupChannel = exports.FireflyGroupMembers = exports.FireflyGroupMember = exports.FireflyGroupRoles = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyClient = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Result = exports.Error = exports.Request = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.protobufPackage = void 0;
+exports.UserMessageInner = exports.CallMessage = exports.MessagePayload = exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundle = exports.FireflyGroupChannels = exports.FireflyGroupChannel = exports.FireflyGroupMembers = exports.FireflyGroupMember = exports.FireflyGroupRoles = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyClient = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Result = exports.Error = exports.Request = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.protobufPackage = void 0;
 /* eslint-disable */
 const wire_1 = require("@bufbuild/protobuf/wire");
 exports.protobufPackage = "firefly";
@@ -2891,8 +2891,283 @@ exports.Conversations = {
         return message;
     },
 };
+function createBaseEncryptedFile() {
+    return { url: "", contentType: 0, secretKey: new Uint8Array(0) };
+}
+exports.EncryptedFile = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.url !== "") {
+            writer.uint32(10).string(message.url);
+        }
+        if (message.contentType !== 0) {
+            writer.uint32(16).uint32(message.contentType);
+        }
+        if (message.secretKey.length !== 0) {
+            writer.uint32(26).bytes(message.secretKey);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseEncryptedFile();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.url = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.contentType = reader.uint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.secretKey = reader.bytes();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            url: isSet(object.url) ? globalThis.String(object.url) : "",
+            contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
+            secretKey: isSet(object.secretKey) ? bytesFromBase64(object.secretKey) : new Uint8Array(0),
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.url !== "") {
+            obj.url = message.url;
+        }
+        if (message.contentType !== 0) {
+            obj.contentType = Math.round(message.contentType);
+        }
+        if (message.secretKey.length !== 0) {
+            obj.secretKey = base64FromBytes(message.secretKey);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.EncryptedFile.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseEncryptedFile();
+        message.url = object.url ?? "";
+        message.contentType = object.contentType ?? 0;
+        message.secretKey = object.secretKey ?? new Uint8Array(0);
+        return message;
+    },
+};
+function createBaseEncryptedFiles() {
+    return { files: [] };
+}
+exports.EncryptedFiles = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        for (const v of message.files) {
+            exports.EncryptedFile.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseEncryptedFiles();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.files.push(exports.EncryptedFile.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            files: globalThis.Array.isArray(object?.files) ? object.files.map((e) => exports.EncryptedFile.fromJSON(e)) : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.files?.length) {
+            obj.files = message.files.map((e) => exports.EncryptedFile.toJSON(e));
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.EncryptedFiles.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseEncryptedFiles();
+        message.files = object.files?.map((e) => exports.EncryptedFile.fromPartial(e)) || [];
+        return message;
+    },
+};
+function createBaseMessagePayload() {
+    return { text: "", replyingTo: 0n, files: undefined };
+}
+exports.MessagePayload = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.text !== "") {
+            writer.uint32(10).string(message.text);
+        }
+        if (message.replyingTo !== 0n) {
+            if (BigInt.asUintN(64, message.replyingTo) !== message.replyingTo) {
+                throw new globalThis.Error("value provided for field message.replyingTo of type uint64 too large");
+            }
+            writer.uint32(16).uint64(message.replyingTo);
+        }
+        if (message.files !== undefined) {
+            exports.EncryptedFiles.encode(message.files, writer.uint32(26).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseMessagePayload();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.text = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.replyingTo = reader.uint64();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.files = exports.EncryptedFiles.decode(reader, reader.uint32());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            text: isSet(object.text) ? globalThis.String(object.text) : "",
+            replyingTo: isSet(object.replyingTo) ? BigInt(object.replyingTo) : 0n,
+            files: isSet(object.files) ? exports.EncryptedFiles.fromJSON(object.files) : undefined,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.text !== "") {
+            obj.text = message.text;
+        }
+        if (message.replyingTo !== 0n) {
+            obj.replyingTo = message.replyingTo.toString();
+        }
+        if (message.files !== undefined) {
+            obj.files = exports.EncryptedFiles.toJSON(message.files);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.MessagePayload.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseMessagePayload();
+        message.text = object.text ?? "";
+        message.replyingTo = object.replyingTo ?? 0n;
+        message.files = (object.files !== undefined && object.files !== null)
+            ? exports.EncryptedFiles.fromPartial(object.files)
+            : undefined;
+        return message;
+    },
+};
+function createBaseCallMessage() {
+    return { message: new Uint8Array(0) };
+}
+exports.CallMessage = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.message.length !== 0) {
+            writer.uint32(10).bytes(message.message);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseCallMessage();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.message = reader.bytes();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return { message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0) };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.message.length !== 0) {
+            obj.message = base64FromBytes(message.message);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.CallMessage.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseCallMessage();
+        message.message = object.message ?? new Uint8Array(0);
+        return message;
+    },
+};
 function createBaseUserMessageInner() {
-    return { plainText: undefined, callMessage: undefined };
+    return { plainText: undefined, callMessage: undefined, messagePayload: undefined };
 }
 exports.UserMessageInner = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -2900,7 +3175,10 @@ exports.UserMessageInner = {
             writer.uint32(10).bytes(message.plainText);
         }
         if (message.callMessage !== undefined) {
-            writer.uint32(18).bytes(message.callMessage);
+            exports.CallMessage.encode(message.callMessage, writer.uint32(18).fork()).join();
+        }
+        if (message.messagePayload !== undefined) {
+            exports.MessagePayload.encode(message.messagePayload, writer.uint32(26).fork()).join();
         }
         return writer;
     },
@@ -2922,7 +3200,14 @@ exports.UserMessageInner = {
                     if (tag !== 18) {
                         break;
                     }
-                    message.callMessage = reader.bytes();
+                    message.callMessage = exports.CallMessage.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.messagePayload = exports.MessagePayload.decode(reader, reader.uint32());
                     continue;
                 }
             }
@@ -2936,7 +3221,8 @@ exports.UserMessageInner = {
     fromJSON(object) {
         return {
             plainText: isSet(object.plainText) ? bytesFromBase64(object.plainText) : undefined,
-            callMessage: isSet(object.callMessage) ? bytesFromBase64(object.callMessage) : undefined,
+            callMessage: isSet(object.callMessage) ? exports.CallMessage.fromJSON(object.callMessage) : undefined,
+            messagePayload: isSet(object.messagePayload) ? exports.MessagePayload.fromJSON(object.messagePayload) : undefined,
         };
     },
     toJSON(message) {
@@ -2945,7 +3231,10 @@ exports.UserMessageInner = {
             obj.plainText = base64FromBytes(message.plainText);
         }
         if (message.callMessage !== undefined) {
-            obj.callMessage = base64FromBytes(message.callMessage);
+            obj.callMessage = exports.CallMessage.toJSON(message.callMessage);
+        }
+        if (message.messagePayload !== undefined) {
+            obj.messagePayload = exports.MessagePayload.toJSON(message.messagePayload);
         }
         return obj;
     },
@@ -2955,7 +3244,12 @@ exports.UserMessageInner = {
     fromPartial(object) {
         const message = createBaseUserMessageInner();
         message.plainText = object.plainText ?? undefined;
-        message.callMessage = object.callMessage ?? undefined;
+        message.callMessage = (object.callMessage !== undefined && object.callMessage !== null)
+            ? exports.CallMessage.fromPartial(object.callMessage)
+            : undefined;
+        message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
+            ? exports.MessagePayload.fromPartial(object.messagePayload)
+            : undefined;
         return message;
     },
 };

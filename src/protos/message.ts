@@ -209,9 +209,30 @@ export interface Conversations {
   conversations: Conversation[];
 }
 
+export interface EncryptedFile {
+  url: string;
+  contentType: number;
+  secretKey: Uint8Array;
+}
+
+export interface EncryptedFiles {
+  files: EncryptedFile[];
+}
+
+export interface MessagePayload {
+  text: string;
+  replyingTo: bigint;
+  files: EncryptedFiles | undefined;
+}
+
+export interface CallMessage {
+  message: Uint8Array;
+}
+
 export interface UserMessageInner {
   plainText?: Uint8Array | undefined;
-  callMessage?: Uint8Array | undefined;
+  callMessage?: CallMessage | undefined;
+  messagePayload?: MessagePayload | undefined;
 }
 
 function createBaseUserMessage(): UserMessage {
@@ -3398,8 +3419,315 @@ export const Conversations: MessageFns<Conversations> = {
   },
 };
 
+function createBaseEncryptedFile(): EncryptedFile {
+  return { url: "", contentType: 0, secretKey: new Uint8Array(0) };
+}
+
+export const EncryptedFile: MessageFns<EncryptedFile> = {
+  encode(message: EncryptedFile, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.url !== "") {
+      writer.uint32(10).string(message.url);
+    }
+    if (message.contentType !== 0) {
+      writer.uint32(16).uint32(message.contentType);
+    }
+    if (message.secretKey.length !== 0) {
+      writer.uint32(26).bytes(message.secretKey);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EncryptedFile {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEncryptedFile();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.url = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.contentType = reader.uint32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.secretKey = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EncryptedFile {
+    return {
+      url: isSet(object.url) ? globalThis.String(object.url) : "",
+      contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
+      secretKey: isSet(object.secretKey) ? bytesFromBase64(object.secretKey) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: EncryptedFile): unknown {
+    const obj: any = {};
+    if (message.url !== "") {
+      obj.url = message.url;
+    }
+    if (message.contentType !== 0) {
+      obj.contentType = Math.round(message.contentType);
+    }
+    if (message.secretKey.length !== 0) {
+      obj.secretKey = base64FromBytes(message.secretKey);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EncryptedFile>, I>>(base?: I): EncryptedFile {
+    return EncryptedFile.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EncryptedFile>, I>>(object: I): EncryptedFile {
+    const message = createBaseEncryptedFile();
+    message.url = object.url ?? "";
+    message.contentType = object.contentType ?? 0;
+    message.secretKey = object.secretKey ?? new Uint8Array(0);
+    return message;
+  },
+};
+
+function createBaseEncryptedFiles(): EncryptedFiles {
+  return { files: [] };
+}
+
+export const EncryptedFiles: MessageFns<EncryptedFiles> = {
+  encode(message: EncryptedFiles, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.files) {
+      EncryptedFile.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EncryptedFiles {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEncryptedFiles();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.files.push(EncryptedFile.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EncryptedFiles {
+    return {
+      files: globalThis.Array.isArray(object?.files) ? object.files.map((e: any) => EncryptedFile.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: EncryptedFiles): unknown {
+    const obj: any = {};
+    if (message.files?.length) {
+      obj.files = message.files.map((e) => EncryptedFile.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EncryptedFiles>, I>>(base?: I): EncryptedFiles {
+    return EncryptedFiles.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EncryptedFiles>, I>>(object: I): EncryptedFiles {
+    const message = createBaseEncryptedFiles();
+    message.files = object.files?.map((e) => EncryptedFile.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMessagePayload(): MessagePayload {
+  return { text: "", replyingTo: 0n, files: undefined };
+}
+
+export const MessagePayload: MessageFns<MessagePayload> = {
+  encode(message: MessagePayload, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.text !== "") {
+      writer.uint32(10).string(message.text);
+    }
+    if (message.replyingTo !== 0n) {
+      if (BigInt.asUintN(64, message.replyingTo) !== message.replyingTo) {
+        throw new globalThis.Error("value provided for field message.replyingTo of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.replyingTo);
+    }
+    if (message.files !== undefined) {
+      EncryptedFiles.encode(message.files, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MessagePayload {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMessagePayload();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.text = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.replyingTo = reader.uint64() as bigint;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.files = EncryptedFiles.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MessagePayload {
+    return {
+      text: isSet(object.text) ? globalThis.String(object.text) : "",
+      replyingTo: isSet(object.replyingTo) ? BigInt(object.replyingTo) : 0n,
+      files: isSet(object.files) ? EncryptedFiles.fromJSON(object.files) : undefined,
+    };
+  },
+
+  toJSON(message: MessagePayload): unknown {
+    const obj: any = {};
+    if (message.text !== "") {
+      obj.text = message.text;
+    }
+    if (message.replyingTo !== 0n) {
+      obj.replyingTo = message.replyingTo.toString();
+    }
+    if (message.files !== undefined) {
+      obj.files = EncryptedFiles.toJSON(message.files);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MessagePayload>, I>>(base?: I): MessagePayload {
+    return MessagePayload.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MessagePayload>, I>>(object: I): MessagePayload {
+    const message = createBaseMessagePayload();
+    message.text = object.text ?? "";
+    message.replyingTo = object.replyingTo ?? 0n;
+    message.files = (object.files !== undefined && object.files !== null)
+      ? EncryptedFiles.fromPartial(object.files)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseCallMessage(): CallMessage {
+  return { message: new Uint8Array(0) };
+}
+
+export const CallMessage: MessageFns<CallMessage> = {
+  encode(message: CallMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message.length !== 0) {
+      writer.uint32(10).bytes(message.message);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CallMessage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCallMessage();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CallMessage {
+    return { message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0) };
+  },
+
+  toJSON(message: CallMessage): unknown {
+    const obj: any = {};
+    if (message.message.length !== 0) {
+      obj.message = base64FromBytes(message.message);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CallMessage>, I>>(base?: I): CallMessage {
+    return CallMessage.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CallMessage>, I>>(object: I): CallMessage {
+    const message = createBaseCallMessage();
+    message.message = object.message ?? new Uint8Array(0);
+    return message;
+  },
+};
+
 function createBaseUserMessageInner(): UserMessageInner {
-  return { plainText: undefined, callMessage: undefined };
+  return { plainText: undefined, callMessage: undefined, messagePayload: undefined };
 }
 
 export const UserMessageInner: MessageFns<UserMessageInner> = {
@@ -3408,7 +3736,10 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
       writer.uint32(10).bytes(message.plainText);
     }
     if (message.callMessage !== undefined) {
-      writer.uint32(18).bytes(message.callMessage);
+      CallMessage.encode(message.callMessage, writer.uint32(18).fork()).join();
+    }
+    if (message.messagePayload !== undefined) {
+      MessagePayload.encode(message.messagePayload, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -3433,7 +3764,15 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
             break;
           }
 
-          message.callMessage = reader.bytes();
+          message.callMessage = CallMessage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.messagePayload = MessagePayload.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -3448,7 +3787,8 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
   fromJSON(object: any): UserMessageInner {
     return {
       plainText: isSet(object.plainText) ? bytesFromBase64(object.plainText) : undefined,
-      callMessage: isSet(object.callMessage) ? bytesFromBase64(object.callMessage) : undefined,
+      callMessage: isSet(object.callMessage) ? CallMessage.fromJSON(object.callMessage) : undefined,
+      messagePayload: isSet(object.messagePayload) ? MessagePayload.fromJSON(object.messagePayload) : undefined,
     };
   },
 
@@ -3458,7 +3798,10 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
       obj.plainText = base64FromBytes(message.plainText);
     }
     if (message.callMessage !== undefined) {
-      obj.callMessage = base64FromBytes(message.callMessage);
+      obj.callMessage = CallMessage.toJSON(message.callMessage);
+    }
+    if (message.messagePayload !== undefined) {
+      obj.messagePayload = MessagePayload.toJSON(message.messagePayload);
     }
     return obj;
   },
@@ -3469,7 +3812,12 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
   fromPartial<I extends Exact<DeepPartial<UserMessageInner>, I>>(object: I): UserMessageInner {
     const message = createBaseUserMessageInner();
     message.plainText = object.plainText ?? undefined;
-    message.callMessage = object.callMessage ?? undefined;
+    message.callMessage = (object.callMessage !== undefined && object.callMessage !== null)
+      ? CallMessage.fromPartial(object.callMessage)
+      : undefined;
+    message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
+      ? MessagePayload.fromPartial(object.messagePayload)
+      : undefined;
     return message;
   },
 };
