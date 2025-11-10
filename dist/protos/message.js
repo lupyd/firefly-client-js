@@ -5,10 +5,87 @@
 //   protoc               v6.33.0
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserMessageInner = exports.CallMessage = exports.MessagePayload = exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundle = exports.FireflyGroupChannels = exports.FireflyGroupChannel = exports.FireflyGroupMembers = exports.FireflyGroupMember = exports.FireflyGroupRoles = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyClient = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Result = exports.Error = exports.Request = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.protobufPackage = void 0;
+exports.UserMessageInner = exports.CompressedMessageInner = exports.CallMessage = exports.MessagePayload = exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundle = exports.FireflyGroupChannels = exports.FireflyGroupChannel = exports.FireflyGroupMembers = exports.FireflyGroupMember = exports.FireflyGroupRoles = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyClient = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Result = exports.Error = exports.Request = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.CallMessageType = exports.protobufPackage = void 0;
+exports.callMessageTypeFromJSON = callMessageTypeFromJSON;
+exports.callMessageTypeToJSON = callMessageTypeToJSON;
 /* eslint-disable */
 const wire_1 = require("@bufbuild/protobuf/wire");
 exports.protobufPackage = "firefly";
+var CallMessageType;
+(function (CallMessageType) {
+    CallMessageType[CallMessageType["none"] = 0] = "none";
+    CallMessageType[CallMessageType["request"] = 1] = "request";
+    CallMessageType[CallMessageType["reject"] = 2] = "reject";
+    CallMessageType[CallMessageType["end"] = 3] = "end";
+    /** ended - for saving call messages */
+    CallMessageType[CallMessageType["ended"] = 4] = "ended";
+    CallMessageType[CallMessageType["rejected"] = 5] = "rejected";
+    /** candidate - webrtc messages */
+    CallMessageType[CallMessageType["candidate"] = 10] = "candidate";
+    CallMessageType[CallMessageType["answer"] = 11] = "answer";
+    CallMessageType[CallMessageType["offer"] = 12] = "offer";
+    CallMessageType[CallMessageType["UNRECOGNIZED"] = -1] = "UNRECOGNIZED";
+})(CallMessageType || (exports.CallMessageType = CallMessageType = {}));
+function callMessageTypeFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "none":
+            return CallMessageType.none;
+        case 1:
+        case "request":
+            return CallMessageType.request;
+        case 2:
+        case "reject":
+            return CallMessageType.reject;
+        case 3:
+        case "end":
+            return CallMessageType.end;
+        case 4:
+        case "ended":
+            return CallMessageType.ended;
+        case 5:
+        case "rejected":
+            return CallMessageType.rejected;
+        case 10:
+        case "candidate":
+            return CallMessageType.candidate;
+        case 11:
+        case "answer":
+            return CallMessageType.answer;
+        case 12:
+        case "offer":
+            return CallMessageType.offer;
+        case -1:
+        case "UNRECOGNIZED":
+        default:
+            return CallMessageType.UNRECOGNIZED;
+    }
+}
+function callMessageTypeToJSON(object) {
+    switch (object) {
+        case CallMessageType.none:
+            return "none";
+        case CallMessageType.request:
+            return "request";
+        case CallMessageType.reject:
+            return "reject";
+        case CallMessageType.end:
+            return "end";
+        case CallMessageType.ended:
+            return "ended";
+        case CallMessageType.rejected:
+            return "rejected";
+        case CallMessageType.candidate:
+            return "candidate";
+        case CallMessageType.answer:
+            return "answer";
+        case CallMessageType.offer:
+            return "offer";
+        case CallMessageType.UNRECOGNIZED:
+        default:
+            return "UNRECOGNIZED";
+    }
+}
 function createBaseUserMessage() {
     return { id: 0n, to: "", from: "", text: new Uint8Array(0), conversationId: 0n, type: 0 };
 }
@@ -3116,12 +3193,21 @@ exports.MessagePayload = {
     },
 };
 function createBaseCallMessage() {
-    return { message: new Uint8Array(0) };
+    return { message: new Uint8Array(0), sessionId: 0, type: 0, jsonBody: "" };
 }
 exports.CallMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.message.length !== 0) {
             writer.uint32(10).bytes(message.message);
+        }
+        if (message.sessionId !== 0) {
+            writer.uint32(16).uint32(message.sessionId);
+        }
+        if (message.type !== 0) {
+            writer.uint32(24).int32(message.type);
+        }
+        if (message.jsonBody !== "") {
+            writer.uint32(34).string(message.jsonBody);
         }
         return writer;
     },
@@ -3139,6 +3225,27 @@ exports.CallMessage = {
                     message.message = reader.bytes();
                     continue;
                 }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.sessionId = reader.uint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.type = reader.int32();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.jsonBody = reader.string();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -3148,12 +3255,26 @@ exports.CallMessage = {
         return message;
     },
     fromJSON(object) {
-        return { message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0) };
+        return {
+            message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0),
+            sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
+            type: isSet(object.type) ? callMessageTypeFromJSON(object.type) : 0,
+            jsonBody: isSet(object.jsonBody) ? globalThis.String(object.jsonBody) : "",
+        };
     },
     toJSON(message) {
         const obj = {};
         if (message.message.length !== 0) {
             obj.message = base64FromBytes(message.message);
+        }
+        if (message.sessionId !== 0) {
+            obj.sessionId = Math.round(message.sessionId);
+        }
+        if (message.type !== 0) {
+            obj.type = callMessageTypeToJSON(message.type);
+        }
+        if (message.jsonBody !== "") {
+            obj.jsonBody = message.jsonBody;
         }
         return obj;
     },
@@ -3163,11 +3284,82 @@ exports.CallMessage = {
     fromPartial(object) {
         const message = createBaseCallMessage();
         message.message = object.message ?? new Uint8Array(0);
+        message.sessionId = object.sessionId ?? 0;
+        message.type = object.type ?? 0;
+        message.jsonBody = object.jsonBody ?? "";
+        return message;
+    },
+};
+function createBaseCompressedMessageInner() {
+    return { compressionType: 0, payload: new Uint8Array(0) };
+}
+exports.CompressedMessageInner = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.compressionType !== 0) {
+            writer.uint32(8).uint32(message.compressionType);
+        }
+        if (message.payload.length !== 0) {
+            writer.uint32(18).bytes(message.payload);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseCompressedMessageInner();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.compressionType = reader.uint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.payload = reader.bytes();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            compressionType: isSet(object.compressionType) ? globalThis.Number(object.compressionType) : 0,
+            payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.compressionType !== 0) {
+            obj.compressionType = Math.round(message.compressionType);
+        }
+        if (message.payload.length !== 0) {
+            obj.payload = base64FromBytes(message.payload);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.CompressedMessageInner.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseCompressedMessageInner();
+        message.compressionType = object.compressionType ?? 0;
+        message.payload = object.payload ?? new Uint8Array(0);
         return message;
     },
 };
 function createBaseUserMessageInner() {
-    return { plainText: undefined, callMessage: undefined, messagePayload: undefined };
+    return { plainText: undefined, callMessage: undefined, messagePayload: undefined, compressedMessage: undefined };
 }
 exports.UserMessageInner = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -3179,6 +3371,9 @@ exports.UserMessageInner = {
         }
         if (message.messagePayload !== undefined) {
             exports.MessagePayload.encode(message.messagePayload, writer.uint32(26).fork()).join();
+        }
+        if (message.compressedMessage !== undefined) {
+            exports.CompressedMessageInner.encode(message.compressedMessage, writer.uint32(82).fork()).join();
         }
         return writer;
     },
@@ -3210,6 +3405,13 @@ exports.UserMessageInner = {
                     message.messagePayload = exports.MessagePayload.decode(reader, reader.uint32());
                     continue;
                 }
+                case 10: {
+                    if (tag !== 82) {
+                        break;
+                    }
+                    message.compressedMessage = exports.CompressedMessageInner.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -3223,6 +3425,9 @@ exports.UserMessageInner = {
             plainText: isSet(object.plainText) ? bytesFromBase64(object.plainText) : undefined,
             callMessage: isSet(object.callMessage) ? exports.CallMessage.fromJSON(object.callMessage) : undefined,
             messagePayload: isSet(object.messagePayload) ? exports.MessagePayload.fromJSON(object.messagePayload) : undefined,
+            compressedMessage: isSet(object.compressedMessage)
+                ? exports.CompressedMessageInner.fromJSON(object.compressedMessage)
+                : undefined,
         };
     },
     toJSON(message) {
@@ -3235,6 +3440,9 @@ exports.UserMessageInner = {
         }
         if (message.messagePayload !== undefined) {
             obj.messagePayload = exports.MessagePayload.toJSON(message.messagePayload);
+        }
+        if (message.compressedMessage !== undefined) {
+            obj.compressedMessage = exports.CompressedMessageInner.toJSON(message.compressedMessage);
         }
         return obj;
     },
@@ -3249,6 +3457,9 @@ exports.UserMessageInner = {
             : undefined;
         message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
             ? exports.MessagePayload.fromPartial(object.messagePayload)
+            : undefined;
+        message.compressedMessage = (object.compressedMessage !== undefined && object.compressedMessage !== null)
+            ? exports.CompressedMessageInner.fromPartial(object.compressedMessage)
             : undefined;
         return message;
     },

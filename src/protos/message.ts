@@ -9,6 +9,83 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "firefly";
 
+export enum CallMessageType {
+  none = 0,
+  request = 1,
+  reject = 2,
+  end = 3,
+  /** ended - for saving call messages */
+  ended = 4,
+  rejected = 5,
+  /** candidate - webrtc messages */
+  candidate = 10,
+  answer = 11,
+  offer = 12,
+  UNRECOGNIZED = -1,
+}
+
+export function callMessageTypeFromJSON(object: any): CallMessageType {
+  switch (object) {
+    case 0:
+    case "none":
+      return CallMessageType.none;
+    case 1:
+    case "request":
+      return CallMessageType.request;
+    case 2:
+    case "reject":
+      return CallMessageType.reject;
+    case 3:
+    case "end":
+      return CallMessageType.end;
+    case 4:
+    case "ended":
+      return CallMessageType.ended;
+    case 5:
+    case "rejected":
+      return CallMessageType.rejected;
+    case 10:
+    case "candidate":
+      return CallMessageType.candidate;
+    case 11:
+    case "answer":
+      return CallMessageType.answer;
+    case 12:
+    case "offer":
+      return CallMessageType.offer;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return CallMessageType.UNRECOGNIZED;
+  }
+}
+
+export function callMessageTypeToJSON(object: CallMessageType): string {
+  switch (object) {
+    case CallMessageType.none:
+      return "none";
+    case CallMessageType.request:
+      return "request";
+    case CallMessageType.reject:
+      return "reject";
+    case CallMessageType.end:
+      return "end";
+    case CallMessageType.ended:
+      return "ended";
+    case CallMessageType.rejected:
+      return "rejected";
+    case CallMessageType.candidate:
+      return "candidate";
+    case CallMessageType.answer:
+      return "answer";
+    case CallMessageType.offer:
+      return "offer";
+    case CallMessageType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export interface UserMessage {
   id: bigint;
   to: string;
@@ -227,12 +304,21 @@ export interface MessagePayload {
 
 export interface CallMessage {
   message: Uint8Array;
+  sessionId: number;
+  type: CallMessageType;
+  jsonBody: string;
+}
+
+export interface CompressedMessageInner {
+  compressionType: number;
+  payload: Uint8Array;
 }
 
 export interface UserMessageInner {
   plainText?: Uint8Array | undefined;
   callMessage?: CallMessage | undefined;
   messagePayload?: MessagePayload | undefined;
+  compressedMessage?: CompressedMessageInner | undefined;
 }
 
 function createBaseUserMessage(): UserMessage {
@@ -3669,13 +3755,22 @@ export const MessagePayload: MessageFns<MessagePayload> = {
 };
 
 function createBaseCallMessage(): CallMessage {
-  return { message: new Uint8Array(0) };
+  return { message: new Uint8Array(0), sessionId: 0, type: 0, jsonBody: "" };
 }
 
 export const CallMessage: MessageFns<CallMessage> = {
   encode(message: CallMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.message.length !== 0) {
       writer.uint32(10).bytes(message.message);
+    }
+    if (message.sessionId !== 0) {
+      writer.uint32(16).uint32(message.sessionId);
+    }
+    if (message.type !== 0) {
+      writer.uint32(24).int32(message.type);
+    }
+    if (message.jsonBody !== "") {
+      writer.uint32(34).string(message.jsonBody);
     }
     return writer;
   },
@@ -3695,6 +3790,30 @@ export const CallMessage: MessageFns<CallMessage> = {
           message.message = reader.bytes();
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.sessionId = reader.uint32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.jsonBody = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3705,13 +3824,27 @@ export const CallMessage: MessageFns<CallMessage> = {
   },
 
   fromJSON(object: any): CallMessage {
-    return { message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0) };
+    return {
+      message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0),
+      sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
+      type: isSet(object.type) ? callMessageTypeFromJSON(object.type) : 0,
+      jsonBody: isSet(object.jsonBody) ? globalThis.String(object.jsonBody) : "",
+    };
   },
 
   toJSON(message: CallMessage): unknown {
     const obj: any = {};
     if (message.message.length !== 0) {
       obj.message = base64FromBytes(message.message);
+    }
+    if (message.sessionId !== 0) {
+      obj.sessionId = Math.round(message.sessionId);
+    }
+    if (message.type !== 0) {
+      obj.type = callMessageTypeToJSON(message.type);
+    }
+    if (message.jsonBody !== "") {
+      obj.jsonBody = message.jsonBody;
     }
     return obj;
   },
@@ -3722,12 +3855,91 @@ export const CallMessage: MessageFns<CallMessage> = {
   fromPartial<I extends Exact<DeepPartial<CallMessage>, I>>(object: I): CallMessage {
     const message = createBaseCallMessage();
     message.message = object.message ?? new Uint8Array(0);
+    message.sessionId = object.sessionId ?? 0;
+    message.type = object.type ?? 0;
+    message.jsonBody = object.jsonBody ?? "";
+    return message;
+  },
+};
+
+function createBaseCompressedMessageInner(): CompressedMessageInner {
+  return { compressionType: 0, payload: new Uint8Array(0) };
+}
+
+export const CompressedMessageInner: MessageFns<CompressedMessageInner> = {
+  encode(message: CompressedMessageInner, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.compressionType !== 0) {
+      writer.uint32(8).uint32(message.compressionType);
+    }
+    if (message.payload.length !== 0) {
+      writer.uint32(18).bytes(message.payload);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CompressedMessageInner {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCompressedMessageInner();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.compressionType = reader.uint32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.payload = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CompressedMessageInner {
+    return {
+      compressionType: isSet(object.compressionType) ? globalThis.Number(object.compressionType) : 0,
+      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: CompressedMessageInner): unknown {
+    const obj: any = {};
+    if (message.compressionType !== 0) {
+      obj.compressionType = Math.round(message.compressionType);
+    }
+    if (message.payload.length !== 0) {
+      obj.payload = base64FromBytes(message.payload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CompressedMessageInner>, I>>(base?: I): CompressedMessageInner {
+    return CompressedMessageInner.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CompressedMessageInner>, I>>(object: I): CompressedMessageInner {
+    const message = createBaseCompressedMessageInner();
+    message.compressionType = object.compressionType ?? 0;
+    message.payload = object.payload ?? new Uint8Array(0);
     return message;
   },
 };
 
 function createBaseUserMessageInner(): UserMessageInner {
-  return { plainText: undefined, callMessage: undefined, messagePayload: undefined };
+  return { plainText: undefined, callMessage: undefined, messagePayload: undefined, compressedMessage: undefined };
 }
 
 export const UserMessageInner: MessageFns<UserMessageInner> = {
@@ -3740,6 +3952,9 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
     }
     if (message.messagePayload !== undefined) {
       MessagePayload.encode(message.messagePayload, writer.uint32(26).fork()).join();
+    }
+    if (message.compressedMessage !== undefined) {
+      CompressedMessageInner.encode(message.compressedMessage, writer.uint32(82).fork()).join();
     }
     return writer;
   },
@@ -3775,6 +3990,14 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
           message.messagePayload = MessagePayload.decode(reader, reader.uint32());
           continue;
         }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.compressedMessage = CompressedMessageInner.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3789,6 +4012,9 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
       plainText: isSet(object.plainText) ? bytesFromBase64(object.plainText) : undefined,
       callMessage: isSet(object.callMessage) ? CallMessage.fromJSON(object.callMessage) : undefined,
       messagePayload: isSet(object.messagePayload) ? MessagePayload.fromJSON(object.messagePayload) : undefined,
+      compressedMessage: isSet(object.compressedMessage)
+        ? CompressedMessageInner.fromJSON(object.compressedMessage)
+        : undefined,
     };
   },
 
@@ -3802,6 +4028,9 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
     }
     if (message.messagePayload !== undefined) {
       obj.messagePayload = MessagePayload.toJSON(message.messagePayload);
+    }
+    if (message.compressedMessage !== undefined) {
+      obj.compressedMessage = CompressedMessageInner.toJSON(message.compressedMessage);
     }
     return obj;
   },
@@ -3817,6 +4046,9 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
       : undefined;
     message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
       ? MessagePayload.fromPartial(object.messagePayload)
+      : undefined;
+    message.compressedMessage = (object.compressedMessage !== undefined && object.compressedMessage !== null)
+      ? CompressedMessageInner.fromPartial(object.compressedMessage)
       : undefined;
     return message;
   },

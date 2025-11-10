@@ -1,5 +1,21 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
+export declare enum CallMessageType {
+    none = 0,
+    request = 1,
+    reject = 2,
+    end = 3,
+    /** ended - for saving call messages */
+    ended = 4,
+    rejected = 5,
+    /** candidate - webrtc messages */
+    candidate = 10,
+    answer = 11,
+    offer = 12,
+    UNRECOGNIZED = -1
+}
+export declare function callMessageTypeFromJSON(object: any): CallMessageType;
+export declare function callMessageTypeToJSON(object: CallMessageType): string;
 export interface UserMessage {
     id: bigint;
     to: string;
@@ -181,11 +197,19 @@ export interface MessagePayload {
 }
 export interface CallMessage {
     message: Uint8Array;
+    sessionId: number;
+    type: CallMessageType;
+    jsonBody: string;
+}
+export interface CompressedMessageInner {
+    compressionType: number;
+    payload: Uint8Array;
 }
 export interface UserMessageInner {
     plainText?: Uint8Array | undefined;
     callMessage?: CallMessage | undefined;
     messagePayload?: MessagePayload | undefined;
+    compressedMessage?: CompressedMessageInner | undefined;
 }
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
@@ -225,6 +249,7 @@ export declare const EncryptedFile: MessageFns<EncryptedFile>;
 export declare const EncryptedFiles: MessageFns<EncryptedFiles>;
 export declare const MessagePayload: MessageFns<MessagePayload>;
 export declare const CallMessage: MessageFns<CallMessage>;
+export declare const CompressedMessageInner: MessageFns<CompressedMessageInner>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {

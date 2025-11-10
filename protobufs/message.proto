@@ -227,10 +227,36 @@ message MessagePayload {
 
 
 
+enum CallMessageType {
+  none = 0;
+
+  request = 1;
+  reject = 2;
+  end = 3;
+
+  
+  // for saving call messages
+  ended = 4; 
+  rejected = 5;
+
+
+  // webrtc messages
+  candidate = 10;
+  answer = 11;
+  offer = 12;
+}
 
 
 message CallMessage {
   bytes message = 1;
+  uint32 sessionId = 2;
+  CallMessageType type = 3;
+  string jsonBody = 4;
+}
+
+message CompressedMessageInner {
+  uint32 compressionType = 1;
+  bytes payload = 2;
 }
 
 message UserMessageInner {
@@ -238,5 +264,10 @@ message UserMessageInner {
     bytes plainText = 1;
     CallMessage callMessage = 2;
     MessagePayload messagePayload = 3;
+
+
+
+    CompressedMessageInner compressedMessage = 10;
+    
   }
 }
