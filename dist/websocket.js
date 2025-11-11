@@ -123,6 +123,7 @@ class FireflyWsClient extends EventTarget {
         if (message.response) {
             const resolve = this.pendingRequests.get(message.response.id);
             if (resolve) {
+                this.pendingRequests.delete(message.response.id);
                 resolve(message.response);
             }
             return;
