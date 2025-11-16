@@ -93,6 +93,7 @@ export interface UserMessage {
   text: Uint8Array;
   conversationId: bigint;
   type: number;
+  noPreserve: boolean;
 }
 
 export interface Group {
@@ -290,6 +291,7 @@ export interface EncryptedFile {
   url: string;
   contentType: number;
   secretKey: Uint8Array;
+  contentLength: number;
 }
 
 export interface EncryptedFiles {
@@ -322,7 +324,7 @@ export interface UserMessageInner {
 }
 
 function createBaseUserMessage(): UserMessage {
-  return { id: 0n, to: "", from: "", text: new Uint8Array(0), conversationId: 0n, type: 0 };
+  return { id: 0n, to: "", from: "", text: new Uint8Array(0), conversationId: 0n, type: 0, noPreserve: false };
 }
 
 export const UserMessage: MessageFns<UserMessage> = {
@@ -350,6 +352,9 @@ export const UserMessage: MessageFns<UserMessage> = {
     }
     if (message.type !== 0) {
       writer.uint32(48).uint32(message.type);
+    }
+    if (message.noPreserve !== false) {
+      writer.uint32(56).bool(message.noPreserve);
     }
     return writer;
   },
@@ -409,6 +414,14 @@ export const UserMessage: MessageFns<UserMessage> = {
           message.type = reader.uint32();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.noPreserve = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -426,6 +439,7 @@ export const UserMessage: MessageFns<UserMessage> = {
       text: isSet(object.text) ? bytesFromBase64(object.text) : new Uint8Array(0),
       conversationId: isSet(object.conversationId) ? BigInt(object.conversationId) : 0n,
       type: isSet(object.type) ? globalThis.Number(object.type) : 0,
+      noPreserve: isSet(object.noPreserve) ? globalThis.Boolean(object.noPreserve) : false,
     };
   },
 
@@ -449,6 +463,9 @@ export const UserMessage: MessageFns<UserMessage> = {
     if (message.type !== 0) {
       obj.type = Math.round(message.type);
     }
+    if (message.noPreserve !== false) {
+      obj.noPreserve = message.noPreserve;
+    }
     return obj;
   },
 
@@ -463,6 +480,7 @@ export const UserMessage: MessageFns<UserMessage> = {
     message.text = object.text ?? new Uint8Array(0);
     message.conversationId = object.conversationId ?? 0n;
     message.type = object.type ?? 0;
+    message.noPreserve = object.noPreserve ?? false;
     return message;
   },
 };
@@ -3506,7 +3524,7 @@ export const Conversations: MessageFns<Conversations> = {
 };
 
 function createBaseEncryptedFile(): EncryptedFile {
-  return { url: "", contentType: 0, secretKey: new Uint8Array(0) };
+  return { url: "", contentType: 0, secretKey: new Uint8Array(0), contentLength: 0 };
 }
 
 export const EncryptedFile: MessageFns<EncryptedFile> = {
@@ -3519,6 +3537,9 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
     }
     if (message.secretKey.length !== 0) {
       writer.uint32(26).bytes(message.secretKey);
+    }
+    if (message.contentLength !== 0) {
+      writer.uint32(32).uint32(message.contentLength);
     }
     return writer;
   },
@@ -3554,6 +3575,14 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
           message.secretKey = reader.bytes();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.contentLength = reader.uint32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3568,6 +3597,7 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
       url: isSet(object.url) ? globalThis.String(object.url) : "",
       contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
       secretKey: isSet(object.secretKey) ? bytesFromBase64(object.secretKey) : new Uint8Array(0),
+      contentLength: isSet(object.contentLength) ? globalThis.Number(object.contentLength) : 0,
     };
   },
 
@@ -3582,6 +3612,9 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
     if (message.secretKey.length !== 0) {
       obj.secretKey = base64FromBytes(message.secretKey);
     }
+    if (message.contentLength !== 0) {
+      obj.contentLength = Math.round(message.contentLength);
+    }
     return obj;
   },
 
@@ -3593,6 +3626,7 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
     message.url = object.url ?? "";
     message.contentType = object.contentType ?? 0;
     message.secretKey = object.secretKey ?? new Uint8Array(0);
+    message.contentLength = object.contentLength ?? 0;
     return message;
   },
 };

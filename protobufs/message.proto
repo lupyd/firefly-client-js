@@ -9,6 +9,7 @@ message UserMessage {
   bytes text = 4;
   uint64 conversationId = 5;
   uint32 type = 6;
+  bool noPreserve = 7;
 }
 
 message Group {
@@ -212,6 +213,7 @@ message EncryptedFile {
   string url = 1;
   uint32 contentType = 2;
   bytes secretKey = 3;
+  uint32 contentLength = 4;
 }
 
 
