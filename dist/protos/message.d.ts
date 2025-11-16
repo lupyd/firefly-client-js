@@ -23,6 +23,7 @@ export interface UserMessage {
     text: Uint8Array;
     conversationId: bigint;
     type: number;
+    noPreserve: boolean;
 }
 export interface Group {
     id: bigint;
@@ -186,6 +187,7 @@ export interface EncryptedFile {
     url: string;
     contentType: number;
     secretKey: Uint8Array;
+    contentLength: number;
 }
 export interface EncryptedFiles {
     files: EncryptedFile[];
