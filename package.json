@@ -20,7 +20,6 @@
   "license": "MIT",
   "dependencies": {
     "@bufbuild/protobuf": "^2.10.2",
-    "@signalapp/libsignal-client": "^0.78.3",
     "idb": "^8.0.3",
     "ulid": "https://github.com/ash-hashtag/ulid-js"
   },
