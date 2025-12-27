@@ -186,27 +186,30 @@ class FireflyService {
         url.searchParams.set("groupId", String(groupId));
         await this.req(url.pathname + url.search);
     }
-    async uploadPreKeyBundles(bundles) {
-        const body = message_1.PreKeyBundles.encode(bundles).finish();
-        await this.req("/user/preKeyBundles", { method: "POST", body });
-    }
-    async postUserMessage(conversationId, text, type) {
-        const msg = message_1.UserMessage.create({ conversationId, text, type });
-        const res = await this.req("/user/message", {
-            method: "POST",
-            body: message_1.UserMessage.encode(msg).finish(),
-        });
-        return message_1.UserMessage.decode(new Uint8Array(await res.arrayBuffer()));
-    }
-    async createConversation(otherUsername) {
-        if (!otherUsername)
-            throw new Error("other username required");
-        const url = new URL("/user/conversation", this.baseUrl);
-        url.searchParams.set("other", otherUsername);
-        const res = await this.req(url.pathname + url.search, { method: "POST" });
-        const buffer = new Uint8Array(await res.arrayBuffer());
-        return message_1.ConversationStart.decode(buffer);
-    }
+    // async uploadPreKeyBundles(bundles: PreKeyBundles) {
+    //   const body = PreKeyBundles.encode(bundles).finish();
+    //   await this.req("/user/preKeyBundles", { method: "POST", body });
+    // }
+    // async postUserMessage(
+    //   conversationId: bigint,
+    //   text: Uint8Array,
+    //   type: number,
+    // ) {
+    //   const msg = UserMessage.create({ text, type });
+    //   const res = await this.req("/user/message", {
+    //     method: "POST",
+    //     body: UserMessage.encode(msg).finish(),
+    //   });
+    //   return UserMessage.decode(new Uint8Array(await res.arrayBuffer()));
+    // }
+    // async createConversation(otherUsername: string) {
+    //   if (!otherUsername) throw new Error("other username required");
+    //   const url = new URL("/user/conversation", this.baseUrl);
+    //   url.searchParams.set("other", otherUsername);
+    //   const res = await this.req(url.pathname + url.search, { method: "POST" });
+    //   const buffer = new Uint8Array(await res.arrayBuffer());
+    //   return ConversationStart.decode(buffer);
+    // }
     // ---------- DELETEs ----------
     async deleteGroup(id) {
         const url = new URL("/group", this.baseUrl);
@@ -250,13 +253,13 @@ class FireflyService {
         url.searchParams.set("ids", joinCsv(ids));
         await this.req(url.pathname + url.search, { method: "DELETE" });
     }
-    async syncUserMessages(since, limit) {
-        const url = new URL("/user/sync", this.baseUrl);
-        url.searchParams.set("since", since.toString());
-        url.searchParams.set("limit", limit.toString());
-        const response = await this.req(url.pathname + url.search);
-        return message_1.UserMessages.decode(new Uint8Array(await response.arrayBuffer()));
-    }
+    // async syncUserMessages(since: bigint, limit: number) {
+    //   const url = new URL("/user/sync", this.baseUrl);
+    //   url.searchParams.set("since", since.toString());
+    //   url.searchParams.set("limit", limit.toString());
+    //   const response = await this.req(url.pathname + url.search);
+    //   return UserMessages.decode(new Uint8Array(await response.arrayBuffer()));
+    // }
     async deleteUserMessages(until) {
         const url = new URL("/user/messages", this.baseUrl);
         url.searchParams.set("until", until.toString());

@@ -1,4 +1,4 @@
-import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessage, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle } from "./protos/message";
+import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle } from "./protos/message";
 export declare class HttpError extends Error {
     statusCode: number;
     responseText: string;
@@ -34,16 +34,12 @@ export declare class FireflyService {
     postCommit(groupId: bigint, message: Uint8Array): Promise<GroupMessage>;
     invite(groupId: bigint, invitee: string, welcomeMessage: Uint8Array, commitId: bigint): Promise<void>;
     requestReAdd(groupId: number): Promise<void>;
-    uploadPreKeyBundles(bundles: PreKeyBundles): Promise<void>;
-    postUserMessage(conversationId: bigint, text: Uint8Array, type: number): Promise<UserMessage>;
-    createConversation(otherUsername: string): Promise<ConversationStart>;
     deleteGroup(id: number): Promise<void>;
     deleteGroupMember(uname: string, groupId: number): Promise<void>;
     deleteGroupInvites(commitIds: bigint[]): Promise<void>;
     deleteKeyPackages(ids: number[]): Promise<void>;
     deletePreKeyBundles(ids: number[]): Promise<void>;
     deleteConversations(ids: number[]): Promise<void>;
-    syncUserMessages(since: bigint, limit: number): Promise<UserMessages>;
     deleteUserMessages(until: bigint): Promise<void>;
     recreateConversations(): Promise<void>;
     getWebrtcConfig(): Promise<RTCConfiguration>;

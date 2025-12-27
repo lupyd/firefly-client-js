@@ -1,29 +1,16 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
-export declare enum CallMessageType {
-    none = 0,
-    request = 1,
-    reject = 2,
-    end = 3,
-    /** ended - for saving call messages */
-    ended = 4,
-    rejected = 5,
-    /** candidate - webrtc messages */
-    candidate = 10,
-    answer = 11,
-    offer = 12,
-    UNRECOGNIZED = -1
-}
-export declare function callMessageTypeFromJSON(object: any): CallMessageType;
-export declare function callMessageTypeToJSON(object: CallMessageType): string;
 export interface UserMessage {
     id: bigint;
-    to: string;
-    from: string;
+    toId: bigint;
+    fromId: bigint;
     text: Uint8Array;
-    conversationId: bigint;
     type: number;
-    noPreserve: boolean;
+    /** flags for server to notify or just send or don't send */
+    settings: number;
+    /** optional sends these for decryption purposes */
+    fromUsername: string;
+    fromDeviceId: number;
 }
 export interface Group {
     id: bigint;
@@ -63,10 +50,6 @@ export interface GroupKeyPackages {
 export interface GroupMessages {
     messages: GroupMessage[];
 }
-export interface Request {
-    id: number;
-    createUserMessage?: UserMessage | undefined;
-}
 export interface Error {
     errorCode: number;
     error: string;
@@ -75,10 +58,36 @@ export interface Result {
     resultCode: number;
     body: Uint8Array;
 }
+export interface Address {
+    id: bigint;
+    username: string;
+    deviceId: number;
+    fcmToken: string;
+}
+export interface Addresses {
+    addresses: Address[];
+}
+export interface UploadUserMessage {
+    messages: UserMessage[];
+}
+export interface MessageIdAndTo {
+    id: bigint;
+    to: bigint;
+    isSelf: boolean;
+}
+export interface UserMessageUploaded {
+    messageIds: MessageIdAndTo[];
+}
+export interface Request {
+    id: number;
+    createUserMessage?: UserMessage | undefined;
+    uploadUserMessage?: UploadUserMessage | undefined;
+}
 export interface Response {
     id: number;
     error: Error | undefined;
     createdUserMessage?: UserMessage | undefined;
+    userMessageUploaded?: UserMessageUploaded | undefined;
 }
 export interface ServerMessage {
     userMessage?: UserMessage | undefined;
@@ -86,6 +95,8 @@ export interface ServerMessage {
     userMessages?: UserMessages | undefined;
     groupMessages?: GroupMessages | undefined;
     response?: Response | undefined;
+    ping?: Uint8Array | undefined;
+    pong?: Uint8Array | undefined;
 }
 export interface SubscribeGroup {
     id: bigint;
@@ -102,6 +113,8 @@ export interface ClientMessage {
     subscribeGroup?: SubscribeGroup | undefined;
     unSubscribeGroup?: UnSubscribeGroup | undefined;
     request?: Request | undefined;
+    ping?: Uint8Array | undefined;
+    pong?: Uint8Array | undefined;
 }
 export interface GroupId {
     id: bigint;
@@ -117,8 +130,7 @@ export interface SignedToken {
     payload: Uint8Array;
     signature: Uint8Array;
 }
-export interface FireflyClient {
-    username: string;
+export interface FireflyIdentity {
     secret: Uint8Array;
     public: Uint8Array;
     credential: Uint8Array;
@@ -166,6 +178,16 @@ export interface PreKeyBundle {
     KEMPrePublicKey: Uint8Array;
     KEMPreKeySignature: Uint8Array;
 }
+export interface PreKeyBundleEntry {
+    id: number;
+    address: bigint;
+    bundle: PreKeyBundle | undefined;
+    username: string;
+    deviceId: number;
+}
+export interface PreKeyBundleEntries {
+    entries: PreKeyBundleEntry[];
+}
 export interface ConversationStart {
     conversationId: bigint;
     startedBy: string;
@@ -176,9 +198,9 @@ export interface PreKeyBundles {
     bundles: PreKeyBundle[];
 }
 export interface Conversation {
-    id: bigint;
-    startedBy: string;
-    other: string;
+    user1: string;
+    user2: string;
+    settings: bigint;
 }
 export interface Conversations {
     conversations: Conversation[];
@@ -199,19 +221,17 @@ export interface MessagePayload {
 }
 export interface CallMessage {
     message: Uint8Array;
-    sessionId: number;
-    type: CallMessageType;
-    jsonBody: string;
 }
-export interface CompressedMessageInner {
-    compressionType: number;
-    payload: Uint8Array;
+export interface SelfUserMessage {
+    to: string;
+    /** UserMessageInner encrypted */
+    inner: Uint8Array;
 }
 export interface UserMessageInner {
     plainText?: Uint8Array | undefined;
     callMessage?: CallMessage | undefined;
     messagePayload?: MessagePayload | undefined;
-    compressedMessage?: CompressedMessageInner | undefined;
+    selfMessage?: SelfUserMessage | undefined;
 }
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
@@ -223,9 +243,14 @@ export declare const GroupMessage: MessageFns<GroupMessage>;
 export declare const GroupKeyPackage: MessageFns<GroupKeyPackage>;
 export declare const GroupKeyPackages: MessageFns<GroupKeyPackages>;
 export declare const GroupMessages: MessageFns<GroupMessages>;
-export declare const Request: MessageFns<Request>;
 export declare const Error: MessageFns<Error>;
 export declare const Result: MessageFns<Result>;
+export declare const Address: MessageFns<Address>;
+export declare const Addresses: MessageFns<Addresses>;
+export declare const UploadUserMessage: MessageFns<UploadUserMessage>;
+export declare const MessageIdAndTo: MessageFns<MessageIdAndTo>;
+export declare const UserMessageUploaded: MessageFns<UserMessageUploaded>;
+export declare const Request: MessageFns<Request>;
 export declare const Response: MessageFns<Response>;
 export declare const ServerMessage: MessageFns<ServerMessage>;
 export declare const SubscribeGroup: MessageFns<SubscribeGroup>;
@@ -234,7 +259,7 @@ export declare const ClientMessage: MessageFns<ClientMessage>;
 export declare const GroupId: MessageFns<GroupId>;
 export declare const AuthToken: MessageFns<AuthToken>;
 export declare const SignedToken: MessageFns<SignedToken>;
-export declare const FireflyClient: MessageFns<FireflyClient>;
+export declare const FireflyIdentity: MessageFns<FireflyIdentity>;
 export declare const FireflyGroupExtension: MessageFns<FireflyGroupExtension>;
 export declare const FireflyGroupRole: MessageFns<FireflyGroupRole>;
 export declare const FireflyGroupRoles: MessageFns<FireflyGroupRoles>;
@@ -243,6 +268,8 @@ export declare const FireflyGroupMembers: MessageFns<FireflyGroupMembers>;
 export declare const FireflyGroupChannel: MessageFns<FireflyGroupChannel>;
 export declare const FireflyGroupChannels: MessageFns<FireflyGroupChannels>;
 export declare const PreKeyBundle: MessageFns<PreKeyBundle>;
+export declare const PreKeyBundleEntry: MessageFns<PreKeyBundleEntry>;
+export declare const PreKeyBundleEntries: MessageFns<PreKeyBundleEntries>;
 export declare const ConversationStart: MessageFns<ConversationStart>;
 export declare const PreKeyBundles: MessageFns<PreKeyBundles>;
 export declare const Conversation: MessageFns<Conversation>;
@@ -251,7 +278,7 @@ export declare const EncryptedFile: MessageFns<EncryptedFile>;
 export declare const EncryptedFiles: MessageFns<EncryptedFiles>;
 export declare const MessagePayload: MessageFns<MessagePayload>;
 export declare const CallMessage: MessageFns<CallMessage>;
-export declare const CompressedMessageInner: MessageFns<CompressedMessageInner>;
+export declare const SelfUserMessage: MessageFns<SelfUserMessage>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {

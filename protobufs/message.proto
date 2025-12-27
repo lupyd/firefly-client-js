@@ -4,12 +4,17 @@ package firefly;
 
 message UserMessage {
   uint64 id = 1;
-  string to = 2;
-  string from = 3;
+  uint64 toId = 2;
+  uint64 fromId = 3;
   bytes text = 4;
-  uint64 conversationId = 5;
   uint32 type = 6;
-  bool noPreserve = 7;
+  uint32 settings = 7; // flags for server to notify or just send or don't send
+
+
+
+  // optional sends these for decryption purposes
+  string fromUsername = 8;
+  uint32 fromDeviceId = 9;
 }
 
 message Group {
@@ -53,14 +58,6 @@ message GroupKeyPackages { repeated GroupKeyPackage packages = 1; }
 
 message GroupMessages { repeated GroupMessage messages = 2; }
 
-
-message Request {
-  uint32 id = 1;
-  oneof payload {
-    UserMessage createUserMessage = 2;
-  }
-}
-
 message Error {
   uint32 errorCode = 1;
   string error = 2;
@@ -71,11 +68,49 @@ message Result {
   bytes body = 2;
 }
 
+
+message Address {
+  uint64 id = 1;
+  string username = 2;
+  uint32 deviceId = 3;
+  string fcmToken = 4;
+}
+
+message Addresses {
+  repeated Address addresses = 1;
+}
+
+
+message UploadUserMessage {
+  repeated UserMessage messages = 1;
+}
+
+message MessageIdAndTo {
+  uint64 id = 1;
+  uint64 to = 2;
+  bool is_self = 3;
+}
+
+message UserMessageUploaded {
+  repeated MessageIdAndTo messageIds = 1;
+}
+
+
+
+message Request {
+  uint32 id = 1;
+  oneof payload {
+    UserMessage createUserMessage = 2;
+    UploadUserMessage uploadUserMessage = 3;
+  }
+}
+
 message Response {
   uint32 id = 1;
   Error error = 2;
   oneof body {
     UserMessage createdUserMessage = 3;
+    UserMessageUploaded userMessageUploaded = 4;
   }
 }
 
@@ -86,6 +121,10 @@ message ServerMessage {
     UserMessages userMessages = 3;
     GroupMessages groupMessages = 4;
     Response response = 10;
+
+
+    bytes ping = 11;
+    bytes pong = 12;
   }
 }
 
@@ -106,6 +145,8 @@ message ClientMessage {
     SubscribeGroup subscribeGroup = 6;
     UnSubscribeGroup unSubscribeGroup = 7;
     Request request = 10;
+    bytes ping = 11;
+    bytes pong = 12;
   }
 }
 
@@ -126,8 +167,7 @@ message SignedToken {
   bytes signature = 3;
 }
 
-message FireflyClient {
-  string username = 1;
+message FireflyIdentity {
   bytes secret = 2;
   bytes public = 3;
   bytes credential = 4;
@@ -174,18 +214,32 @@ message FireflyGroupChannels {
 
 
 message PreKeyBundle {
-  int32 registrationId = 1;
-  int32 deviceId = 2;
-  int32 preKeyId = 3;
+  uint32 registrationId = 1;
+  uint32 deviceId = 2;
+  uint32 preKeyId = 3;
   bytes prePublicKey = 4;
-  int32 signedPreKeyId = 5;
+  uint32 signedPreKeyId = 5;
   bytes signedPrePublicKey = 6;
   bytes signedPreKeySignature = 7;
   bytes identityPublicKey = 8;
-  int32 KEMPreKeyId = 9;
+  uint32 KEMPreKeyId = 9;
   bytes KEMPrePublicKey = 10;
   bytes KEMPreKeySignature = 11;
 }
+
+message PreKeyBundleEntry {
+  uint32 id = 1;
+  uint64 address = 2;
+  PreKeyBundle bundle = 3;
+
+  string username = 4;
+  uint32 device_id = 5;
+}
+
+message PreKeyBundleEntries {
+  repeated PreKeyBundleEntry entries = 1;
+}
+
 
 message ConversationStart {
   uint64 conversationId = 1;
@@ -199,9 +253,9 @@ message PreKeyBundles {
 }
 
 message Conversation {
-  uint64 id = 1;
-  string startedBy = 2;
-  string other = 3;
+  string user1 = 1;
+  string user2 = 2;
+  uint64 settings = 3;
 }
 
 message Conversations {
@@ -227,38 +281,13 @@ message MessagePayload {
   EncryptedFiles files = 3;
 }
 
-
-
-enum CallMessageType {
-  none = 0;
-
-  request = 1;
-  reject = 2;
-  end = 3;
-
-  
-  // for saving call messages
-  ended = 4; 
-  rejected = 5;
-
-
-  // webrtc messages
-  candidate = 10;
-  answer = 11;
-  offer = 12;
-}
-
-
 message CallMessage {
   bytes message = 1;
-  uint32 sessionId = 2;
-  CallMessageType type = 3;
-  string jsonBody = 4;
 }
 
-message CompressedMessageInner {
-  uint32 compressionType = 1;
-  bytes payload = 2;
+message SelfUserMessage {
+  string to = 1;
+  bytes inner = 2; // UserMessageInner encrypted
 }
 
 message UserMessageInner {
@@ -266,10 +295,6 @@ message UserMessageInner {
     bytes plainText = 1;
     CallMessage callMessage = 2;
     MessagePayload messagePayload = 3;
-
-
-
-    CompressedMessageInner compressedMessage = 10;
-    
+    SelfUserMessage selfMessage = 4;
   }
 }
