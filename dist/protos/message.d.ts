@@ -1,5 +1,21 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
+export declare enum CallMessageType {
+    none = 0,
+    request = 1,
+    reject = 2,
+    end = 3,
+    /** ended - for saving call messages */
+    ended = 4,
+    rejected = 5,
+    /** candidate - webrtc messages */
+    candidate = 10,
+    answer = 11,
+    offer = 12,
+    UNRECOGNIZED = -1
+}
+export declare function callMessageTypeFromJSON(object: any): CallMessageType;
+export declare function callMessageTypeToJSON(object: CallMessageType): string;
 export interface UserMessage {
     id: bigint;
     toId: bigint;
@@ -32,6 +48,15 @@ export interface GroupInvite {
     welcomeMessage: Uint8Array;
     commitId: bigint;
 }
+export interface GroupCommitAndWelcome {
+    id: bigint;
+    groupId: bigint;
+    commitMessage: Uint8Array;
+    inviter: string;
+    invitee: string;
+    welcomeMessage: Uint8Array;
+    inviteeAddresses: bigint[];
+}
 export interface GroupInvites {
     invites: GroupInvite[];
 }
@@ -43,12 +68,31 @@ export interface GroupMessage {
 export interface GroupKeyPackage {
     id: number;
     package: Uint8Array;
+    address: bigint;
+    username: string;
 }
 export interface GroupKeyPackages {
     packages: GroupKeyPackage[];
 }
 export interface GroupMessages {
     messages: GroupMessage[];
+}
+export interface GroupSyncRequest {
+    groupId: bigint;
+    startAfter: bigint;
+    until: bigint;
+    limit: number;
+}
+export interface GroupSyncRequests {
+    requests: GroupSyncRequest[];
+}
+export interface GroupReAddRequest {
+    groupId: bigint;
+    addressId: bigint;
+    username: string;
+}
+export interface GroupReAddRequests {
+    requests: GroupReAddRequest[];
 }
 export interface Error {
     errorCode: number;
@@ -82,12 +126,14 @@ export interface Request {
     id: number;
     createUserMessage?: UserMessage | undefined;
     uploadUserMessage?: UploadUserMessage | undefined;
+    uploadGroupMessage?: GroupMessage | undefined;
 }
 export interface Response {
     id: number;
     error: Error | undefined;
     createdUserMessage?: UserMessage | undefined;
     userMessageUploaded?: UserMessageUploaded | undefined;
+    groupMessageUploaded?: GroupMessage | undefined;
 }
 export interface ServerMessage {
     userMessage?: UserMessage | undefined;
@@ -124,6 +170,8 @@ export interface AuthToken {
     validUntil: bigint;
     issuer: string;
     credential: Uint8Array;
+    deviceId: number;
+    addressId: bigint;
 }
 export interface SignedToken {
     kid: string;
@@ -221,6 +269,9 @@ export interface MessagePayload {
 }
 export interface CallMessage {
     message: Uint8Array;
+    sessionId: number;
+    type: CallMessageType;
+    jsonBody: string;
 }
 export interface SelfUserMessage {
     to: string;
@@ -238,11 +289,16 @@ export declare const Group: MessageFns<Group>;
 export declare const Groups: MessageFns<Groups>;
 export declare const UserMessages: MessageFns<UserMessages>;
 export declare const GroupInvite: MessageFns<GroupInvite>;
+export declare const GroupCommitAndWelcome: MessageFns<GroupCommitAndWelcome>;
 export declare const GroupInvites: MessageFns<GroupInvites>;
 export declare const GroupMessage: MessageFns<GroupMessage>;
 export declare const GroupKeyPackage: MessageFns<GroupKeyPackage>;
 export declare const GroupKeyPackages: MessageFns<GroupKeyPackages>;
 export declare const GroupMessages: MessageFns<GroupMessages>;
+export declare const GroupSyncRequest: MessageFns<GroupSyncRequest>;
+export declare const GroupSyncRequests: MessageFns<GroupSyncRequests>;
+export declare const GroupReAddRequest: MessageFns<GroupReAddRequest>;
+export declare const GroupReAddRequests: MessageFns<GroupReAddRequests>;
 export declare const Error: MessageFns<Error>;
 export declare const Result: MessageFns<Result>;
 export declare const Address: MessageFns<Address>;

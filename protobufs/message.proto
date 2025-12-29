@@ -10,8 +10,6 @@ message UserMessage {
   uint32 type = 6;
   uint32 settings = 7; // flags for server to notify or just send or don't send
 
-
-
   // optional sends these for decryption purposes
   string fromUsername = 8;
   uint32 fromDeviceId = 9;
@@ -29,7 +27,9 @@ message Groups {
   repeated Group groups = 1;
 }
 
-message UserMessages { repeated UserMessage messages = 1; }
+message UserMessages {
+  repeated UserMessage messages = 1;
+}
 
 message GroupInvite {
   uint64 groupId = 1;
@@ -39,8 +39,20 @@ message GroupInvite {
   uint64 commitId = 5;
 }
 
+message GroupCommitAndWelcome {
+  uint64 id = 1;
+  uint64 groupId = 2;
+  bytes commitMessage = 3;
+
+  string inviter = 4;
+  string invitee = 5;
+  bytes welcomeMessage = 6;
+
+  repeated uint64 inviteeAddresses = 7;
+}
+
 message GroupInvites {
-    repeated GroupInvite invites = 1;
+  repeated GroupInvite invites = 1;
 }
 
 message GroupMessage {
@@ -52,11 +64,42 @@ message GroupMessage {
 message GroupKeyPackage {
   int32 id = 1;
   bytes package = 2;
+  uint64 address = 3;
+  string username = 4;
 }
 
-message GroupKeyPackages { repeated GroupKeyPackage packages = 1; }
+message GroupKeyPackages {
+  repeated GroupKeyPackage packages = 1;
+}
 
-message GroupMessages { repeated GroupMessage messages = 2; }
+message GroupMessages {
+  repeated GroupMessage messages = 2;
+}
+
+
+message GroupSyncRequest {
+  uint64 group_id = 1;
+  uint64 start_after = 2;
+  uint64 until = 3;
+  uint32 limit = 4;
+}
+
+
+message GroupSyncRequests {
+  repeated GroupSyncRequest requests = 1;
+}
+
+message GroupReAddRequest {
+  uint64 group_id = 1;
+  uint64 address_id = 2;
+  string username = 3;
+}
+
+message GroupReAddRequests {
+  repeated GroupReAddRequest requests = 1;
+}
+
+
 
 message Error {
   uint32 errorCode = 1;
@@ -68,7 +111,6 @@ message Result {
   bytes body = 2;
 }
 
-
 message Address {
   uint64 id = 1;
   string username = 2;
@@ -79,7 +121,6 @@ message Address {
 message Addresses {
   repeated Address addresses = 1;
 }
-
 
 message UploadUserMessage {
   repeated UserMessage messages = 1;
@@ -95,13 +136,13 @@ message UserMessageUploaded {
   repeated MessageIdAndTo messageIds = 1;
 }
 
-
-
 message Request {
   uint32 id = 1;
   oneof payload {
     UserMessage createUserMessage = 2;
     UploadUserMessage uploadUserMessage = 3;
+
+    GroupMessage uploadGroupMessage = 4;
   }
 }
 
@@ -111,6 +152,7 @@ message Response {
   oneof body {
     UserMessage createdUserMessage = 3;
     UserMessageUploaded userMessageUploaded = 4;
+    GroupMessage groupMessageUploaded = 5;
   }
 }
 
@@ -121,7 +163,6 @@ message ServerMessage {
     UserMessages userMessages = 3;
     GroupMessages groupMessages = 4;
     Response response = 10;
-
 
     bytes ping = 11;
     bytes pong = 12;
@@ -150,15 +191,17 @@ message ClientMessage {
   }
 }
 
-
-message GroupId { uint64 id = 2; }
-
+message GroupId {
+  uint64 id = 2;
+}
 
 message AuthToken {
   string username = 1;
   uint64 valid_until = 2;
   string issuer = 3;
   bytes credential = 4;
+  uint32 device_id = 5;
+  uint64 address_id = 6;
 }
 
 message SignedToken {
@@ -172,7 +215,6 @@ message FireflyIdentity {
   bytes public = 3;
   bytes credential = 4;
 }
-
 
 message FireflyGroupExtension {
   string name = 1;
@@ -200,7 +242,6 @@ message FireflyGroupMembers {
   repeated FireflyGroupMember members = 1;
 }
 
-
 message FireflyGroupChannel {
   uint32 id = 1;
   string name = 2;
@@ -211,7 +252,6 @@ message FireflyGroupChannel {
 message FireflyGroupChannels {
   repeated FireflyGroupChannel channels = 1;
 }
-
 
 message PreKeyBundle {
   uint32 registrationId = 1;
@@ -240,7 +280,6 @@ message PreKeyBundleEntries {
   repeated PreKeyBundleEntry entries = 1;
 }
 
-
 message ConversationStart {
   uint64 conversationId = 1;
   string started_by = 2;
@@ -262,14 +301,12 @@ message Conversations {
   repeated Conversation conversations = 1;
 }
 
-
 message EncryptedFile {
   string url = 1;
   uint32 contentType = 2;
   bytes secretKey = 3;
   uint32 contentLength = 4;
 }
-
 
 message EncryptedFiles {
   repeated EncryptedFile files = 1;
@@ -281,8 +318,28 @@ message MessagePayload {
   EncryptedFiles files = 3;
 }
 
+
+enum CallMessageType {
+  none = 0;
+  request = 1;
+  reject = 2;
+  end = 3;
+  // for saving call messages
+  ended = 4; 
+  rejected = 5;
+  // webrtc messages
+  candidate = 10;
+  answer = 11;
+  offer = 12;
+}
+
+
+
 message CallMessage {
   bytes message = 1;
+  uint32 sessionId = 2;
+  CallMessageType type = 3;
+  string jsonBody = 4;  
 }
 
 message SelfUserMessage {
