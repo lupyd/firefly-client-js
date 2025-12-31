@@ -284,6 +284,10 @@ export interface UserMessageInner {
     messagePayload?: MessagePayload | undefined;
     selfMessage?: SelfUserMessage | undefined;
 }
+export interface GroupMessageInner {
+    channelId: number;
+    messagePayload?: MessagePayload | undefined;
+}
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
 export declare const Groups: MessageFns<Groups>;
@@ -336,6 +340,7 @@ export declare const MessagePayload: MessageFns<MessagePayload>;
 export declare const CallMessage: MessageFns<CallMessage>;
 export declare const SelfUserMessage: MessageFns<SelfUserMessage>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
+export declare const GroupMessageInner: MessageFns<GroupMessageInner>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
     [K in keyof T]?: DeepPartial<T[K]>;

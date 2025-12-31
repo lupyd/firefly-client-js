@@ -355,3 +355,11 @@ message UserMessageInner {
     SelfUserMessage selfMessage = 4;
   }
 }
+
+
+message GroupMessageInner {
+  uint32 channelId = 1;
+  oneof message {
+    MessagePayload messagePayload = 2;
+  }
+}

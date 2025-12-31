@@ -406,6 +406,11 @@ export interface UserMessageInner {
   selfMessage?: SelfUserMessage | undefined;
 }
 
+export interface GroupMessageInner {
+  channelId: number;
+  messagePayload?: MessagePayload | undefined;
+}
+
 function createBaseUserMessage(): UserMessage {
   return {
     id: 0n,
@@ -5512,6 +5517,84 @@ export const UserMessageInner: MessageFns<UserMessageInner> = {
       : undefined;
     message.selfMessage = (object.selfMessage !== undefined && object.selfMessage !== null)
       ? SelfUserMessage.fromPartial(object.selfMessage)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGroupMessageInner(): GroupMessageInner {
+  return { channelId: 0, messagePayload: undefined };
+}
+
+export const GroupMessageInner: MessageFns<GroupMessageInner> = {
+  encode(message: GroupMessageInner, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.channelId !== 0) {
+      writer.uint32(8).uint32(message.channelId);
+    }
+    if (message.messagePayload !== undefined) {
+      MessagePayload.encode(message.messagePayload, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupMessageInner {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMessageInner();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.channelId = reader.uint32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.messagePayload = MessagePayload.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMessageInner {
+    return {
+      channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+      messagePayload: isSet(object.messagePayload) ? MessagePayload.fromJSON(object.messagePayload) : undefined,
+    };
+  },
+
+  toJSON(message: GroupMessageInner): unknown {
+    const obj: any = {};
+    if (message.channelId !== 0) {
+      obj.channelId = Math.round(message.channelId);
+    }
+    if (message.messagePayload !== undefined) {
+      obj.messagePayload = MessagePayload.toJSON(message.messagePayload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMessageInner>, I>>(base?: I): GroupMessageInner {
+    return GroupMessageInner.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMessageInner>, I>>(object: I): GroupMessageInner {
+    const message = createBaseGroupMessageInner();
+    message.channelId = object.channelId ?? 0;
+    message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
+      ? MessagePayload.fromPartial(object.messagePayload)
       : undefined;
     return message;
   },

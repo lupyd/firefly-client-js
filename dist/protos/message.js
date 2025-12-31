@@ -6,7 +6,7 @@
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundleEntries = exports.PreKeyBundleEntry = exports.PreKeyBundle = exports.FireflyGroupChannels = exports.FireflyGroupChannel = exports.FireflyGroupMembers = exports.FireflyGroupMember = exports.FireflyGroupRoles = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyIdentity = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Request = exports.UserMessageUploaded = exports.MessageIdAndTo = exports.UploadUserMessage = exports.Addresses = exports.Address = exports.Result = exports.Error = exports.GroupReAddRequests = exports.GroupReAddRequest = exports.GroupSyncRequests = exports.GroupSyncRequest = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupCommitAndWelcome = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.CallMessageType = exports.protobufPackage = void 0;
-exports.UserMessageInner = exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = void 0;
+exports.GroupMessageInner = exports.UserMessageInner = exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = void 0;
 exports.callMessageTypeFromJSON = callMessageTypeFromJSON;
 exports.callMessageTypeToJSON = callMessageTypeToJSON;
 /* eslint-disable */
@@ -4718,6 +4718,76 @@ exports.UserMessageInner = {
             : undefined;
         message.selfMessage = (object.selfMessage !== undefined && object.selfMessage !== null)
             ? exports.SelfUserMessage.fromPartial(object.selfMessage)
+            : undefined;
+        return message;
+    },
+};
+function createBaseGroupMessageInner() {
+    return { channelId: 0, messagePayload: undefined };
+}
+exports.GroupMessageInner = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.channelId !== 0) {
+            writer.uint32(8).uint32(message.channelId);
+        }
+        if (message.messagePayload !== undefined) {
+            exports.MessagePayload.encode(message.messagePayload, writer.uint32(18).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupMessageInner();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.channelId = reader.uint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.messagePayload = exports.MessagePayload.decode(reader, reader.uint32());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+            messagePayload: isSet(object.messagePayload) ? exports.MessagePayload.fromJSON(object.messagePayload) : undefined,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.channelId !== 0) {
+            obj.channelId = Math.round(message.channelId);
+        }
+        if (message.messagePayload !== undefined) {
+            obj.messagePayload = exports.MessagePayload.toJSON(message.messagePayload);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupMessageInner.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupMessageInner();
+        message.channelId = object.channelId ?? 0;
+        message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
+            ? exports.MessagePayload.fromPartial(object.messagePayload)
             : undefined;
         return message;
     },
