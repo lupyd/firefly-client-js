@@ -185,33 +185,24 @@ export interface FireflyIdentity {
 }
 export interface FireflyGroupExtension {
     name: string;
-    roles: FireflyGroupRoles | undefined;
-    channels: FireflyGroupChannels | undefined;
-    members: FireflyGroupMembers | undefined;
+    roles: FireflyGroupRole[];
+    channels: FireflyGroupChannel[];
+    members: FireflyGroupMember[];
 }
 export interface FireflyGroupRole {
     id: number;
     name: string;
     permissions: number;
 }
-export interface FireflyGroupRoles {
-    roles: FireflyGroupRole[];
-}
 export interface FireflyGroupMember {
     username: string;
     role: number;
-}
-export interface FireflyGroupMembers {
-    members: FireflyGroupMember[];
 }
 export interface FireflyGroupChannel {
     id: number;
     name: string;
     type: number;
-    roles: FireflyGroupRoles | undefined;
-}
-export interface FireflyGroupChannels {
-    channels: FireflyGroupChannel[];
+    roles: FireflyGroupRole[];
 }
 export interface PreKeyBundle {
     registrationId: number;
@@ -322,11 +313,8 @@ export declare const SignedToken: MessageFns<SignedToken>;
 export declare const FireflyIdentity: MessageFns<FireflyIdentity>;
 export declare const FireflyGroupExtension: MessageFns<FireflyGroupExtension>;
 export declare const FireflyGroupRole: MessageFns<FireflyGroupRole>;
-export declare const FireflyGroupRoles: MessageFns<FireflyGroupRoles>;
 export declare const FireflyGroupMember: MessageFns<FireflyGroupMember>;
-export declare const FireflyGroupMembers: MessageFns<FireflyGroupMembers>;
 export declare const FireflyGroupChannel: MessageFns<FireflyGroupChannel>;
-export declare const FireflyGroupChannels: MessageFns<FireflyGroupChannels>;
 export declare const PreKeyBundle: MessageFns<PreKeyBundle>;
 export declare const PreKeyBundleEntry: MessageFns<PreKeyBundleEntry>;
 export declare const PreKeyBundleEntries: MessageFns<PreKeyBundleEntries>;

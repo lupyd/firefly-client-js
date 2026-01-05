@@ -287,9 +287,9 @@ export interface FireflyIdentity {
 
 export interface FireflyGroupExtension {
   name: string;
-  roles: FireflyGroupRoles | undefined;
-  channels: FireflyGroupChannels | undefined;
-  members: FireflyGroupMembers | undefined;
+  roles: FireflyGroupRole[];
+  channels: FireflyGroupChannel[];
+  members: FireflyGroupMember[];
 }
 
 export interface FireflyGroupRole {
@@ -298,28 +298,16 @@ export interface FireflyGroupRole {
   permissions: number;
 }
 
-export interface FireflyGroupRoles {
-  roles: FireflyGroupRole[];
-}
-
 export interface FireflyGroupMember {
   username: string;
   role: number;
-}
-
-export interface FireflyGroupMembers {
-  members: FireflyGroupMember[];
 }
 
 export interface FireflyGroupChannel {
   id: number;
   name: string;
   type: number;
-  roles: FireflyGroupRoles | undefined;
-}
-
-export interface FireflyGroupChannels {
-  channels: FireflyGroupChannel[];
+  roles: FireflyGroupRole[];
 }
 
 export interface PreKeyBundle {
@@ -3621,7 +3609,7 @@ export const FireflyIdentity: MessageFns<FireflyIdentity> = {
 };
 
 function createBaseFireflyGroupExtension(): FireflyGroupExtension {
-  return { name: "", roles: undefined, channels: undefined, members: undefined };
+  return { name: "", roles: [], channels: [], members: [] };
 }
 
 export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
@@ -3629,14 +3617,14 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
     }
-    if (message.roles !== undefined) {
-      FireflyGroupRoles.encode(message.roles, writer.uint32(18).fork()).join();
+    for (const v of message.roles) {
+      FireflyGroupRole.encode(v!, writer.uint32(18).fork()).join();
     }
-    if (message.channels !== undefined) {
-      FireflyGroupChannels.encode(message.channels, writer.uint32(26).fork()).join();
+    for (const v of message.channels) {
+      FireflyGroupChannel.encode(v!, writer.uint32(26).fork()).join();
     }
-    if (message.members !== undefined) {
-      FireflyGroupMembers.encode(message.members, writer.uint32(34).fork()).join();
+    for (const v of message.members) {
+      FireflyGroupMember.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -3661,7 +3649,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
             break;
           }
 
-          message.roles = FireflyGroupRoles.decode(reader, reader.uint32());
+          message.roles.push(FireflyGroupRole.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -3669,7 +3657,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
             break;
           }
 
-          message.channels = FireflyGroupChannels.decode(reader, reader.uint32());
+          message.channels.push(FireflyGroupChannel.decode(reader, reader.uint32()));
           continue;
         }
         case 4: {
@@ -3677,7 +3665,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
             break;
           }
 
-          message.members = FireflyGroupMembers.decode(reader, reader.uint32());
+          message.members.push(FireflyGroupMember.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -3692,9 +3680,13 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
   fromJSON(object: any): FireflyGroupExtension {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
-      roles: isSet(object.roles) ? FireflyGroupRoles.fromJSON(object.roles) : undefined,
-      channels: isSet(object.channels) ? FireflyGroupChannels.fromJSON(object.channels) : undefined,
-      members: isSet(object.members) ? FireflyGroupMembers.fromJSON(object.members) : undefined,
+      roles: globalThis.Array.isArray(object?.roles) ? object.roles.map((e: any) => FireflyGroupRole.fromJSON(e)) : [],
+      channels: globalThis.Array.isArray(object?.channels)
+        ? object.channels.map((e: any) => FireflyGroupChannel.fromJSON(e))
+        : [],
+      members: globalThis.Array.isArray(object?.members)
+        ? object.members.map((e: any) => FireflyGroupMember.fromJSON(e))
+        : [],
     };
   },
 
@@ -3703,14 +3695,14 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
-    if (message.roles !== undefined) {
-      obj.roles = FireflyGroupRoles.toJSON(message.roles);
+    if (message.roles?.length) {
+      obj.roles = message.roles.map((e) => FireflyGroupRole.toJSON(e));
     }
-    if (message.channels !== undefined) {
-      obj.channels = FireflyGroupChannels.toJSON(message.channels);
+    if (message.channels?.length) {
+      obj.channels = message.channels.map((e) => FireflyGroupChannel.toJSON(e));
     }
-    if (message.members !== undefined) {
-      obj.members = FireflyGroupMembers.toJSON(message.members);
+    if (message.members?.length) {
+      obj.members = message.members.map((e) => FireflyGroupMember.toJSON(e));
     }
     return obj;
   },
@@ -3721,15 +3713,9 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
   fromPartial<I extends Exact<DeepPartial<FireflyGroupExtension>, I>>(object: I): FireflyGroupExtension {
     const message = createBaseFireflyGroupExtension();
     message.name = object.name ?? "";
-    message.roles = (object.roles !== undefined && object.roles !== null)
-      ? FireflyGroupRoles.fromPartial(object.roles)
-      : undefined;
-    message.channels = (object.channels !== undefined && object.channels !== null)
-      ? FireflyGroupChannels.fromPartial(object.channels)
-      : undefined;
-    message.members = (object.members !== undefined && object.members !== null)
-      ? FireflyGroupMembers.fromPartial(object.members)
-      : undefined;
+    message.roles = object.roles?.map((e) => FireflyGroupRole.fromPartial(e)) || [];
+    message.channels = object.channels?.map((e) => FireflyGroupChannel.fromPartial(e)) || [];
+    message.members = object.members?.map((e) => FireflyGroupMember.fromPartial(e)) || [];
     return message;
   },
 };
@@ -3826,66 +3812,6 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
   },
 };
 
-function createBaseFireflyGroupRoles(): FireflyGroupRoles {
-  return { roles: [] };
-}
-
-export const FireflyGroupRoles: MessageFns<FireflyGroupRoles> = {
-  encode(message: FireflyGroupRoles, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.roles) {
-      FireflyGroupRole.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FireflyGroupRoles {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFireflyGroupRoles();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.roles.push(FireflyGroupRole.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FireflyGroupRoles {
-    return {
-      roles: globalThis.Array.isArray(object?.roles) ? object.roles.map((e: any) => FireflyGroupRole.fromJSON(e)) : [],
-    };
-  },
-
-  toJSON(message: FireflyGroupRoles): unknown {
-    const obj: any = {};
-    if (message.roles?.length) {
-      obj.roles = message.roles.map((e) => FireflyGroupRole.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FireflyGroupRoles>, I>>(base?: I): FireflyGroupRoles {
-    return FireflyGroupRoles.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FireflyGroupRoles>, I>>(object: I): FireflyGroupRoles {
-    const message = createBaseFireflyGroupRoles();
-    message.roles = object.roles?.map((e) => FireflyGroupRole.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseFireflyGroupMember(): FireflyGroupMember {
   return { username: "", role: 0 };
 }
@@ -3962,70 +3888,8 @@ export const FireflyGroupMember: MessageFns<FireflyGroupMember> = {
   },
 };
 
-function createBaseFireflyGroupMembers(): FireflyGroupMembers {
-  return { members: [] };
-}
-
-export const FireflyGroupMembers: MessageFns<FireflyGroupMembers> = {
-  encode(message: FireflyGroupMembers, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.members) {
-      FireflyGroupMember.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FireflyGroupMembers {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFireflyGroupMembers();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.members.push(FireflyGroupMember.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FireflyGroupMembers {
-    return {
-      members: globalThis.Array.isArray(object?.members)
-        ? object.members.map((e: any) => FireflyGroupMember.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: FireflyGroupMembers): unknown {
-    const obj: any = {};
-    if (message.members?.length) {
-      obj.members = message.members.map((e) => FireflyGroupMember.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FireflyGroupMembers>, I>>(base?: I): FireflyGroupMembers {
-    return FireflyGroupMembers.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FireflyGroupMembers>, I>>(object: I): FireflyGroupMembers {
-    const message = createBaseFireflyGroupMembers();
-    message.members = object.members?.map((e) => FireflyGroupMember.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseFireflyGroupChannel(): FireflyGroupChannel {
-  return { id: 0, name: "", type: 0, roles: undefined };
+  return { id: 0, name: "", type: 0, roles: [] };
 }
 
 export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
@@ -4039,8 +3903,8 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     if (message.type !== 0) {
       writer.uint32(24).uint32(message.type);
     }
-    if (message.roles !== undefined) {
-      FireflyGroupRoles.encode(message.roles, writer.uint32(34).fork()).join();
+    for (const v of message.roles) {
+      FireflyGroupRole.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -4081,7 +3945,7 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
             break;
           }
 
-          message.roles = FireflyGroupRoles.decode(reader, reader.uint32());
+          message.roles.push(FireflyGroupRole.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -4098,7 +3962,7 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       type: isSet(object.type) ? globalThis.Number(object.type) : 0,
-      roles: isSet(object.roles) ? FireflyGroupRoles.fromJSON(object.roles) : undefined,
+      roles: globalThis.Array.isArray(object?.roles) ? object.roles.map((e: any) => FireflyGroupRole.fromJSON(e)) : [],
     };
   },
 
@@ -4113,8 +3977,8 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     if (message.type !== 0) {
       obj.type = Math.round(message.type);
     }
-    if (message.roles !== undefined) {
-      obj.roles = FireflyGroupRoles.toJSON(message.roles);
+    if (message.roles?.length) {
+      obj.roles = message.roles.map((e) => FireflyGroupRole.toJSON(e));
     }
     return obj;
   },
@@ -4127,71 +3991,7 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     message.id = object.id ?? 0;
     message.name = object.name ?? "";
     message.type = object.type ?? 0;
-    message.roles = (object.roles !== undefined && object.roles !== null)
-      ? FireflyGroupRoles.fromPartial(object.roles)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseFireflyGroupChannels(): FireflyGroupChannels {
-  return { channels: [] };
-}
-
-export const FireflyGroupChannels: MessageFns<FireflyGroupChannels> = {
-  encode(message: FireflyGroupChannels, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.channels) {
-      FireflyGroupChannel.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): FireflyGroupChannels {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFireflyGroupChannels();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.channels.push(FireflyGroupChannel.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FireflyGroupChannels {
-    return {
-      channels: globalThis.Array.isArray(object?.channels)
-        ? object.channels.map((e: any) => FireflyGroupChannel.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: FireflyGroupChannels): unknown {
-    const obj: any = {};
-    if (message.channels?.length) {
-      obj.channels = message.channels.map((e) => FireflyGroupChannel.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FireflyGroupChannels>, I>>(base?: I): FireflyGroupChannels {
-    return FireflyGroupChannels.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FireflyGroupChannels>, I>>(object: I): FireflyGroupChannels {
-    const message = createBaseFireflyGroupChannels();
-    message.channels = object.channels?.map((e) => FireflyGroupChannel.fromPartial(e)) || [];
+    message.roles = object.roles?.map((e) => FireflyGroupRole.fromPartial(e)) || [];
     return message;
   },
 };

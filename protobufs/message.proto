@@ -76,14 +76,12 @@ message GroupMessages {
   repeated GroupMessage messages = 2;
 }
 
-
 message GroupSyncRequest {
   uint64 group_id = 1;
   uint64 start_after = 2;
   uint64 until = 3;
   uint32 limit = 4;
 }
-
 
 message GroupSyncRequests {
   repeated GroupSyncRequest requests = 1;
@@ -98,8 +96,6 @@ message GroupReAddRequest {
 message GroupReAddRequests {
   repeated GroupReAddRequest requests = 1;
 }
-
-
 
 message Error {
   uint32 errorCode = 1;
@@ -218,9 +214,9 @@ message FireflyIdentity {
 
 message FireflyGroupExtension {
   string name = 1;
-  FireflyGroupRoles roles = 2;
-  FireflyGroupChannels channels = 3;
-  FireflyGroupMembers members = 4;
+  repeated FireflyGroupRole roles = 2;
+  repeated FireflyGroupChannel channels = 3;
+  repeated FireflyGroupMember members = 4;
 }
 
 message FireflyGroupRole {
@@ -229,28 +225,16 @@ message FireflyGroupRole {
   uint32 permissions = 3;
 }
 
-message FireflyGroupRoles {
-  repeated FireflyGroupRole roles = 1;
-}
-
 message FireflyGroupMember {
   string username = 1;
   uint32 role = 2;
-}
-
-message FireflyGroupMembers {
-  repeated FireflyGroupMember members = 1;
 }
 
 message FireflyGroupChannel {
   uint32 id = 1;
   string name = 2;
   uint32 type = 3;
-  FireflyGroupRoles roles = 4;
-}
-
-message FireflyGroupChannels {
-  repeated FireflyGroupChannel channels = 1;
+  repeated FireflyGroupRole roles = 4;
 }
 
 message PreKeyBundle {
@@ -318,14 +302,13 @@ message MessagePayload {
   EncryptedFiles files = 3;
 }
 
-
 enum CallMessageType {
   none = 0;
   request = 1;
   reject = 2;
   end = 3;
   // for saving call messages
-  ended = 4; 
+  ended = 4;
   rejected = 5;
   // webrtc messages
   candidate = 10;
@@ -333,13 +316,11 @@ enum CallMessageType {
   offer = 12;
 }
 
-
-
 message CallMessage {
   bytes message = 1;
   uint32 sessionId = 2;
   CallMessageType type = 3;
-  string jsonBody = 4;  
+  string jsonBody = 4;
 }
 
 message SelfUserMessage {
@@ -355,7 +336,6 @@ message UserMessageInner {
     SelfUserMessage selfMessage = 4;
   }
 }
-
 
 message GroupMessageInner {
   uint32 channelId = 1;
