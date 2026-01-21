@@ -3,7 +3,7 @@ syntax = "proto3";
 package firefly;
 
 message UserMessage {
-  uint64 id = 1;
+  fixed64 id = 1;
   uint64 toId = 2;
   uint64 fromId = 3;
   bytes text = 4;
@@ -16,11 +16,11 @@ message UserMessage {
 }
 
 message Group {
-  uint64 id = 1;
+  fixed64 id = 1;
   string name = 2;
   string description = 3;
-  bool pfp = 4;
   bytes state = 5;
+  uint32 settings = 6;
 }
 
 message Groups {
@@ -36,11 +36,11 @@ message GroupInvite {
   string inviter = 2;
   string invitee = 3;
   bytes welcomeMessage = 4;
-  uint64 commitId = 5;
+  fixed64 commitId = 5;
 }
 
 message GroupCommitAndWelcome {
-  uint64 id = 1;
+  fixed64 id = 1;
   uint64 groupId = 2;
   bytes commitMessage = 3;
 
@@ -56,16 +56,16 @@ message GroupInvites {
 }
 
 message GroupMessage {
-  uint64 id = 1;
+  fixed64 id = 1;
   uint64 groupId = 2;
   bytes message = 3;
 }
 
 message GroupKeyPackage {
-  int32 id = 1;
-  bytes package = 2;
   uint64 address = 3;
+  bytes package = 2;
   string username = 4;
+  int32 id = 1;
 }
 
 message GroupKeyPackages {
@@ -78,13 +78,39 @@ message GroupMessages {
 
 message GroupSyncRequest {
   uint64 group_id = 1;
-  uint64 start_after = 2;
-  uint64 until = 3;
+  fixed64 start_after = 2;
+  fixed64 until = 3;
   uint32 limit = 4;
 }
 
 message GroupSyncRequests {
   repeated GroupSyncRequest requests = 1;
+}
+
+message GroupMemberUpdate {
+  uint64 group_id = 1;
+  fixed64 last_message_seen = 2;
+  uint32 last_epoch = 3;
+}
+
+message GroupMemberUpdates {
+  repeated GroupMemberUpdate updates = 1;
+}
+
+message GroupCommit {
+  fixed64 id = 1;
+  uint64 groupId = 2;
+  bytes commit = 4;
+  uint32 epoch = 3;
+}
+
+message GroupCommits {
+  repeated GroupCommit commits = 1;
+}
+
+message GroupCommitSyncRequest {
+  uint64 group_id = 1;
+  uint32 epoch = 2;
 }
 
 message GroupReAddRequest {
@@ -98,20 +124,20 @@ message GroupReAddRequests {
 }
 
 message Error {
-  uint32 errorCode = 1;
   string error = 2;
+  uint32 errorCode = 1;
 }
 
 message Result {
-  uint32 resultCode = 1;
   bytes body = 2;
+  uint32 resultCode = 1;
 }
 
 message Address {
   uint64 id = 1;
   string username = 2;
-  uint32 deviceId = 3;
   string fcmToken = 4;
+  uint32 deviceId = 3;
 }
 
 message Addresses {
@@ -123,7 +149,7 @@ message UploadUserMessage {
 }
 
 message MessageIdAndTo {
-  uint64 id = 1;
+  fixed64 id = 1;
   uint64 to = 2;
   bool is_self = 3;
 }
@@ -137,7 +163,6 @@ message Request {
   oneof payload {
     UserMessage createUserMessage = 2;
     UploadUserMessage uploadUserMessage = 3;
-
     GroupMessage uploadGroupMessage = 4;
   }
 }
@@ -165,22 +190,10 @@ message ServerMessage {
   }
 }
 
-message SubscribeGroup {
-  uint64 id = 1;
-}
-message UnSubscribeGroup {
-  uint64 id = 2;
-}
-
 message ClientMessage {
   oneof message {
     UserMessage userMessage = 1;
     GroupMessage groupMessage = 2;
-    UserMessages userMessages = 3;
-    GroupMessages groupMessages = 4;
-    string bearerToken = 5;
-    SubscribeGroup subscribeGroup = 6;
-    UnSubscribeGroup unSubscribeGroup = 7;
     Request request = 10;
     bytes ping = 11;
     bytes pong = 12;
@@ -194,10 +207,9 @@ message GroupId {
 message AuthToken {
   string username = 1;
   uint64 valid_until = 2;
-  string issuer = 3;
   bytes credential = 4;
-  uint32 device_id = 5;
   uint64 address_id = 6;
+  uint32 device_id = 5;
 }
 
 message SignedToken {
@@ -217,12 +229,13 @@ message FireflyGroupExtension {
   repeated FireflyGroupRole roles = 2;
   repeated FireflyGroupChannel channels = 3;
   repeated FireflyGroupMember members = 4;
+  fixed32 default_permissions = 5;
 }
 
 message FireflyGroupRole {
   uint32 id = 1;
   string name = 2;
-  uint32 permissions = 3;
+  fixed32 permissions = 3;
 }
 
 message FireflyGroupMember {
@@ -235,6 +248,7 @@ message FireflyGroupChannel {
   string name = 2;
   uint32 type = 3;
   repeated FireflyGroupRole roles = 4;
+  fixed32 default_permissions = 5;
 }
 
 message PreKeyBundle {
@@ -287,8 +301,8 @@ message Conversations {
 
 message EncryptedFile {
   string url = 1;
-  uint32 contentType = 2;
   bytes secretKey = 3;
+  uint32 contentType = 2;
   uint32 contentLength = 4;
 }
 
@@ -298,7 +312,7 @@ message EncryptedFiles {
 
 message MessagePayload {
   string text = 1;
-  uint64 replyingTo = 2;
+  fixed64 replyingTo = 2;
   EncryptedFiles files = 3;
 }
 
@@ -318,9 +332,9 @@ enum CallMessageType {
 
 message CallMessage {
   bytes message = 1;
-  uint32 sessionId = 2;
   CallMessageType type = 3;
   string jsonBody = 4;
+  uint32 sessionId = 2;
 }
 
 message SelfUserMessage {

@@ -5,8 +5,8 @@
 //   protoc               v6.33.1
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundleEntries = exports.PreKeyBundleEntry = exports.PreKeyBundle = exports.FireflyGroupChannel = exports.FireflyGroupMember = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyIdentity = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.UnSubscribeGroup = exports.SubscribeGroup = exports.ServerMessage = exports.Response = exports.Request = exports.UserMessageUploaded = exports.MessageIdAndTo = exports.UploadUserMessage = exports.Addresses = exports.Address = exports.Result = exports.Error = exports.GroupReAddRequests = exports.GroupReAddRequest = exports.GroupSyncRequests = exports.GroupSyncRequest = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupCommitAndWelcome = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.CallMessageType = exports.protobufPackage = void 0;
-exports.GroupMessageInner = exports.UserMessageInner = void 0;
+exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundleEntries = exports.PreKeyBundleEntry = exports.PreKeyBundle = exports.FireflyGroupChannel = exports.FireflyGroupMember = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyIdentity = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.ServerMessage = exports.Response = exports.Request = exports.UserMessageUploaded = exports.MessageIdAndTo = exports.UploadUserMessage = exports.Addresses = exports.Address = exports.Result = exports.Error = exports.GroupReAddRequests = exports.GroupReAddRequest = exports.GroupCommitSyncRequest = exports.GroupCommits = exports.GroupCommit = exports.GroupMemberUpdates = exports.GroupMemberUpdate = exports.GroupSyncRequests = exports.GroupSyncRequest = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupCommitAndWelcome = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.CallMessageType = exports.protobufPackage = void 0;
+exports.GroupMessageInner = exports.UserMessageInner = exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = void 0;
 exports.callMessageTypeFromJSON = callMessageTypeFromJSON;
 exports.callMessageTypeToJSON = callMessageTypeToJSON;
 /* eslint-disable */
@@ -103,9 +103,9 @@ exports.UserMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0n) {
             if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
             }
-            writer.uint32(8).uint64(message.id);
+            writer.uint32(9).fixed64(message.id);
         }
         if (message.toId !== 0n) {
             if (BigInt.asUintN(64, message.toId) !== message.toId) {
@@ -144,10 +144,10 @@ exports.UserMessage = {
             const tag = reader.uint32();
             switch (tag >>> 3) {
                 case 1: {
-                    if (tag !== 8) {
+                    if (tag !== 9) {
                         break;
                     }
-                    message.id = reader.uint64();
+                    message.id = reader.fixed64();
                     continue;
                 }
                 case 2: {
@@ -264,15 +264,15 @@ exports.UserMessage = {
     },
 };
 function createBaseGroup() {
-    return { id: 0n, name: "", description: "", pfp: false, state: new Uint8Array(0) };
+    return { id: 0n, name: "", description: "", state: new Uint8Array(0), settings: 0 };
 }
 exports.Group = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0n) {
             if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
             }
-            writer.uint32(8).uint64(message.id);
+            writer.uint32(9).fixed64(message.id);
         }
         if (message.name !== "") {
             writer.uint32(18).string(message.name);
@@ -280,11 +280,11 @@ exports.Group = {
         if (message.description !== "") {
             writer.uint32(26).string(message.description);
         }
-        if (message.pfp !== false) {
-            writer.uint32(32).bool(message.pfp);
-        }
         if (message.state.length !== 0) {
             writer.uint32(42).bytes(message.state);
+        }
+        if (message.settings !== 0) {
+            writer.uint32(48).uint32(message.settings);
         }
         return writer;
     },
@@ -296,10 +296,10 @@ exports.Group = {
             const tag = reader.uint32();
             switch (tag >>> 3) {
                 case 1: {
-                    if (tag !== 8) {
+                    if (tag !== 9) {
                         break;
                     }
-                    message.id = reader.uint64();
+                    message.id = reader.fixed64();
                     continue;
                 }
                 case 2: {
@@ -316,18 +316,18 @@ exports.Group = {
                     message.description = reader.string();
                     continue;
                 }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.pfp = reader.bool();
-                    continue;
-                }
                 case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.state = reader.bytes();
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 48) {
+                        break;
+                    }
+                    message.settings = reader.uint32();
                     continue;
                 }
             }
@@ -343,8 +343,8 @@ exports.Group = {
             id: isSet(object.id) ? BigInt(object.id) : 0n,
             name: isSet(object.name) ? globalThis.String(object.name) : "",
             description: isSet(object.description) ? globalThis.String(object.description) : "",
-            pfp: isSet(object.pfp) ? globalThis.Boolean(object.pfp) : false,
             state: isSet(object.state) ? bytesFromBase64(object.state) : new Uint8Array(0),
+            settings: isSet(object.settings) ? globalThis.Number(object.settings) : 0,
         };
     },
     toJSON(message) {
@@ -358,11 +358,11 @@ exports.Group = {
         if (message.description !== "") {
             obj.description = message.description;
         }
-        if (message.pfp !== false) {
-            obj.pfp = message.pfp;
-        }
         if (message.state.length !== 0) {
             obj.state = base64FromBytes(message.state);
+        }
+        if (message.settings !== 0) {
+            obj.settings = Math.round(message.settings);
         }
         return obj;
     },
@@ -374,8 +374,8 @@ exports.Group = {
         message.id = object.id ?? 0n;
         message.name = object.name ?? "";
         message.description = object.description ?? "";
-        message.pfp = object.pfp ?? false;
         message.state = object.state ?? new Uint8Array(0);
+        message.settings = object.settings ?? 0;
         return message;
     },
 };
@@ -507,9 +507,9 @@ exports.GroupInvite = {
         }
         if (message.commitId !== 0n) {
             if (BigInt.asUintN(64, message.commitId) !== message.commitId) {
-                throw new globalThis.Error("value provided for field message.commitId of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.commitId of type fixed64 too large");
             }
-            writer.uint32(40).uint64(message.commitId);
+            writer.uint32(41).fixed64(message.commitId);
         }
         return writer;
     },
@@ -549,10 +549,10 @@ exports.GroupInvite = {
                     continue;
                 }
                 case 5: {
-                    if (tag !== 40) {
+                    if (tag !== 41) {
                         break;
                     }
-                    message.commitId = reader.uint64();
+                    message.commitId = reader.fixed64();
                     continue;
                 }
             }
@@ -619,9 +619,9 @@ exports.GroupCommitAndWelcome = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0n) {
             if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
             }
-            writer.uint32(8).uint64(message.id);
+            writer.uint32(9).fixed64(message.id);
         }
         if (message.groupId !== 0n) {
             if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
@@ -659,10 +659,10 @@ exports.GroupCommitAndWelcome = {
             const tag = reader.uint32();
             switch (tag >>> 3) {
                 case 1: {
-                    if (tag !== 8) {
+                    if (tag !== 9) {
                         break;
                     }
-                    message.id = reader.uint64();
+                    message.id = reader.fixed64();
                     continue;
                 }
                 case 2: {
@@ -835,9 +835,9 @@ exports.GroupMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0n) {
             if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
             }
-            writer.uint32(8).uint64(message.id);
+            writer.uint32(9).fixed64(message.id);
         }
         if (message.groupId !== 0n) {
             if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
@@ -858,10 +858,10 @@ exports.GroupMessage = {
             const tag = reader.uint32();
             switch (tag >>> 3) {
                 case 1: {
-                    if (tag !== 8) {
+                    if (tag !== 9) {
                         break;
                     }
-                    message.id = reader.uint64();
+                    message.id = reader.fixed64();
                     continue;
                 }
                 case 2: {
@@ -918,24 +918,24 @@ exports.GroupMessage = {
     },
 };
 function createBaseGroupKeyPackage() {
-    return { id: 0, package: new Uint8Array(0), address: 0n, username: "" };
+    return { address: 0n, package: new Uint8Array(0), username: "", id: 0 };
 }
 exports.GroupKeyPackage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
-        if (message.id !== 0) {
-            writer.uint32(8).int32(message.id);
-        }
-        if (message.package.length !== 0) {
-            writer.uint32(18).bytes(message.package);
-        }
         if (message.address !== 0n) {
             if (BigInt.asUintN(64, message.address) !== message.address) {
                 throw new globalThis.Error("value provided for field message.address of type uint64 too large");
             }
             writer.uint32(24).uint64(message.address);
         }
+        if (message.package.length !== 0) {
+            writer.uint32(18).bytes(message.package);
+        }
         if (message.username !== "") {
             writer.uint32(34).string(message.username);
+        }
+        if (message.id !== 0) {
+            writer.uint32(8).int32(message.id);
         }
         return writer;
     },
@@ -946,11 +946,11 @@ exports.GroupKeyPackage = {
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
+                case 3: {
+                    if (tag !== 24) {
                         break;
                     }
-                    message.id = reader.int32();
+                    message.address = reader.uint64();
                     continue;
                 }
                 case 2: {
@@ -960,18 +960,18 @@ exports.GroupKeyPackage = {
                     message.package = reader.bytes();
                     continue;
                 }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.address = reader.uint64();
-                    continue;
-                }
                 case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.username = reader.string();
+                    continue;
+                }
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.id = reader.int32();
                     continue;
                 }
             }
@@ -984,25 +984,25 @@ exports.GroupKeyPackage = {
     },
     fromJSON(object) {
         return {
-            id: isSet(object.id) ? globalThis.Number(object.id) : 0,
-            package: isSet(object.package) ? bytesFromBase64(object.package) : new Uint8Array(0),
             address: isSet(object.address) ? BigInt(object.address) : 0n,
+            package: isSet(object.package) ? bytesFromBase64(object.package) : new Uint8Array(0),
             username: isSet(object.username) ? globalThis.String(object.username) : "",
+            id: isSet(object.id) ? globalThis.Number(object.id) : 0,
         };
     },
     toJSON(message) {
         const obj = {};
-        if (message.id !== 0) {
-            obj.id = Math.round(message.id);
+        if (message.address !== 0n) {
+            obj.address = message.address.toString();
         }
         if (message.package.length !== 0) {
             obj.package = base64FromBytes(message.package);
         }
-        if (message.address !== 0n) {
-            obj.address = message.address.toString();
-        }
         if (message.username !== "") {
             obj.username = message.username;
+        }
+        if (message.id !== 0) {
+            obj.id = Math.round(message.id);
         }
         return obj;
     },
@@ -1011,10 +1011,10 @@ exports.GroupKeyPackage = {
     },
     fromPartial(object) {
         const message = createBaseGroupKeyPackage();
-        message.id = object.id ?? 0;
-        message.package = object.package ?? new Uint8Array(0);
         message.address = object.address ?? 0n;
+        message.package = object.package ?? new Uint8Array(0);
         message.username = object.username ?? "";
+        message.id = object.id ?? 0;
         return message;
     },
 };
@@ -1141,15 +1141,15 @@ exports.GroupSyncRequest = {
         }
         if (message.startAfter !== 0n) {
             if (BigInt.asUintN(64, message.startAfter) !== message.startAfter) {
-                throw new globalThis.Error("value provided for field message.startAfter of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.startAfter of type fixed64 too large");
             }
-            writer.uint32(16).uint64(message.startAfter);
+            writer.uint32(17).fixed64(message.startAfter);
         }
         if (message.until !== 0n) {
             if (BigInt.asUintN(64, message.until) !== message.until) {
-                throw new globalThis.Error("value provided for field message.until of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.until of type fixed64 too large");
             }
-            writer.uint32(24).uint64(message.until);
+            writer.uint32(25).fixed64(message.until);
         }
         if (message.limit !== 0) {
             writer.uint32(32).uint32(message.limit);
@@ -1171,17 +1171,17 @@ exports.GroupSyncRequest = {
                     continue;
                 }
                 case 2: {
-                    if (tag !== 16) {
+                    if (tag !== 17) {
                         break;
                     }
-                    message.startAfter = reader.uint64();
+                    message.startAfter = reader.fixed64();
                     continue;
                 }
                 case 3: {
-                    if (tag !== 24) {
+                    if (tag !== 25) {
                         break;
                     }
-                    message.until = reader.uint64();
+                    message.until = reader.fixed64();
                     continue;
                 }
                 case 4: {
@@ -1287,6 +1287,378 @@ exports.GroupSyncRequests = {
     fromPartial(object) {
         const message = createBaseGroupSyncRequests();
         message.requests = object.requests?.map((e) => exports.GroupSyncRequest.fromPartial(e)) || [];
+        return message;
+    },
+};
+function createBaseGroupMemberUpdate() {
+    return { groupId: 0n, lastMessageSeen: 0n, lastEpoch: 0 };
+}
+exports.GroupMemberUpdate = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.groupId !== 0n) {
+            if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+                throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+            }
+            writer.uint32(8).uint64(message.groupId);
+        }
+        if (message.lastMessageSeen !== 0n) {
+            if (BigInt.asUintN(64, message.lastMessageSeen) !== message.lastMessageSeen) {
+                throw new globalThis.Error("value provided for field message.lastMessageSeen of type fixed64 too large");
+            }
+            writer.uint32(17).fixed64(message.lastMessageSeen);
+        }
+        if (message.lastEpoch !== 0) {
+            writer.uint32(24).uint32(message.lastEpoch);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupMemberUpdate();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.groupId = reader.uint64();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 17) {
+                        break;
+                    }
+                    message.lastMessageSeen = reader.fixed64();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.lastEpoch = reader.uint32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+            lastMessageSeen: isSet(object.lastMessageSeen) ? BigInt(object.lastMessageSeen) : 0n,
+            lastEpoch: isSet(object.lastEpoch) ? globalThis.Number(object.lastEpoch) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.groupId !== 0n) {
+            obj.groupId = message.groupId.toString();
+        }
+        if (message.lastMessageSeen !== 0n) {
+            obj.lastMessageSeen = message.lastMessageSeen.toString();
+        }
+        if (message.lastEpoch !== 0) {
+            obj.lastEpoch = Math.round(message.lastEpoch);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupMemberUpdate.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupMemberUpdate();
+        message.groupId = object.groupId ?? 0n;
+        message.lastMessageSeen = object.lastMessageSeen ?? 0n;
+        message.lastEpoch = object.lastEpoch ?? 0;
+        return message;
+    },
+};
+function createBaseGroupMemberUpdates() {
+    return { updates: [] };
+}
+exports.GroupMemberUpdates = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        for (const v of message.updates) {
+            exports.GroupMemberUpdate.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupMemberUpdates();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.updates.push(exports.GroupMemberUpdate.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            updates: globalThis.Array.isArray(object?.updates)
+                ? object.updates.map((e) => exports.GroupMemberUpdate.fromJSON(e))
+                : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.updates?.length) {
+            obj.updates = message.updates.map((e) => exports.GroupMemberUpdate.toJSON(e));
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupMemberUpdates.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupMemberUpdates();
+        message.updates = object.updates?.map((e) => exports.GroupMemberUpdate.fromPartial(e)) || [];
+        return message;
+    },
+};
+function createBaseGroupCommit() {
+    return { id: 0n, groupId: 0n, commit: new Uint8Array(0), epoch: 0 };
+}
+exports.GroupCommit = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.id !== 0n) {
+            if (BigInt.asUintN(64, message.id) !== message.id) {
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
+            }
+            writer.uint32(9).fixed64(message.id);
+        }
+        if (message.groupId !== 0n) {
+            if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+                throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+            }
+            writer.uint32(16).uint64(message.groupId);
+        }
+        if (message.commit.length !== 0) {
+            writer.uint32(34).bytes(message.commit);
+        }
+        if (message.epoch !== 0) {
+            writer.uint32(24).uint32(message.epoch);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupCommit();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 9) {
+                        break;
+                    }
+                    message.id = reader.fixed64();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.groupId = reader.uint64();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.commit = reader.bytes();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.epoch = reader.uint32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            id: isSet(object.id) ? BigInt(object.id) : 0n,
+            groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+            commit: isSet(object.commit) ? bytesFromBase64(object.commit) : new Uint8Array(0),
+            epoch: isSet(object.epoch) ? globalThis.Number(object.epoch) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.id !== 0n) {
+            obj.id = message.id.toString();
+        }
+        if (message.groupId !== 0n) {
+            obj.groupId = message.groupId.toString();
+        }
+        if (message.commit.length !== 0) {
+            obj.commit = base64FromBytes(message.commit);
+        }
+        if (message.epoch !== 0) {
+            obj.epoch = Math.round(message.epoch);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupCommit.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupCommit();
+        message.id = object.id ?? 0n;
+        message.groupId = object.groupId ?? 0n;
+        message.commit = object.commit ?? new Uint8Array(0);
+        message.epoch = object.epoch ?? 0;
+        return message;
+    },
+};
+function createBaseGroupCommits() {
+    return { commits: [] };
+}
+exports.GroupCommits = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        for (const v of message.commits) {
+            exports.GroupCommit.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupCommits();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.commits.push(exports.GroupCommit.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            commits: globalThis.Array.isArray(object?.commits) ? object.commits.map((e) => exports.GroupCommit.fromJSON(e)) : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.commits?.length) {
+            obj.commits = message.commits.map((e) => exports.GroupCommit.toJSON(e));
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupCommits.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupCommits();
+        message.commits = object.commits?.map((e) => exports.GroupCommit.fromPartial(e)) || [];
+        return message;
+    },
+};
+function createBaseGroupCommitSyncRequest() {
+    return { groupId: 0n, epoch: 0 };
+}
+exports.GroupCommitSyncRequest = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.groupId !== 0n) {
+            if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+                throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+            }
+            writer.uint32(8).uint64(message.groupId);
+        }
+        if (message.epoch !== 0) {
+            writer.uint32(16).uint32(message.epoch);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupCommitSyncRequest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.groupId = reader.uint64();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.epoch = reader.uint32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+            epoch: isSet(object.epoch) ? globalThis.Number(object.epoch) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.groupId !== 0n) {
+            obj.groupId = message.groupId.toString();
+        }
+        if (message.epoch !== 0) {
+            obj.epoch = Math.round(message.epoch);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.GroupCommitSyncRequest.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseGroupCommitSyncRequest();
+        message.groupId = object.groupId ?? 0n;
+        message.epoch = object.epoch ?? 0;
         return message;
     },
 };
@@ -1435,15 +1807,15 @@ exports.GroupReAddRequests = {
     },
 };
 function createBaseError() {
-    return { errorCode: 0, error: "" };
+    return { error: "", errorCode: 0 };
 }
 exports.Error = {
     encode(message, writer = new wire_1.BinaryWriter()) {
-        if (message.errorCode !== 0) {
-            writer.uint32(8).uint32(message.errorCode);
-        }
         if (message.error !== "") {
             writer.uint32(18).string(message.error);
+        }
+        if (message.errorCode !== 0) {
+            writer.uint32(8).uint32(message.errorCode);
         }
         return writer;
     },
@@ -1454,18 +1826,18 @@ exports.Error = {
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.errorCode = reader.uint32();
-                    continue;
-                }
                 case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.error = reader.string();
+                    continue;
+                }
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.errorCode = reader.uint32();
                     continue;
                 }
             }
@@ -1478,17 +1850,17 @@ exports.Error = {
     },
     fromJSON(object) {
         return {
-            errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
             error: isSet(object.error) ? globalThis.String(object.error) : "",
+            errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
         };
     },
     toJSON(message) {
         const obj = {};
-        if (message.errorCode !== 0) {
-            obj.errorCode = Math.round(message.errorCode);
-        }
         if (message.error !== "") {
             obj.error = message.error;
+        }
+        if (message.errorCode !== 0) {
+            obj.errorCode = Math.round(message.errorCode);
         }
         return obj;
     },
@@ -1497,21 +1869,21 @@ exports.Error = {
     },
     fromPartial(object) {
         const message = createBaseError();
-        message.errorCode = object.errorCode ?? 0;
         message.error = object.error ?? "";
+        message.errorCode = object.errorCode ?? 0;
         return message;
     },
 };
 function createBaseResult() {
-    return { resultCode: 0, body: new Uint8Array(0) };
+    return { body: new Uint8Array(0), resultCode: 0 };
 }
 exports.Result = {
     encode(message, writer = new wire_1.BinaryWriter()) {
-        if (message.resultCode !== 0) {
-            writer.uint32(8).uint32(message.resultCode);
-        }
         if (message.body.length !== 0) {
             writer.uint32(18).bytes(message.body);
+        }
+        if (message.resultCode !== 0) {
+            writer.uint32(8).uint32(message.resultCode);
         }
         return writer;
     },
@@ -1522,18 +1894,18 @@ exports.Result = {
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.resultCode = reader.uint32();
-                    continue;
-                }
                 case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.body = reader.bytes();
+                    continue;
+                }
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.resultCode = reader.uint32();
                     continue;
                 }
             }
@@ -1546,17 +1918,17 @@ exports.Result = {
     },
     fromJSON(object) {
         return {
-            resultCode: isSet(object.resultCode) ? globalThis.Number(object.resultCode) : 0,
             body: isSet(object.body) ? bytesFromBase64(object.body) : new Uint8Array(0),
+            resultCode: isSet(object.resultCode) ? globalThis.Number(object.resultCode) : 0,
         };
     },
     toJSON(message) {
         const obj = {};
-        if (message.resultCode !== 0) {
-            obj.resultCode = Math.round(message.resultCode);
-        }
         if (message.body.length !== 0) {
             obj.body = base64FromBytes(message.body);
+        }
+        if (message.resultCode !== 0) {
+            obj.resultCode = Math.round(message.resultCode);
         }
         return obj;
     },
@@ -1565,13 +1937,13 @@ exports.Result = {
     },
     fromPartial(object) {
         const message = createBaseResult();
-        message.resultCode = object.resultCode ?? 0;
         message.body = object.body ?? new Uint8Array(0);
+        message.resultCode = object.resultCode ?? 0;
         return message;
     },
 };
 function createBaseAddress() {
-    return { id: 0n, username: "", deviceId: 0, fcmToken: "" };
+    return { id: 0n, username: "", fcmToken: "", deviceId: 0 };
 }
 exports.Address = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -1584,11 +1956,11 @@ exports.Address = {
         if (message.username !== "") {
             writer.uint32(18).string(message.username);
         }
-        if (message.deviceId !== 0) {
-            writer.uint32(24).uint32(message.deviceId);
-        }
         if (message.fcmToken !== "") {
             writer.uint32(34).string(message.fcmToken);
+        }
+        if (message.deviceId !== 0) {
+            writer.uint32(24).uint32(message.deviceId);
         }
         return writer;
     },
@@ -1613,18 +1985,18 @@ exports.Address = {
                     message.username = reader.string();
                     continue;
                 }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.deviceId = reader.uint32();
-                    continue;
-                }
                 case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.fcmToken = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.deviceId = reader.uint32();
                     continue;
                 }
             }
@@ -1639,8 +2011,8 @@ exports.Address = {
         return {
             id: isSet(object.id) ? BigInt(object.id) : 0n,
             username: isSet(object.username) ? globalThis.String(object.username) : "",
-            deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
             fcmToken: isSet(object.fcmToken) ? globalThis.String(object.fcmToken) : "",
+            deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
         };
     },
     toJSON(message) {
@@ -1651,11 +2023,11 @@ exports.Address = {
         if (message.username !== "") {
             obj.username = message.username;
         }
-        if (message.deviceId !== 0) {
-            obj.deviceId = Math.round(message.deviceId);
-        }
         if (message.fcmToken !== "") {
             obj.fcmToken = message.fcmToken;
+        }
+        if (message.deviceId !== 0) {
+            obj.deviceId = Math.round(message.deviceId);
         }
         return obj;
     },
@@ -1666,8 +2038,8 @@ exports.Address = {
         const message = createBaseAddress();
         message.id = object.id ?? 0n;
         message.username = object.username ?? "";
-        message.deviceId = object.deviceId ?? 0;
         message.fcmToken = object.fcmToken ?? "";
+        message.deviceId = object.deviceId ?? 0;
         return message;
     },
 };
@@ -1788,9 +2160,9 @@ exports.MessageIdAndTo = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.id !== 0n) {
             if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
             }
-            writer.uint32(8).uint64(message.id);
+            writer.uint32(9).fixed64(message.id);
         }
         if (message.to !== 0n) {
             if (BigInt.asUintN(64, message.to) !== message.to) {
@@ -1811,10 +2183,10 @@ exports.MessageIdAndTo = {
             const tag = reader.uint32();
             switch (tag >>> 3) {
                 case 1: {
-                    if (tag !== 8) {
+                    if (tag !== 9) {
                         break;
                     }
-                    message.id = reader.uint64();
+                    message.id = reader.fixed64();
                     continue;
                 }
                 case 2: {
@@ -2325,127 +2697,8 @@ exports.ServerMessage = {
         return message;
     },
 };
-function createBaseSubscribeGroup() {
-    return { id: 0n };
-}
-exports.SubscribeGroup = {
-    encode(message, writer = new wire_1.BinaryWriter()) {
-        if (message.id !== 0n) {
-            if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
-            }
-            writer.uint32(8).uint64(message.id);
-        }
-        return writer;
-    },
-    decode(input, length) {
-        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseSubscribeGroup();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.id = reader.uint64();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
-        }
-        return message;
-    },
-    fromJSON(object) {
-        return { id: isSet(object.id) ? BigInt(object.id) : 0n };
-    },
-    toJSON(message) {
-        const obj = {};
-        if (message.id !== 0n) {
-            obj.id = message.id.toString();
-        }
-        return obj;
-    },
-    create(base) {
-        return exports.SubscribeGroup.fromPartial(base ?? {});
-    },
-    fromPartial(object) {
-        const message = createBaseSubscribeGroup();
-        message.id = object.id ?? 0n;
-        return message;
-    },
-};
-function createBaseUnSubscribeGroup() {
-    return { id: 0n };
-}
-exports.UnSubscribeGroup = {
-    encode(message, writer = new wire_1.BinaryWriter()) {
-        if (message.id !== 0n) {
-            if (BigInt.asUintN(64, message.id) !== message.id) {
-                throw new globalThis.Error("value provided for field message.id of type uint64 too large");
-            }
-            writer.uint32(16).uint64(message.id);
-        }
-        return writer;
-    },
-    decode(input, length) {
-        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseUnSubscribeGroup();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.id = reader.uint64();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
-        }
-        return message;
-    },
-    fromJSON(object) {
-        return { id: isSet(object.id) ? BigInt(object.id) : 0n };
-    },
-    toJSON(message) {
-        const obj = {};
-        if (message.id !== 0n) {
-            obj.id = message.id.toString();
-        }
-        return obj;
-    },
-    create(base) {
-        return exports.UnSubscribeGroup.fromPartial(base ?? {});
-    },
-    fromPartial(object) {
-        const message = createBaseUnSubscribeGroup();
-        message.id = object.id ?? 0n;
-        return message;
-    },
-};
 function createBaseClientMessage() {
-    return {
-        userMessage: undefined,
-        groupMessage: undefined,
-        userMessages: undefined,
-        groupMessages: undefined,
-        bearerToken: undefined,
-        subscribeGroup: undefined,
-        unSubscribeGroup: undefined,
-        request: undefined,
-        ping: undefined,
-        pong: undefined,
-    };
+    return { userMessage: undefined, groupMessage: undefined, request: undefined, ping: undefined, pong: undefined };
 }
 exports.ClientMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -2454,21 +2707,6 @@ exports.ClientMessage = {
         }
         if (message.groupMessage !== undefined) {
             exports.GroupMessage.encode(message.groupMessage, writer.uint32(18).fork()).join();
-        }
-        if (message.userMessages !== undefined) {
-            exports.UserMessages.encode(message.userMessages, writer.uint32(26).fork()).join();
-        }
-        if (message.groupMessages !== undefined) {
-            exports.GroupMessages.encode(message.groupMessages, writer.uint32(34).fork()).join();
-        }
-        if (message.bearerToken !== undefined) {
-            writer.uint32(42).string(message.bearerToken);
-        }
-        if (message.subscribeGroup !== undefined) {
-            exports.SubscribeGroup.encode(message.subscribeGroup, writer.uint32(50).fork()).join();
-        }
-        if (message.unSubscribeGroup !== undefined) {
-            exports.UnSubscribeGroup.encode(message.unSubscribeGroup, writer.uint32(58).fork()).join();
         }
         if (message.request !== undefined) {
             exports.Request.encode(message.request, writer.uint32(82).fork()).join();
@@ -2500,41 +2738,6 @@ exports.ClientMessage = {
                         break;
                     }
                     message.groupMessage = exports.GroupMessage.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.userMessages = exports.UserMessages.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.groupMessages = exports.GroupMessages.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.bearerToken = reader.string();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.subscribeGroup = exports.SubscribeGroup.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 58) {
-                        break;
-                    }
-                    message.unSubscribeGroup = exports.UnSubscribeGroup.decode(reader, reader.uint32());
                     continue;
                 }
                 case 10: {
@@ -2570,11 +2773,6 @@ exports.ClientMessage = {
         return {
             userMessage: isSet(object.userMessage) ? exports.UserMessage.fromJSON(object.userMessage) : undefined,
             groupMessage: isSet(object.groupMessage) ? exports.GroupMessage.fromJSON(object.groupMessage) : undefined,
-            userMessages: isSet(object.userMessages) ? exports.UserMessages.fromJSON(object.userMessages) : undefined,
-            groupMessages: isSet(object.groupMessages) ? exports.GroupMessages.fromJSON(object.groupMessages) : undefined,
-            bearerToken: isSet(object.bearerToken) ? globalThis.String(object.bearerToken) : undefined,
-            subscribeGroup: isSet(object.subscribeGroup) ? exports.SubscribeGroup.fromJSON(object.subscribeGroup) : undefined,
-            unSubscribeGroup: isSet(object.unSubscribeGroup) ? exports.UnSubscribeGroup.fromJSON(object.unSubscribeGroup) : undefined,
             request: isSet(object.request) ? exports.Request.fromJSON(object.request) : undefined,
             ping: isSet(object.ping) ? bytesFromBase64(object.ping) : undefined,
             pong: isSet(object.pong) ? bytesFromBase64(object.pong) : undefined,
@@ -2587,21 +2785,6 @@ exports.ClientMessage = {
         }
         if (message.groupMessage !== undefined) {
             obj.groupMessage = exports.GroupMessage.toJSON(message.groupMessage);
-        }
-        if (message.userMessages !== undefined) {
-            obj.userMessages = exports.UserMessages.toJSON(message.userMessages);
-        }
-        if (message.groupMessages !== undefined) {
-            obj.groupMessages = exports.GroupMessages.toJSON(message.groupMessages);
-        }
-        if (message.bearerToken !== undefined) {
-            obj.bearerToken = message.bearerToken;
-        }
-        if (message.subscribeGroup !== undefined) {
-            obj.subscribeGroup = exports.SubscribeGroup.toJSON(message.subscribeGroup);
-        }
-        if (message.unSubscribeGroup !== undefined) {
-            obj.unSubscribeGroup = exports.UnSubscribeGroup.toJSON(message.unSubscribeGroup);
         }
         if (message.request !== undefined) {
             obj.request = exports.Request.toJSON(message.request);
@@ -2624,19 +2807,6 @@ exports.ClientMessage = {
             : undefined;
         message.groupMessage = (object.groupMessage !== undefined && object.groupMessage !== null)
             ? exports.GroupMessage.fromPartial(object.groupMessage)
-            : undefined;
-        message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
-            ? exports.UserMessages.fromPartial(object.userMessages)
-            : undefined;
-        message.groupMessages = (object.groupMessages !== undefined && object.groupMessages !== null)
-            ? exports.GroupMessages.fromPartial(object.groupMessages)
-            : undefined;
-        message.bearerToken = object.bearerToken ?? undefined;
-        message.subscribeGroup = (object.subscribeGroup !== undefined && object.subscribeGroup !== null)
-            ? exports.SubscribeGroup.fromPartial(object.subscribeGroup)
-            : undefined;
-        message.unSubscribeGroup = (object.unSubscribeGroup !== undefined && object.unSubscribeGroup !== null)
-            ? exports.UnSubscribeGroup.fromPartial(object.unSubscribeGroup)
             : undefined;
         message.request = (object.request !== undefined && object.request !== null)
             ? exports.Request.fromPartial(object.request)
@@ -2701,7 +2871,7 @@ exports.GroupId = {
     },
 };
 function createBaseAuthToken() {
-    return { username: "", validUntil: 0n, issuer: "", credential: new Uint8Array(0), deviceId: 0, addressId: 0n };
+    return { username: "", validUntil: 0n, credential: new Uint8Array(0), addressId: 0n, deviceId: 0 };
 }
 exports.AuthToken = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -2714,20 +2884,17 @@ exports.AuthToken = {
             }
             writer.uint32(16).uint64(message.validUntil);
         }
-        if (message.issuer !== "") {
-            writer.uint32(26).string(message.issuer);
-        }
         if (message.credential.length !== 0) {
             writer.uint32(34).bytes(message.credential);
-        }
-        if (message.deviceId !== 0) {
-            writer.uint32(40).uint32(message.deviceId);
         }
         if (message.addressId !== 0n) {
             if (BigInt.asUintN(64, message.addressId) !== message.addressId) {
                 throw new globalThis.Error("value provided for field message.addressId of type uint64 too large");
             }
             writer.uint32(48).uint64(message.addressId);
+        }
+        if (message.deviceId !== 0) {
+            writer.uint32(40).uint32(message.deviceId);
         }
         return writer;
     },
@@ -2752,13 +2919,6 @@ exports.AuthToken = {
                     message.validUntil = reader.uint64();
                     continue;
                 }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.issuer = reader.string();
-                    continue;
-                }
                 case 4: {
                     if (tag !== 34) {
                         break;
@@ -2766,18 +2926,18 @@ exports.AuthToken = {
                     message.credential = reader.bytes();
                     continue;
                 }
-                case 5: {
-                    if (tag !== 40) {
-                        break;
-                    }
-                    message.deviceId = reader.uint32();
-                    continue;
-                }
                 case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.addressId = reader.uint64();
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.deviceId = reader.uint32();
                     continue;
                 }
             }
@@ -2792,10 +2952,9 @@ exports.AuthToken = {
         return {
             username: isSet(object.username) ? globalThis.String(object.username) : "",
             validUntil: isSet(object.validUntil) ? BigInt(object.validUntil) : 0n,
-            issuer: isSet(object.issuer) ? globalThis.String(object.issuer) : "",
             credential: isSet(object.credential) ? bytesFromBase64(object.credential) : new Uint8Array(0),
-            deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
             addressId: isSet(object.addressId) ? BigInt(object.addressId) : 0n,
+            deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
         };
     },
     toJSON(message) {
@@ -2806,17 +2965,14 @@ exports.AuthToken = {
         if (message.validUntil !== 0n) {
             obj.validUntil = message.validUntil.toString();
         }
-        if (message.issuer !== "") {
-            obj.issuer = message.issuer;
-        }
         if (message.credential.length !== 0) {
             obj.credential = base64FromBytes(message.credential);
         }
-        if (message.deviceId !== 0) {
-            obj.deviceId = Math.round(message.deviceId);
-        }
         if (message.addressId !== 0n) {
             obj.addressId = message.addressId.toString();
+        }
+        if (message.deviceId !== 0) {
+            obj.deviceId = Math.round(message.deviceId);
         }
         return obj;
     },
@@ -2827,10 +2983,9 @@ exports.AuthToken = {
         const message = createBaseAuthToken();
         message.username = object.username ?? "";
         message.validUntil = object.validUntil ?? 0n;
-        message.issuer = object.issuer ?? "";
         message.credential = object.credential ?? new Uint8Array(0);
-        message.deviceId = object.deviceId ?? 0;
         message.addressId = object.addressId ?? 0n;
+        message.deviceId = object.deviceId ?? 0;
         return message;
     },
 };
@@ -3001,7 +3156,7 @@ exports.FireflyIdentity = {
     },
 };
 function createBaseFireflyGroupExtension() {
-    return { name: "", roles: [], channels: [], members: [] };
+    return { name: "", roles: [], channels: [], members: [], defaultPermissions: 0 };
 }
 exports.FireflyGroupExtension = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -3016,6 +3171,9 @@ exports.FireflyGroupExtension = {
         }
         for (const v of message.members) {
             exports.FireflyGroupMember.encode(v, writer.uint32(34).fork()).join();
+        }
+        if (message.defaultPermissions !== 0) {
+            writer.uint32(45).fixed32(message.defaultPermissions);
         }
         return writer;
     },
@@ -3054,6 +3212,13 @@ exports.FireflyGroupExtension = {
                     message.members.push(exports.FireflyGroupMember.decode(reader, reader.uint32()));
                     continue;
                 }
+                case 5: {
+                    if (tag !== 45) {
+                        break;
+                    }
+                    message.defaultPermissions = reader.fixed32();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -3072,6 +3237,7 @@ exports.FireflyGroupExtension = {
             members: globalThis.Array.isArray(object?.members)
                 ? object.members.map((e) => exports.FireflyGroupMember.fromJSON(e))
                 : [],
+            defaultPermissions: isSet(object.defaultPermissions) ? globalThis.Number(object.defaultPermissions) : 0,
         };
     },
     toJSON(message) {
@@ -3088,6 +3254,9 @@ exports.FireflyGroupExtension = {
         if (message.members?.length) {
             obj.members = message.members.map((e) => exports.FireflyGroupMember.toJSON(e));
         }
+        if (message.defaultPermissions !== 0) {
+            obj.defaultPermissions = Math.round(message.defaultPermissions);
+        }
         return obj;
     },
     create(base) {
@@ -3099,6 +3268,7 @@ exports.FireflyGroupExtension = {
         message.roles = object.roles?.map((e) => exports.FireflyGroupRole.fromPartial(e)) || [];
         message.channels = object.channels?.map((e) => exports.FireflyGroupChannel.fromPartial(e)) || [];
         message.members = object.members?.map((e) => exports.FireflyGroupMember.fromPartial(e)) || [];
+        message.defaultPermissions = object.defaultPermissions ?? 0;
         return message;
     },
 };
@@ -3114,7 +3284,7 @@ exports.FireflyGroupRole = {
             writer.uint32(18).string(message.name);
         }
         if (message.permissions !== 0) {
-            writer.uint32(24).uint32(message.permissions);
+            writer.uint32(29).fixed32(message.permissions);
         }
         return writer;
     },
@@ -3140,10 +3310,10 @@ exports.FireflyGroupRole = {
                     continue;
                 }
                 case 3: {
-                    if (tag !== 24) {
+                    if (tag !== 29) {
                         break;
                     }
-                    message.permissions = reader.uint32();
+                    message.permissions = reader.fixed32();
                     continue;
                 }
             }
@@ -3254,7 +3424,7 @@ exports.FireflyGroupMember = {
     },
 };
 function createBaseFireflyGroupChannel() {
-    return { id: 0, name: "", type: 0, roles: [] };
+    return { id: 0, name: "", type: 0, roles: [], defaultPermissions: 0 };
 }
 exports.FireflyGroupChannel = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -3269,6 +3439,9 @@ exports.FireflyGroupChannel = {
         }
         for (const v of message.roles) {
             exports.FireflyGroupRole.encode(v, writer.uint32(34).fork()).join();
+        }
+        if (message.defaultPermissions !== 0) {
+            writer.uint32(45).fixed32(message.defaultPermissions);
         }
         return writer;
     },
@@ -3307,6 +3480,13 @@ exports.FireflyGroupChannel = {
                     message.roles.push(exports.FireflyGroupRole.decode(reader, reader.uint32()));
                     continue;
                 }
+                case 5: {
+                    if (tag !== 45) {
+                        break;
+                    }
+                    message.defaultPermissions = reader.fixed32();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -3321,6 +3501,7 @@ exports.FireflyGroupChannel = {
             name: isSet(object.name) ? globalThis.String(object.name) : "",
             type: isSet(object.type) ? globalThis.Number(object.type) : 0,
             roles: globalThis.Array.isArray(object?.roles) ? object.roles.map((e) => exports.FireflyGroupRole.fromJSON(e)) : [],
+            defaultPermissions: isSet(object.defaultPermissions) ? globalThis.Number(object.defaultPermissions) : 0,
         };
     },
     toJSON(message) {
@@ -3337,6 +3518,9 @@ exports.FireflyGroupChannel = {
         if (message.roles?.length) {
             obj.roles = message.roles.map((e) => exports.FireflyGroupRole.toJSON(e));
         }
+        if (message.defaultPermissions !== 0) {
+            obj.defaultPermissions = Math.round(message.defaultPermissions);
+        }
         return obj;
     },
     create(base) {
@@ -3348,6 +3532,7 @@ exports.FireflyGroupChannel = {
         message.name = object.name ?? "";
         message.type = object.type ?? 0;
         message.roles = object.roles?.map((e) => exports.FireflyGroupRole.fromPartial(e)) || [];
+        message.defaultPermissions = object.defaultPermissions ?? 0;
         return message;
     },
 };
@@ -4047,18 +4232,18 @@ exports.Conversations = {
     },
 };
 function createBaseEncryptedFile() {
-    return { url: "", contentType: 0, secretKey: new Uint8Array(0), contentLength: 0 };
+    return { url: "", secretKey: new Uint8Array(0), contentType: 0, contentLength: 0 };
 }
 exports.EncryptedFile = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.url !== "") {
             writer.uint32(10).string(message.url);
         }
-        if (message.contentType !== 0) {
-            writer.uint32(16).uint32(message.contentType);
-        }
         if (message.secretKey.length !== 0) {
             writer.uint32(26).bytes(message.secretKey);
+        }
+        if (message.contentType !== 0) {
+            writer.uint32(16).uint32(message.contentType);
         }
         if (message.contentLength !== 0) {
             writer.uint32(32).uint32(message.contentLength);
@@ -4079,18 +4264,18 @@ exports.EncryptedFile = {
                     message.url = reader.string();
                     continue;
                 }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.contentType = reader.uint32();
-                    continue;
-                }
                 case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.secretKey = reader.bytes();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.contentType = reader.uint32();
                     continue;
                 }
                 case 4: {
@@ -4111,8 +4296,8 @@ exports.EncryptedFile = {
     fromJSON(object) {
         return {
             url: isSet(object.url) ? globalThis.String(object.url) : "",
-            contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
             secretKey: isSet(object.secretKey) ? bytesFromBase64(object.secretKey) : new Uint8Array(0),
+            contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
             contentLength: isSet(object.contentLength) ? globalThis.Number(object.contentLength) : 0,
         };
     },
@@ -4121,11 +4306,11 @@ exports.EncryptedFile = {
         if (message.url !== "") {
             obj.url = message.url;
         }
-        if (message.contentType !== 0) {
-            obj.contentType = Math.round(message.contentType);
-        }
         if (message.secretKey.length !== 0) {
             obj.secretKey = base64FromBytes(message.secretKey);
+        }
+        if (message.contentType !== 0) {
+            obj.contentType = Math.round(message.contentType);
         }
         if (message.contentLength !== 0) {
             obj.contentLength = Math.round(message.contentLength);
@@ -4138,8 +4323,8 @@ exports.EncryptedFile = {
     fromPartial(object) {
         const message = createBaseEncryptedFile();
         message.url = object.url ?? "";
-        message.contentType = object.contentType ?? 0;
         message.secretKey = object.secretKey ?? new Uint8Array(0);
+        message.contentType = object.contentType ?? 0;
         message.contentLength = object.contentLength ?? 0;
         return message;
     },
@@ -4207,9 +4392,9 @@ exports.MessagePayload = {
         }
         if (message.replyingTo !== 0n) {
             if (BigInt.asUintN(64, message.replyingTo) !== message.replyingTo) {
-                throw new globalThis.Error("value provided for field message.replyingTo of type uint64 too large");
+                throw new globalThis.Error("value provided for field message.replyingTo of type fixed64 too large");
             }
-            writer.uint32(16).uint64(message.replyingTo);
+            writer.uint32(17).fixed64(message.replyingTo);
         }
         if (message.files !== undefined) {
             exports.EncryptedFiles.encode(message.files, writer.uint32(26).fork()).join();
@@ -4231,10 +4416,10 @@ exports.MessagePayload = {
                     continue;
                 }
                 case 2: {
-                    if (tag !== 16) {
+                    if (tag !== 17) {
                         break;
                     }
-                    message.replyingTo = reader.uint64();
+                    message.replyingTo = reader.fixed64();
                     continue;
                 }
                 case 3: {
@@ -4286,21 +4471,21 @@ exports.MessagePayload = {
     },
 };
 function createBaseCallMessage() {
-    return { message: new Uint8Array(0), sessionId: 0, type: 0, jsonBody: "" };
+    return { message: new Uint8Array(0), type: 0, jsonBody: "", sessionId: 0 };
 }
 exports.CallMessage = {
     encode(message, writer = new wire_1.BinaryWriter()) {
         if (message.message.length !== 0) {
             writer.uint32(10).bytes(message.message);
         }
-        if (message.sessionId !== 0) {
-            writer.uint32(16).uint32(message.sessionId);
-        }
         if (message.type !== 0) {
             writer.uint32(24).int32(message.type);
         }
         if (message.jsonBody !== "") {
             writer.uint32(34).string(message.jsonBody);
+        }
+        if (message.sessionId !== 0) {
+            writer.uint32(16).uint32(message.sessionId);
         }
         return writer;
     },
@@ -4318,13 +4503,6 @@ exports.CallMessage = {
                     message.message = reader.bytes();
                     continue;
                 }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.sessionId = reader.uint32();
-                    continue;
-                }
                 case 3: {
                     if (tag !== 24) {
                         break;
@@ -4339,6 +4517,13 @@ exports.CallMessage = {
                     message.jsonBody = reader.string();
                     continue;
                 }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.sessionId = reader.uint32();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -4350,9 +4535,9 @@ exports.CallMessage = {
     fromJSON(object) {
         return {
             message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0),
-            sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
             type: isSet(object.type) ? callMessageTypeFromJSON(object.type) : 0,
             jsonBody: isSet(object.jsonBody) ? globalThis.String(object.jsonBody) : "",
+            sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
         };
     },
     toJSON(message) {
@@ -4360,14 +4545,14 @@ exports.CallMessage = {
         if (message.message.length !== 0) {
             obj.message = base64FromBytes(message.message);
         }
-        if (message.sessionId !== 0) {
-            obj.sessionId = Math.round(message.sessionId);
-        }
         if (message.type !== 0) {
             obj.type = callMessageTypeToJSON(message.type);
         }
         if (message.jsonBody !== "") {
             obj.jsonBody = message.jsonBody;
+        }
+        if (message.sessionId !== 0) {
+            obj.sessionId = Math.round(message.sessionId);
         }
         return obj;
     },
@@ -4377,9 +4562,9 @@ exports.CallMessage = {
     fromPartial(object) {
         const message = createBaseCallMessage();
         message.message = object.message ?? new Uint8Array(0);
-        message.sessionId = object.sessionId ?? 0;
         message.type = object.type ?? 0;
         message.jsonBody = object.jsonBody ?? "";
+        message.sessionId = object.sessionId ?? 0;
         return message;
     },
 };

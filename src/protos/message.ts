@@ -103,8 +103,8 @@ export interface Group {
   id: bigint;
   name: string;
   description: string;
-  pfp: boolean;
   state: Uint8Array;
+  settings: number;
 }
 
 export interface Groups {
@@ -144,10 +144,10 @@ export interface GroupMessage {
 }
 
 export interface GroupKeyPackage {
-  id: number;
-  package: Uint8Array;
   address: bigint;
+  package: Uint8Array;
   username: string;
+  id: number;
 }
 
 export interface GroupKeyPackages {
@@ -169,6 +169,32 @@ export interface GroupSyncRequests {
   requests: GroupSyncRequest[];
 }
 
+export interface GroupMemberUpdate {
+  groupId: bigint;
+  lastMessageSeen: bigint;
+  lastEpoch: number;
+}
+
+export interface GroupMemberUpdates {
+  updates: GroupMemberUpdate[];
+}
+
+export interface GroupCommit {
+  id: bigint;
+  groupId: bigint;
+  commit: Uint8Array;
+  epoch: number;
+}
+
+export interface GroupCommits {
+  commits: GroupCommit[];
+}
+
+export interface GroupCommitSyncRequest {
+  groupId: bigint;
+  epoch: number;
+}
+
 export interface GroupReAddRequest {
   groupId: bigint;
   addressId: bigint;
@@ -180,20 +206,20 @@ export interface GroupReAddRequests {
 }
 
 export interface Error {
-  errorCode: number;
   error: string;
+  errorCode: number;
 }
 
 export interface Result {
-  resultCode: number;
   body: Uint8Array;
+  resultCode: number;
 }
 
 export interface Address {
   id: bigint;
   username: string;
-  deviceId: number;
   fcmToken: string;
+  deviceId: number;
 }
 
 export interface Addresses {
@@ -239,22 +265,9 @@ export interface ServerMessage {
   pong?: Uint8Array | undefined;
 }
 
-export interface SubscribeGroup {
-  id: bigint;
-}
-
-export interface UnSubscribeGroup {
-  id: bigint;
-}
-
 export interface ClientMessage {
   userMessage?: UserMessage | undefined;
   groupMessage?: GroupMessage | undefined;
-  userMessages?: UserMessages | undefined;
-  groupMessages?: GroupMessages | undefined;
-  bearerToken?: string | undefined;
-  subscribeGroup?: SubscribeGroup | undefined;
-  unSubscribeGroup?: UnSubscribeGroup | undefined;
   request?: Request | undefined;
   ping?: Uint8Array | undefined;
   pong?: Uint8Array | undefined;
@@ -267,10 +280,9 @@ export interface GroupId {
 export interface AuthToken {
   username: string;
   validUntil: bigint;
-  issuer: string;
   credential: Uint8Array;
-  deviceId: number;
   addressId: bigint;
+  deviceId: number;
 }
 
 export interface SignedToken {
@@ -290,6 +302,7 @@ export interface FireflyGroupExtension {
   roles: FireflyGroupRole[];
   channels: FireflyGroupChannel[];
   members: FireflyGroupMember[];
+  defaultPermissions: number;
 }
 
 export interface FireflyGroupRole {
@@ -308,6 +321,7 @@ export interface FireflyGroupChannel {
   name: string;
   type: number;
   roles: FireflyGroupRole[];
+  defaultPermissions: number;
 }
 
 export interface PreKeyBundle {
@@ -359,8 +373,8 @@ export interface Conversations {
 
 export interface EncryptedFile {
   url: string;
-  contentType: number;
   secretKey: Uint8Array;
+  contentType: number;
   contentLength: number;
 }
 
@@ -376,9 +390,9 @@ export interface MessagePayload {
 
 export interface CallMessage {
   message: Uint8Array;
-  sessionId: number;
   type: CallMessageType;
   jsonBody: string;
+  sessionId: number;
 }
 
 export interface SelfUserMessage {
@@ -416,9 +430,9 @@ export const UserMessage: MessageFns<UserMessage> = {
   encode(message: UserMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0n) {
       if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
       }
-      writer.uint32(8).uint64(message.id);
+      writer.uint32(9).fixed64(message.id);
     }
     if (message.toId !== 0n) {
       if (BigInt.asUintN(64, message.toId) !== message.toId) {
@@ -458,11 +472,11 @@ export const UserMessage: MessageFns<UserMessage> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 9) {
             break;
           }
 
-          message.id = reader.uint64() as bigint;
+          message.id = reader.fixed64() as bigint;
           continue;
         }
         case 2: {
@@ -590,16 +604,16 @@ export const UserMessage: MessageFns<UserMessage> = {
 };
 
 function createBaseGroup(): Group {
-  return { id: 0n, name: "", description: "", pfp: false, state: new Uint8Array(0) };
+  return { id: 0n, name: "", description: "", state: new Uint8Array(0), settings: 0 };
 }
 
 export const Group: MessageFns<Group> = {
   encode(message: Group, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0n) {
       if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
       }
-      writer.uint32(8).uint64(message.id);
+      writer.uint32(9).fixed64(message.id);
     }
     if (message.name !== "") {
       writer.uint32(18).string(message.name);
@@ -607,11 +621,11 @@ export const Group: MessageFns<Group> = {
     if (message.description !== "") {
       writer.uint32(26).string(message.description);
     }
-    if (message.pfp !== false) {
-      writer.uint32(32).bool(message.pfp);
-    }
     if (message.state.length !== 0) {
       writer.uint32(42).bytes(message.state);
+    }
+    if (message.settings !== 0) {
+      writer.uint32(48).uint32(message.settings);
     }
     return writer;
   },
@@ -624,11 +638,11 @@ export const Group: MessageFns<Group> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 9) {
             break;
           }
 
-          message.id = reader.uint64() as bigint;
+          message.id = reader.fixed64() as bigint;
           continue;
         }
         case 2: {
@@ -647,20 +661,20 @@ export const Group: MessageFns<Group> = {
           message.description = reader.string();
           continue;
         }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.pfp = reader.bool();
-          continue;
-        }
         case 5: {
           if (tag !== 42) {
             break;
           }
 
           message.state = reader.bytes();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.settings = reader.uint32();
           continue;
         }
       }
@@ -677,8 +691,8 @@ export const Group: MessageFns<Group> = {
       id: isSet(object.id) ? BigInt(object.id) : 0n,
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       description: isSet(object.description) ? globalThis.String(object.description) : "",
-      pfp: isSet(object.pfp) ? globalThis.Boolean(object.pfp) : false,
       state: isSet(object.state) ? bytesFromBase64(object.state) : new Uint8Array(0),
+      settings: isSet(object.settings) ? globalThis.Number(object.settings) : 0,
     };
   },
 
@@ -693,11 +707,11 @@ export const Group: MessageFns<Group> = {
     if (message.description !== "") {
       obj.description = message.description;
     }
-    if (message.pfp !== false) {
-      obj.pfp = message.pfp;
-    }
     if (message.state.length !== 0) {
       obj.state = base64FromBytes(message.state);
+    }
+    if (message.settings !== 0) {
+      obj.settings = Math.round(message.settings);
     }
     return obj;
   },
@@ -710,8 +724,8 @@ export const Group: MessageFns<Group> = {
     message.id = object.id ?? 0n;
     message.name = object.name ?? "";
     message.description = object.description ?? "";
-    message.pfp = object.pfp ?? false;
     message.state = object.state ?? new Uint8Array(0);
+    message.settings = object.settings ?? 0;
     return message;
   },
 };
@@ -859,9 +873,9 @@ export const GroupInvite: MessageFns<GroupInvite> = {
     }
     if (message.commitId !== 0n) {
       if (BigInt.asUintN(64, message.commitId) !== message.commitId) {
-        throw new globalThis.Error("value provided for field message.commitId of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.commitId of type fixed64 too large");
       }
-      writer.uint32(40).uint64(message.commitId);
+      writer.uint32(41).fixed64(message.commitId);
     }
     return writer;
   },
@@ -906,11 +920,11 @@ export const GroupInvite: MessageFns<GroupInvite> = {
           continue;
         }
         case 5: {
-          if (tag !== 40) {
+          if (tag !== 41) {
             break;
           }
 
-          message.commitId = reader.uint64() as bigint;
+          message.commitId = reader.fixed64() as bigint;
           continue;
         }
       }
@@ -982,9 +996,9 @@ export const GroupCommitAndWelcome: MessageFns<GroupCommitAndWelcome> = {
   encode(message: GroupCommitAndWelcome, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0n) {
       if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
       }
-      writer.uint32(8).uint64(message.id);
+      writer.uint32(9).fixed64(message.id);
     }
     if (message.groupId !== 0n) {
       if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
@@ -1023,11 +1037,11 @@ export const GroupCommitAndWelcome: MessageFns<GroupCommitAndWelcome> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 9) {
             break;
           }
 
-          message.id = reader.uint64() as bigint;
+          message.id = reader.fixed64() as bigint;
           continue;
         }
         case 2: {
@@ -1221,9 +1235,9 @@ export const GroupMessage: MessageFns<GroupMessage> = {
   encode(message: GroupMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0n) {
       if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
       }
-      writer.uint32(8).uint64(message.id);
+      writer.uint32(9).fixed64(message.id);
     }
     if (message.groupId !== 0n) {
       if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
@@ -1245,11 +1259,11 @@ export const GroupMessage: MessageFns<GroupMessage> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 9) {
             break;
           }
 
-          message.id = reader.uint64() as bigint;
+          message.id = reader.fixed64() as bigint;
           continue;
         }
         case 2: {
@@ -1312,25 +1326,25 @@ export const GroupMessage: MessageFns<GroupMessage> = {
 };
 
 function createBaseGroupKeyPackage(): GroupKeyPackage {
-  return { id: 0, package: new Uint8Array(0), address: 0n, username: "" };
+  return { address: 0n, package: new Uint8Array(0), username: "", id: 0 };
 }
 
 export const GroupKeyPackage: MessageFns<GroupKeyPackage> = {
   encode(message: GroupKeyPackage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0) {
-      writer.uint32(8).int32(message.id);
-    }
-    if (message.package.length !== 0) {
-      writer.uint32(18).bytes(message.package);
-    }
     if (message.address !== 0n) {
       if (BigInt.asUintN(64, message.address) !== message.address) {
         throw new globalThis.Error("value provided for field message.address of type uint64 too large");
       }
       writer.uint32(24).uint64(message.address);
     }
+    if (message.package.length !== 0) {
+      writer.uint32(18).bytes(message.package);
+    }
     if (message.username !== "") {
       writer.uint32(34).string(message.username);
+    }
+    if (message.id !== 0) {
+      writer.uint32(8).int32(message.id);
     }
     return writer;
   },
@@ -1342,12 +1356,12 @@ export const GroupKeyPackage: MessageFns<GroupKeyPackage> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
+        case 3: {
+          if (tag !== 24) {
             break;
           }
 
-          message.id = reader.int32();
+          message.address = reader.uint64() as bigint;
           continue;
         }
         case 2: {
@@ -1358,20 +1372,20 @@ export const GroupKeyPackage: MessageFns<GroupKeyPackage> = {
           message.package = reader.bytes();
           continue;
         }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.address = reader.uint64() as bigint;
-          continue;
-        }
         case 4: {
           if (tag !== 34) {
             break;
           }
 
           message.username = reader.string();
+          continue;
+        }
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int32();
           continue;
         }
       }
@@ -1385,26 +1399,26 @@ export const GroupKeyPackage: MessageFns<GroupKeyPackage> = {
 
   fromJSON(object: any): GroupKeyPackage {
     return {
-      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
-      package: isSet(object.package) ? bytesFromBase64(object.package) : new Uint8Array(0),
       address: isSet(object.address) ? BigInt(object.address) : 0n,
+      package: isSet(object.package) ? bytesFromBase64(object.package) : new Uint8Array(0),
       username: isSet(object.username) ? globalThis.String(object.username) : "",
+      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
     };
   },
 
   toJSON(message: GroupKeyPackage): unknown {
     const obj: any = {};
-    if (message.id !== 0) {
-      obj.id = Math.round(message.id);
+    if (message.address !== 0n) {
+      obj.address = message.address.toString();
     }
     if (message.package.length !== 0) {
       obj.package = base64FromBytes(message.package);
     }
-    if (message.address !== 0n) {
-      obj.address = message.address.toString();
-    }
     if (message.username !== "") {
       obj.username = message.username;
+    }
+    if (message.id !== 0) {
+      obj.id = Math.round(message.id);
     }
     return obj;
   },
@@ -1414,10 +1428,10 @@ export const GroupKeyPackage: MessageFns<GroupKeyPackage> = {
   },
   fromPartial<I extends Exact<DeepPartial<GroupKeyPackage>, I>>(object: I): GroupKeyPackage {
     const message = createBaseGroupKeyPackage();
-    message.id = object.id ?? 0;
-    message.package = object.package ?? new Uint8Array(0);
     message.address = object.address ?? 0n;
+    message.package = object.package ?? new Uint8Array(0);
     message.username = object.username ?? "";
+    message.id = object.id ?? 0;
     return message;
   },
 };
@@ -1560,15 +1574,15 @@ export const GroupSyncRequest: MessageFns<GroupSyncRequest> = {
     }
     if (message.startAfter !== 0n) {
       if (BigInt.asUintN(64, message.startAfter) !== message.startAfter) {
-        throw new globalThis.Error("value provided for field message.startAfter of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.startAfter of type fixed64 too large");
       }
-      writer.uint32(16).uint64(message.startAfter);
+      writer.uint32(17).fixed64(message.startAfter);
     }
     if (message.until !== 0n) {
       if (BigInt.asUintN(64, message.until) !== message.until) {
-        throw new globalThis.Error("value provided for field message.until of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.until of type fixed64 too large");
       }
-      writer.uint32(24).uint64(message.until);
+      writer.uint32(25).fixed64(message.until);
     }
     if (message.limit !== 0) {
       writer.uint32(32).uint32(message.limit);
@@ -1592,19 +1606,19 @@ export const GroupSyncRequest: MessageFns<GroupSyncRequest> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 17) {
             break;
           }
 
-          message.startAfter = reader.uint64() as bigint;
+          message.startAfter = reader.fixed64() as bigint;
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 25) {
             break;
           }
 
-          message.until = reader.uint64() as bigint;
+          message.until = reader.fixed64() as bigint;
           continue;
         }
         case 4: {
@@ -1721,6 +1735,419 @@ export const GroupSyncRequests: MessageFns<GroupSyncRequests> = {
   fromPartial<I extends Exact<DeepPartial<GroupSyncRequests>, I>>(object: I): GroupSyncRequests {
     const message = createBaseGroupSyncRequests();
     message.requests = object.requests?.map((e) => GroupSyncRequest.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGroupMemberUpdate(): GroupMemberUpdate {
+  return { groupId: 0n, lastMessageSeen: 0n, lastEpoch: 0 };
+}
+
+export const GroupMemberUpdate: MessageFns<GroupMemberUpdate> = {
+  encode(message: GroupMemberUpdate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.lastMessageSeen !== 0n) {
+      if (BigInt.asUintN(64, message.lastMessageSeen) !== message.lastMessageSeen) {
+        throw new globalThis.Error("value provided for field message.lastMessageSeen of type fixed64 too large");
+      }
+      writer.uint32(17).fixed64(message.lastMessageSeen);
+    }
+    if (message.lastEpoch !== 0) {
+      writer.uint32(24).uint32(message.lastEpoch);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupMemberUpdate {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMemberUpdate();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.lastMessageSeen = reader.fixed64() as bigint;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.lastEpoch = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMemberUpdate {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      lastMessageSeen: isSet(object.lastMessageSeen) ? BigInt(object.lastMessageSeen) : 0n,
+      lastEpoch: isSet(object.lastEpoch) ? globalThis.Number(object.lastEpoch) : 0,
+    };
+  },
+
+  toJSON(message: GroupMemberUpdate): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.lastMessageSeen !== 0n) {
+      obj.lastMessageSeen = message.lastMessageSeen.toString();
+    }
+    if (message.lastEpoch !== 0) {
+      obj.lastEpoch = Math.round(message.lastEpoch);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMemberUpdate>, I>>(base?: I): GroupMemberUpdate {
+    return GroupMemberUpdate.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMemberUpdate>, I>>(object: I): GroupMemberUpdate {
+    const message = createBaseGroupMemberUpdate();
+    message.groupId = object.groupId ?? 0n;
+    message.lastMessageSeen = object.lastMessageSeen ?? 0n;
+    message.lastEpoch = object.lastEpoch ?? 0;
+    return message;
+  },
+};
+
+function createBaseGroupMemberUpdates(): GroupMemberUpdates {
+  return { updates: [] };
+}
+
+export const GroupMemberUpdates: MessageFns<GroupMemberUpdates> = {
+  encode(message: GroupMemberUpdates, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.updates) {
+      GroupMemberUpdate.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupMemberUpdates {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMemberUpdates();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.updates.push(GroupMemberUpdate.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMemberUpdates {
+    return {
+      updates: globalThis.Array.isArray(object?.updates)
+        ? object.updates.map((e: any) => GroupMemberUpdate.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GroupMemberUpdates): unknown {
+    const obj: any = {};
+    if (message.updates?.length) {
+      obj.updates = message.updates.map((e) => GroupMemberUpdate.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMemberUpdates>, I>>(base?: I): GroupMemberUpdates {
+    return GroupMemberUpdates.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMemberUpdates>, I>>(object: I): GroupMemberUpdates {
+    const message = createBaseGroupMemberUpdates();
+    message.updates = object.updates?.map((e) => GroupMemberUpdate.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGroupCommit(): GroupCommit {
+  return { id: 0n, groupId: 0n, commit: new Uint8Array(0), epoch: 0 };
+}
+
+export const GroupCommit: MessageFns<GroupCommit> = {
+  encode(message: GroupCommit, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0n) {
+      if (BigInt.asUintN(64, message.id) !== message.id) {
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
+      }
+      writer.uint32(9).fixed64(message.id);
+    }
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.groupId);
+    }
+    if (message.commit.length !== 0) {
+      writer.uint32(34).bytes(message.commit);
+    }
+    if (message.epoch !== 0) {
+      writer.uint32(24).uint32(message.epoch);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupCommit {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupCommit();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.id = reader.fixed64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.commit = reader.bytes();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.epoch = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupCommit {
+    return {
+      id: isSet(object.id) ? BigInt(object.id) : 0n,
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      commit: isSet(object.commit) ? bytesFromBase64(object.commit) : new Uint8Array(0),
+      epoch: isSet(object.epoch) ? globalThis.Number(object.epoch) : 0,
+    };
+  },
+
+  toJSON(message: GroupCommit): unknown {
+    const obj: any = {};
+    if (message.id !== 0n) {
+      obj.id = message.id.toString();
+    }
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.commit.length !== 0) {
+      obj.commit = base64FromBytes(message.commit);
+    }
+    if (message.epoch !== 0) {
+      obj.epoch = Math.round(message.epoch);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupCommit>, I>>(base?: I): GroupCommit {
+    return GroupCommit.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupCommit>, I>>(object: I): GroupCommit {
+    const message = createBaseGroupCommit();
+    message.id = object.id ?? 0n;
+    message.groupId = object.groupId ?? 0n;
+    message.commit = object.commit ?? new Uint8Array(0);
+    message.epoch = object.epoch ?? 0;
+    return message;
+  },
+};
+
+function createBaseGroupCommits(): GroupCommits {
+  return { commits: [] };
+}
+
+export const GroupCommits: MessageFns<GroupCommits> = {
+  encode(message: GroupCommits, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.commits) {
+      GroupCommit.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupCommits {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupCommits();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.commits.push(GroupCommit.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupCommits {
+    return {
+      commits: globalThis.Array.isArray(object?.commits) ? object.commits.map((e: any) => GroupCommit.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GroupCommits): unknown {
+    const obj: any = {};
+    if (message.commits?.length) {
+      obj.commits = message.commits.map((e) => GroupCommit.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupCommits>, I>>(base?: I): GroupCommits {
+    return GroupCommits.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupCommits>, I>>(object: I): GroupCommits {
+    const message = createBaseGroupCommits();
+    message.commits = object.commits?.map((e) => GroupCommit.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGroupCommitSyncRequest(): GroupCommitSyncRequest {
+  return { groupId: 0n, epoch: 0 };
+}
+
+export const GroupCommitSyncRequest: MessageFns<GroupCommitSyncRequest> = {
+  encode(message: GroupCommitSyncRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.epoch !== 0) {
+      writer.uint32(16).uint32(message.epoch);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupCommitSyncRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupCommitSyncRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.epoch = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupCommitSyncRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      epoch: isSet(object.epoch) ? globalThis.Number(object.epoch) : 0,
+    };
+  },
+
+  toJSON(message: GroupCommitSyncRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.epoch !== 0) {
+      obj.epoch = Math.round(message.epoch);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupCommitSyncRequest>, I>>(base?: I): GroupCommitSyncRequest {
+    return GroupCommitSyncRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupCommitSyncRequest>, I>>(object: I): GroupCommitSyncRequest {
+    const message = createBaseGroupCommitSyncRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.epoch = object.epoch ?? 0;
     return message;
   },
 };
@@ -1886,16 +2313,16 @@ export const GroupReAddRequests: MessageFns<GroupReAddRequests> = {
 };
 
 function createBaseError(): Error {
-  return { errorCode: 0, error: "" };
+  return { error: "", errorCode: 0 };
 }
 
 export const Error: MessageFns<Error> = {
   encode(message: Error, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.errorCode !== 0) {
-      writer.uint32(8).uint32(message.errorCode);
-    }
     if (message.error !== "") {
       writer.uint32(18).string(message.error);
+    }
+    if (message.errorCode !== 0) {
+      writer.uint32(8).uint32(message.errorCode);
     }
     return writer;
   },
@@ -1907,20 +2334,20 @@ export const Error: MessageFns<Error> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.errorCode = reader.uint32();
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
           }
 
           message.error = reader.string();
+          continue;
+        }
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.errorCode = reader.uint32();
           continue;
         }
       }
@@ -1934,18 +2361,18 @@ export const Error: MessageFns<Error> = {
 
   fromJSON(object: any): Error {
     return {
-      errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
       error: isSet(object.error) ? globalThis.String(object.error) : "",
+      errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
     };
   },
 
   toJSON(message: Error): unknown {
     const obj: any = {};
-    if (message.errorCode !== 0) {
-      obj.errorCode = Math.round(message.errorCode);
-    }
     if (message.error !== "") {
       obj.error = message.error;
+    }
+    if (message.errorCode !== 0) {
+      obj.errorCode = Math.round(message.errorCode);
     }
     return obj;
   },
@@ -1955,23 +2382,23 @@ export const Error: MessageFns<Error> = {
   },
   fromPartial<I extends Exact<DeepPartial<Error>, I>>(object: I): Error {
     const message = createBaseError();
-    message.errorCode = object.errorCode ?? 0;
     message.error = object.error ?? "";
+    message.errorCode = object.errorCode ?? 0;
     return message;
   },
 };
 
 function createBaseResult(): Result {
-  return { resultCode: 0, body: new Uint8Array(0) };
+  return { body: new Uint8Array(0), resultCode: 0 };
 }
 
 export const Result: MessageFns<Result> = {
   encode(message: Result, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.resultCode !== 0) {
-      writer.uint32(8).uint32(message.resultCode);
-    }
     if (message.body.length !== 0) {
       writer.uint32(18).bytes(message.body);
+    }
+    if (message.resultCode !== 0) {
+      writer.uint32(8).uint32(message.resultCode);
     }
     return writer;
   },
@@ -1983,20 +2410,20 @@ export const Result: MessageFns<Result> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.resultCode = reader.uint32();
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
           }
 
           message.body = reader.bytes();
+          continue;
+        }
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.resultCode = reader.uint32();
           continue;
         }
       }
@@ -2010,18 +2437,18 @@ export const Result: MessageFns<Result> = {
 
   fromJSON(object: any): Result {
     return {
-      resultCode: isSet(object.resultCode) ? globalThis.Number(object.resultCode) : 0,
       body: isSet(object.body) ? bytesFromBase64(object.body) : new Uint8Array(0),
+      resultCode: isSet(object.resultCode) ? globalThis.Number(object.resultCode) : 0,
     };
   },
 
   toJSON(message: Result): unknown {
     const obj: any = {};
-    if (message.resultCode !== 0) {
-      obj.resultCode = Math.round(message.resultCode);
-    }
     if (message.body.length !== 0) {
       obj.body = base64FromBytes(message.body);
+    }
+    if (message.resultCode !== 0) {
+      obj.resultCode = Math.round(message.resultCode);
     }
     return obj;
   },
@@ -2031,14 +2458,14 @@ export const Result: MessageFns<Result> = {
   },
   fromPartial<I extends Exact<DeepPartial<Result>, I>>(object: I): Result {
     const message = createBaseResult();
-    message.resultCode = object.resultCode ?? 0;
     message.body = object.body ?? new Uint8Array(0);
+    message.resultCode = object.resultCode ?? 0;
     return message;
   },
 };
 
 function createBaseAddress(): Address {
-  return { id: 0n, username: "", deviceId: 0, fcmToken: "" };
+  return { id: 0n, username: "", fcmToken: "", deviceId: 0 };
 }
 
 export const Address: MessageFns<Address> = {
@@ -2052,11 +2479,11 @@ export const Address: MessageFns<Address> = {
     if (message.username !== "") {
       writer.uint32(18).string(message.username);
     }
-    if (message.deviceId !== 0) {
-      writer.uint32(24).uint32(message.deviceId);
-    }
     if (message.fcmToken !== "") {
       writer.uint32(34).string(message.fcmToken);
+    }
+    if (message.deviceId !== 0) {
+      writer.uint32(24).uint32(message.deviceId);
     }
     return writer;
   },
@@ -2084,20 +2511,20 @@ export const Address: MessageFns<Address> = {
           message.username = reader.string();
           continue;
         }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.deviceId = reader.uint32();
-          continue;
-        }
         case 4: {
           if (tag !== 34) {
             break;
           }
 
           message.fcmToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.deviceId = reader.uint32();
           continue;
         }
       }
@@ -2113,8 +2540,8 @@ export const Address: MessageFns<Address> = {
     return {
       id: isSet(object.id) ? BigInt(object.id) : 0n,
       username: isSet(object.username) ? globalThis.String(object.username) : "",
-      deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
       fcmToken: isSet(object.fcmToken) ? globalThis.String(object.fcmToken) : "",
+      deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
     };
   },
 
@@ -2126,11 +2553,11 @@ export const Address: MessageFns<Address> = {
     if (message.username !== "") {
       obj.username = message.username;
     }
-    if (message.deviceId !== 0) {
-      obj.deviceId = Math.round(message.deviceId);
-    }
     if (message.fcmToken !== "") {
       obj.fcmToken = message.fcmToken;
+    }
+    if (message.deviceId !== 0) {
+      obj.deviceId = Math.round(message.deviceId);
     }
     return obj;
   },
@@ -2142,8 +2569,8 @@ export const Address: MessageFns<Address> = {
     const message = createBaseAddress();
     message.id = object.id ?? 0n;
     message.username = object.username ?? "";
-    message.deviceId = object.deviceId ?? 0;
     message.fcmToken = object.fcmToken ?? "";
+    message.deviceId = object.deviceId ?? 0;
     return message;
   },
 };
@@ -2280,9 +2707,9 @@ export const MessageIdAndTo: MessageFns<MessageIdAndTo> = {
   encode(message: MessageIdAndTo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0n) {
       if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.id of type fixed64 too large");
       }
-      writer.uint32(8).uint64(message.id);
+      writer.uint32(9).fixed64(message.id);
     }
     if (message.to !== 0n) {
       if (BigInt.asUintN(64, message.to) !== message.to) {
@@ -2304,11 +2731,11 @@ export const MessageIdAndTo: MessageFns<MessageIdAndTo> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 9) {
             break;
           }
 
-          message.id = reader.uint64() as bigint;
+          message.id = reader.fixed64() as bigint;
           continue;
         }
         case 2: {
@@ -2866,141 +3293,8 @@ export const ServerMessage: MessageFns<ServerMessage> = {
   },
 };
 
-function createBaseSubscribeGroup(): SubscribeGroup {
-  return { id: 0n };
-}
-
-export const SubscribeGroup: MessageFns<SubscribeGroup> = {
-  encode(message: SubscribeGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0n) {
-      if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
-      }
-      writer.uint32(8).uint64(message.id);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): SubscribeGroup {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSubscribeGroup();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.id = reader.uint64() as bigint;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): SubscribeGroup {
-    return { id: isSet(object.id) ? BigInt(object.id) : 0n };
-  },
-
-  toJSON(message: SubscribeGroup): unknown {
-    const obj: any = {};
-    if (message.id !== 0n) {
-      obj.id = message.id.toString();
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<SubscribeGroup>, I>>(base?: I): SubscribeGroup {
-    return SubscribeGroup.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<SubscribeGroup>, I>>(object: I): SubscribeGroup {
-    const message = createBaseSubscribeGroup();
-    message.id = object.id ?? 0n;
-    return message;
-  },
-};
-
-function createBaseUnSubscribeGroup(): UnSubscribeGroup {
-  return { id: 0n };
-}
-
-export const UnSubscribeGroup: MessageFns<UnSubscribeGroup> = {
-  encode(message: UnSubscribeGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0n) {
-      if (BigInt.asUintN(64, message.id) !== message.id) {
-        throw new globalThis.Error("value provided for field message.id of type uint64 too large");
-      }
-      writer.uint32(16).uint64(message.id);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UnSubscribeGroup {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseUnSubscribeGroup();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.id = reader.uint64() as bigint;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UnSubscribeGroup {
-    return { id: isSet(object.id) ? BigInt(object.id) : 0n };
-  },
-
-  toJSON(message: UnSubscribeGroup): unknown {
-    const obj: any = {};
-    if (message.id !== 0n) {
-      obj.id = message.id.toString();
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<UnSubscribeGroup>, I>>(base?: I): UnSubscribeGroup {
-    return UnSubscribeGroup.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<UnSubscribeGroup>, I>>(object: I): UnSubscribeGroup {
-    const message = createBaseUnSubscribeGroup();
-    message.id = object.id ?? 0n;
-    return message;
-  },
-};
-
 function createBaseClientMessage(): ClientMessage {
-  return {
-    userMessage: undefined,
-    groupMessage: undefined,
-    userMessages: undefined,
-    groupMessages: undefined,
-    bearerToken: undefined,
-    subscribeGroup: undefined,
-    unSubscribeGroup: undefined,
-    request: undefined,
-    ping: undefined,
-    pong: undefined,
-  };
+  return { userMessage: undefined, groupMessage: undefined, request: undefined, ping: undefined, pong: undefined };
 }
 
 export const ClientMessage: MessageFns<ClientMessage> = {
@@ -3010,21 +3304,6 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     }
     if (message.groupMessage !== undefined) {
       GroupMessage.encode(message.groupMessage, writer.uint32(18).fork()).join();
-    }
-    if (message.userMessages !== undefined) {
-      UserMessages.encode(message.userMessages, writer.uint32(26).fork()).join();
-    }
-    if (message.groupMessages !== undefined) {
-      GroupMessages.encode(message.groupMessages, writer.uint32(34).fork()).join();
-    }
-    if (message.bearerToken !== undefined) {
-      writer.uint32(42).string(message.bearerToken);
-    }
-    if (message.subscribeGroup !== undefined) {
-      SubscribeGroup.encode(message.subscribeGroup, writer.uint32(50).fork()).join();
-    }
-    if (message.unSubscribeGroup !== undefined) {
-      UnSubscribeGroup.encode(message.unSubscribeGroup, writer.uint32(58).fork()).join();
     }
     if (message.request !== undefined) {
       Request.encode(message.request, writer.uint32(82).fork()).join();
@@ -3059,46 +3338,6 @@ export const ClientMessage: MessageFns<ClientMessage> = {
           }
 
           message.groupMessage = GroupMessage.decode(reader, reader.uint32());
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.userMessages = UserMessages.decode(reader, reader.uint32());
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.groupMessages = GroupMessages.decode(reader, reader.uint32());
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.bearerToken = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.subscribeGroup = SubscribeGroup.decode(reader, reader.uint32());
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.unSubscribeGroup = UnSubscribeGroup.decode(reader, reader.uint32());
           continue;
         }
         case 10: {
@@ -3138,11 +3377,6 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     return {
       userMessage: isSet(object.userMessage) ? UserMessage.fromJSON(object.userMessage) : undefined,
       groupMessage: isSet(object.groupMessage) ? GroupMessage.fromJSON(object.groupMessage) : undefined,
-      userMessages: isSet(object.userMessages) ? UserMessages.fromJSON(object.userMessages) : undefined,
-      groupMessages: isSet(object.groupMessages) ? GroupMessages.fromJSON(object.groupMessages) : undefined,
-      bearerToken: isSet(object.bearerToken) ? globalThis.String(object.bearerToken) : undefined,
-      subscribeGroup: isSet(object.subscribeGroup) ? SubscribeGroup.fromJSON(object.subscribeGroup) : undefined,
-      unSubscribeGroup: isSet(object.unSubscribeGroup) ? UnSubscribeGroup.fromJSON(object.unSubscribeGroup) : undefined,
       request: isSet(object.request) ? Request.fromJSON(object.request) : undefined,
       ping: isSet(object.ping) ? bytesFromBase64(object.ping) : undefined,
       pong: isSet(object.pong) ? bytesFromBase64(object.pong) : undefined,
@@ -3156,21 +3390,6 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     }
     if (message.groupMessage !== undefined) {
       obj.groupMessage = GroupMessage.toJSON(message.groupMessage);
-    }
-    if (message.userMessages !== undefined) {
-      obj.userMessages = UserMessages.toJSON(message.userMessages);
-    }
-    if (message.groupMessages !== undefined) {
-      obj.groupMessages = GroupMessages.toJSON(message.groupMessages);
-    }
-    if (message.bearerToken !== undefined) {
-      obj.bearerToken = message.bearerToken;
-    }
-    if (message.subscribeGroup !== undefined) {
-      obj.subscribeGroup = SubscribeGroup.toJSON(message.subscribeGroup);
-    }
-    if (message.unSubscribeGroup !== undefined) {
-      obj.unSubscribeGroup = UnSubscribeGroup.toJSON(message.unSubscribeGroup);
     }
     if (message.request !== undefined) {
       obj.request = Request.toJSON(message.request);
@@ -3194,19 +3413,6 @@ export const ClientMessage: MessageFns<ClientMessage> = {
       : undefined;
     message.groupMessage = (object.groupMessage !== undefined && object.groupMessage !== null)
       ? GroupMessage.fromPartial(object.groupMessage)
-      : undefined;
-    message.userMessages = (object.userMessages !== undefined && object.userMessages !== null)
-      ? UserMessages.fromPartial(object.userMessages)
-      : undefined;
-    message.groupMessages = (object.groupMessages !== undefined && object.groupMessages !== null)
-      ? GroupMessages.fromPartial(object.groupMessages)
-      : undefined;
-    message.bearerToken = object.bearerToken ?? undefined;
-    message.subscribeGroup = (object.subscribeGroup !== undefined && object.subscribeGroup !== null)
-      ? SubscribeGroup.fromPartial(object.subscribeGroup)
-      : undefined;
-    message.unSubscribeGroup = (object.unSubscribeGroup !== undefined && object.unSubscribeGroup !== null)
-      ? UnSubscribeGroup.fromPartial(object.unSubscribeGroup)
       : undefined;
     message.request = (object.request !== undefined && object.request !== null)
       ? Request.fromPartial(object.request)
@@ -3279,7 +3485,7 @@ export const GroupId: MessageFns<GroupId> = {
 };
 
 function createBaseAuthToken(): AuthToken {
-  return { username: "", validUntil: 0n, issuer: "", credential: new Uint8Array(0), deviceId: 0, addressId: 0n };
+  return { username: "", validUntil: 0n, credential: new Uint8Array(0), addressId: 0n, deviceId: 0 };
 }
 
 export const AuthToken: MessageFns<AuthToken> = {
@@ -3293,20 +3499,17 @@ export const AuthToken: MessageFns<AuthToken> = {
       }
       writer.uint32(16).uint64(message.validUntil);
     }
-    if (message.issuer !== "") {
-      writer.uint32(26).string(message.issuer);
-    }
     if (message.credential.length !== 0) {
       writer.uint32(34).bytes(message.credential);
-    }
-    if (message.deviceId !== 0) {
-      writer.uint32(40).uint32(message.deviceId);
     }
     if (message.addressId !== 0n) {
       if (BigInt.asUintN(64, message.addressId) !== message.addressId) {
         throw new globalThis.Error("value provided for field message.addressId of type uint64 too large");
       }
       writer.uint32(48).uint64(message.addressId);
+    }
+    if (message.deviceId !== 0) {
+      writer.uint32(40).uint32(message.deviceId);
     }
     return writer;
   },
@@ -3334,14 +3537,6 @@ export const AuthToken: MessageFns<AuthToken> = {
           message.validUntil = reader.uint64() as bigint;
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.issuer = reader.string();
-          continue;
-        }
         case 4: {
           if (tag !== 34) {
             break;
@@ -3350,20 +3545,20 @@ export const AuthToken: MessageFns<AuthToken> = {
           message.credential = reader.bytes();
           continue;
         }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.deviceId = reader.uint32();
-          continue;
-        }
         case 6: {
           if (tag !== 48) {
             break;
           }
 
           message.addressId = reader.uint64() as bigint;
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.deviceId = reader.uint32();
           continue;
         }
       }
@@ -3379,10 +3574,9 @@ export const AuthToken: MessageFns<AuthToken> = {
     return {
       username: isSet(object.username) ? globalThis.String(object.username) : "",
       validUntil: isSet(object.validUntil) ? BigInt(object.validUntil) : 0n,
-      issuer: isSet(object.issuer) ? globalThis.String(object.issuer) : "",
       credential: isSet(object.credential) ? bytesFromBase64(object.credential) : new Uint8Array(0),
-      deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
       addressId: isSet(object.addressId) ? BigInt(object.addressId) : 0n,
+      deviceId: isSet(object.deviceId) ? globalThis.Number(object.deviceId) : 0,
     };
   },
 
@@ -3394,17 +3588,14 @@ export const AuthToken: MessageFns<AuthToken> = {
     if (message.validUntil !== 0n) {
       obj.validUntil = message.validUntil.toString();
     }
-    if (message.issuer !== "") {
-      obj.issuer = message.issuer;
-    }
     if (message.credential.length !== 0) {
       obj.credential = base64FromBytes(message.credential);
     }
-    if (message.deviceId !== 0) {
-      obj.deviceId = Math.round(message.deviceId);
-    }
     if (message.addressId !== 0n) {
       obj.addressId = message.addressId.toString();
+    }
+    if (message.deviceId !== 0) {
+      obj.deviceId = Math.round(message.deviceId);
     }
     return obj;
   },
@@ -3416,10 +3607,9 @@ export const AuthToken: MessageFns<AuthToken> = {
     const message = createBaseAuthToken();
     message.username = object.username ?? "";
     message.validUntil = object.validUntil ?? 0n;
-    message.issuer = object.issuer ?? "";
     message.credential = object.credential ?? new Uint8Array(0);
-    message.deviceId = object.deviceId ?? 0;
     message.addressId = object.addressId ?? 0n;
+    message.deviceId = object.deviceId ?? 0;
     return message;
   },
 };
@@ -3609,7 +3799,7 @@ export const FireflyIdentity: MessageFns<FireflyIdentity> = {
 };
 
 function createBaseFireflyGroupExtension(): FireflyGroupExtension {
-  return { name: "", roles: [], channels: [], members: [] };
+  return { name: "", roles: [], channels: [], members: [], defaultPermissions: 0 };
 }
 
 export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
@@ -3625,6 +3815,9 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
     }
     for (const v of message.members) {
       FireflyGroupMember.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.defaultPermissions !== 0) {
+      writer.uint32(45).fixed32(message.defaultPermissions);
     }
     return writer;
   },
@@ -3668,6 +3861,14 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
           message.members.push(FireflyGroupMember.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 45) {
+            break;
+          }
+
+          message.defaultPermissions = reader.fixed32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3687,6 +3888,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
       members: globalThis.Array.isArray(object?.members)
         ? object.members.map((e: any) => FireflyGroupMember.fromJSON(e))
         : [],
+      defaultPermissions: isSet(object.defaultPermissions) ? globalThis.Number(object.defaultPermissions) : 0,
     };
   },
 
@@ -3704,6 +3906,9 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
     if (message.members?.length) {
       obj.members = message.members.map((e) => FireflyGroupMember.toJSON(e));
     }
+    if (message.defaultPermissions !== 0) {
+      obj.defaultPermissions = Math.round(message.defaultPermissions);
+    }
     return obj;
   },
 
@@ -3716,6 +3921,7 @@ export const FireflyGroupExtension: MessageFns<FireflyGroupExtension> = {
     message.roles = object.roles?.map((e) => FireflyGroupRole.fromPartial(e)) || [];
     message.channels = object.channels?.map((e) => FireflyGroupChannel.fromPartial(e)) || [];
     message.members = object.members?.map((e) => FireflyGroupMember.fromPartial(e)) || [];
+    message.defaultPermissions = object.defaultPermissions ?? 0;
     return message;
   },
 };
@@ -3733,7 +3939,7 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
       writer.uint32(18).string(message.name);
     }
     if (message.permissions !== 0) {
-      writer.uint32(24).uint32(message.permissions);
+      writer.uint32(29).fixed32(message.permissions);
     }
     return writer;
   },
@@ -3762,11 +3968,11 @@ export const FireflyGroupRole: MessageFns<FireflyGroupRole> = {
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 29) {
             break;
           }
 
-          message.permissions = reader.uint32();
+          message.permissions = reader.fixed32();
           continue;
         }
       }
@@ -3889,7 +4095,7 @@ export const FireflyGroupMember: MessageFns<FireflyGroupMember> = {
 };
 
 function createBaseFireflyGroupChannel(): FireflyGroupChannel {
-  return { id: 0, name: "", type: 0, roles: [] };
+  return { id: 0, name: "", type: 0, roles: [], defaultPermissions: 0 };
 }
 
 export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
@@ -3905,6 +4111,9 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     }
     for (const v of message.roles) {
       FireflyGroupRole.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.defaultPermissions !== 0) {
+      writer.uint32(45).fixed32(message.defaultPermissions);
     }
     return writer;
   },
@@ -3948,6 +4157,14 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
           message.roles.push(FireflyGroupRole.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 45) {
+            break;
+          }
+
+          message.defaultPermissions = reader.fixed32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3963,6 +4180,7 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       type: isSet(object.type) ? globalThis.Number(object.type) : 0,
       roles: globalThis.Array.isArray(object?.roles) ? object.roles.map((e: any) => FireflyGroupRole.fromJSON(e)) : [],
+      defaultPermissions: isSet(object.defaultPermissions) ? globalThis.Number(object.defaultPermissions) : 0,
     };
   },
 
@@ -3980,6 +4198,9 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     if (message.roles?.length) {
       obj.roles = message.roles.map((e) => FireflyGroupRole.toJSON(e));
     }
+    if (message.defaultPermissions !== 0) {
+      obj.defaultPermissions = Math.round(message.defaultPermissions);
+    }
     return obj;
   },
 
@@ -3992,6 +4213,7 @@ export const FireflyGroupChannel: MessageFns<FireflyGroupChannel> = {
     message.name = object.name ?? "";
     message.type = object.type ?? 0;
     message.roles = object.roles?.map((e) => FireflyGroupRole.fromPartial(e)) || [];
+    message.defaultPermissions = object.defaultPermissions ?? 0;
     return message;
   },
 };
@@ -4760,7 +4982,7 @@ export const Conversations: MessageFns<Conversations> = {
 };
 
 function createBaseEncryptedFile(): EncryptedFile {
-  return { url: "", contentType: 0, secretKey: new Uint8Array(0), contentLength: 0 };
+  return { url: "", secretKey: new Uint8Array(0), contentType: 0, contentLength: 0 };
 }
 
 export const EncryptedFile: MessageFns<EncryptedFile> = {
@@ -4768,11 +4990,11 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
     if (message.url !== "") {
       writer.uint32(10).string(message.url);
     }
-    if (message.contentType !== 0) {
-      writer.uint32(16).uint32(message.contentType);
-    }
     if (message.secretKey.length !== 0) {
       writer.uint32(26).bytes(message.secretKey);
+    }
+    if (message.contentType !== 0) {
+      writer.uint32(16).uint32(message.contentType);
     }
     if (message.contentLength !== 0) {
       writer.uint32(32).uint32(message.contentLength);
@@ -4795,20 +5017,20 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
           message.url = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.contentType = reader.uint32();
-          continue;
-        }
         case 3: {
           if (tag !== 26) {
             break;
           }
 
           message.secretKey = reader.bytes();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.contentType = reader.uint32();
           continue;
         }
         case 4: {
@@ -4831,8 +5053,8 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
   fromJSON(object: any): EncryptedFile {
     return {
       url: isSet(object.url) ? globalThis.String(object.url) : "",
-      contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
       secretKey: isSet(object.secretKey) ? bytesFromBase64(object.secretKey) : new Uint8Array(0),
+      contentType: isSet(object.contentType) ? globalThis.Number(object.contentType) : 0,
       contentLength: isSet(object.contentLength) ? globalThis.Number(object.contentLength) : 0,
     };
   },
@@ -4842,11 +5064,11 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
     if (message.url !== "") {
       obj.url = message.url;
     }
-    if (message.contentType !== 0) {
-      obj.contentType = Math.round(message.contentType);
-    }
     if (message.secretKey.length !== 0) {
       obj.secretKey = base64FromBytes(message.secretKey);
+    }
+    if (message.contentType !== 0) {
+      obj.contentType = Math.round(message.contentType);
     }
     if (message.contentLength !== 0) {
       obj.contentLength = Math.round(message.contentLength);
@@ -4860,8 +5082,8 @@ export const EncryptedFile: MessageFns<EncryptedFile> = {
   fromPartial<I extends Exact<DeepPartial<EncryptedFile>, I>>(object: I): EncryptedFile {
     const message = createBaseEncryptedFile();
     message.url = object.url ?? "";
-    message.contentType = object.contentType ?? 0;
     message.secretKey = object.secretKey ?? new Uint8Array(0);
+    message.contentType = object.contentType ?? 0;
     message.contentLength = object.contentLength ?? 0;
     return message;
   },
@@ -4938,9 +5160,9 @@ export const MessagePayload: MessageFns<MessagePayload> = {
     }
     if (message.replyingTo !== 0n) {
       if (BigInt.asUintN(64, message.replyingTo) !== message.replyingTo) {
-        throw new globalThis.Error("value provided for field message.replyingTo of type uint64 too large");
+        throw new globalThis.Error("value provided for field message.replyingTo of type fixed64 too large");
       }
-      writer.uint32(16).uint64(message.replyingTo);
+      writer.uint32(17).fixed64(message.replyingTo);
     }
     if (message.files !== undefined) {
       EncryptedFiles.encode(message.files, writer.uint32(26).fork()).join();
@@ -4964,11 +5186,11 @@ export const MessagePayload: MessageFns<MessagePayload> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 17) {
             break;
           }
 
-          message.replyingTo = reader.uint64() as bigint;
+          message.replyingTo = reader.fixed64() as bigint;
           continue;
         }
         case 3: {
@@ -5025,7 +5247,7 @@ export const MessagePayload: MessageFns<MessagePayload> = {
 };
 
 function createBaseCallMessage(): CallMessage {
-  return { message: new Uint8Array(0), sessionId: 0, type: 0, jsonBody: "" };
+  return { message: new Uint8Array(0), type: 0, jsonBody: "", sessionId: 0 };
 }
 
 export const CallMessage: MessageFns<CallMessage> = {
@@ -5033,14 +5255,14 @@ export const CallMessage: MessageFns<CallMessage> = {
     if (message.message.length !== 0) {
       writer.uint32(10).bytes(message.message);
     }
-    if (message.sessionId !== 0) {
-      writer.uint32(16).uint32(message.sessionId);
-    }
     if (message.type !== 0) {
       writer.uint32(24).int32(message.type);
     }
     if (message.jsonBody !== "") {
       writer.uint32(34).string(message.jsonBody);
+    }
+    if (message.sessionId !== 0) {
+      writer.uint32(16).uint32(message.sessionId);
     }
     return writer;
   },
@@ -5060,14 +5282,6 @@ export const CallMessage: MessageFns<CallMessage> = {
           message.message = reader.bytes();
           continue;
         }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.sessionId = reader.uint32();
-          continue;
-        }
         case 3: {
           if (tag !== 24) {
             break;
@@ -5084,6 +5298,14 @@ export const CallMessage: MessageFns<CallMessage> = {
           message.jsonBody = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.sessionId = reader.uint32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5096,9 +5318,9 @@ export const CallMessage: MessageFns<CallMessage> = {
   fromJSON(object: any): CallMessage {
     return {
       message: isSet(object.message) ? bytesFromBase64(object.message) : new Uint8Array(0),
-      sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
       type: isSet(object.type) ? callMessageTypeFromJSON(object.type) : 0,
       jsonBody: isSet(object.jsonBody) ? globalThis.String(object.jsonBody) : "",
+      sessionId: isSet(object.sessionId) ? globalThis.Number(object.sessionId) : 0,
     };
   },
 
@@ -5107,14 +5329,14 @@ export const CallMessage: MessageFns<CallMessage> = {
     if (message.message.length !== 0) {
       obj.message = base64FromBytes(message.message);
     }
-    if (message.sessionId !== 0) {
-      obj.sessionId = Math.round(message.sessionId);
-    }
     if (message.type !== 0) {
       obj.type = callMessageTypeToJSON(message.type);
     }
     if (message.jsonBody !== "") {
       obj.jsonBody = message.jsonBody;
+    }
+    if (message.sessionId !== 0) {
+      obj.sessionId = Math.round(message.sessionId);
     }
     return obj;
   },
@@ -5125,9 +5347,9 @@ export const CallMessage: MessageFns<CallMessage> = {
   fromPartial<I extends Exact<DeepPartial<CallMessage>, I>>(object: I): CallMessage {
     const message = createBaseCallMessage();
     message.message = object.message ?? new Uint8Array(0);
-    message.sessionId = object.sessionId ?? 0;
     message.type = object.type ?? 0;
     message.jsonBody = object.jsonBody ?? "";
+    message.sessionId = object.sessionId ?? 0;
     return message;
   },
 };

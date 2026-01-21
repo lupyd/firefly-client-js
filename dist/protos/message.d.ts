@@ -32,8 +32,8 @@ export interface Group {
     id: bigint;
     name: string;
     description: string;
-    pfp: boolean;
     state: Uint8Array;
+    settings: number;
 }
 export interface Groups {
     groups: Group[];
@@ -66,10 +66,10 @@ export interface GroupMessage {
     message: Uint8Array;
 }
 export interface GroupKeyPackage {
-    id: number;
-    package: Uint8Array;
     address: bigint;
+    package: Uint8Array;
     username: string;
+    id: number;
 }
 export interface GroupKeyPackages {
     packages: GroupKeyPackage[];
@@ -86,6 +86,27 @@ export interface GroupSyncRequest {
 export interface GroupSyncRequests {
     requests: GroupSyncRequest[];
 }
+export interface GroupMemberUpdate {
+    groupId: bigint;
+    lastMessageSeen: bigint;
+    lastEpoch: number;
+}
+export interface GroupMemberUpdates {
+    updates: GroupMemberUpdate[];
+}
+export interface GroupCommit {
+    id: bigint;
+    groupId: bigint;
+    commit: Uint8Array;
+    epoch: number;
+}
+export interface GroupCommits {
+    commits: GroupCommit[];
+}
+export interface GroupCommitSyncRequest {
+    groupId: bigint;
+    epoch: number;
+}
 export interface GroupReAddRequest {
     groupId: bigint;
     addressId: bigint;
@@ -95,18 +116,18 @@ export interface GroupReAddRequests {
     requests: GroupReAddRequest[];
 }
 export interface Error {
-    errorCode: number;
     error: string;
+    errorCode: number;
 }
 export interface Result {
-    resultCode: number;
     body: Uint8Array;
+    resultCode: number;
 }
 export interface Address {
     id: bigint;
     username: string;
-    deviceId: number;
     fcmToken: string;
+    deviceId: number;
 }
 export interface Addresses {
     addresses: Address[];
@@ -144,20 +165,9 @@ export interface ServerMessage {
     ping?: Uint8Array | undefined;
     pong?: Uint8Array | undefined;
 }
-export interface SubscribeGroup {
-    id: bigint;
-}
-export interface UnSubscribeGroup {
-    id: bigint;
-}
 export interface ClientMessage {
     userMessage?: UserMessage | undefined;
     groupMessage?: GroupMessage | undefined;
-    userMessages?: UserMessages | undefined;
-    groupMessages?: GroupMessages | undefined;
-    bearerToken?: string | undefined;
-    subscribeGroup?: SubscribeGroup | undefined;
-    unSubscribeGroup?: UnSubscribeGroup | undefined;
     request?: Request | undefined;
     ping?: Uint8Array | undefined;
     pong?: Uint8Array | undefined;
@@ -168,10 +178,9 @@ export interface GroupId {
 export interface AuthToken {
     username: string;
     validUntil: bigint;
-    issuer: string;
     credential: Uint8Array;
-    deviceId: number;
     addressId: bigint;
+    deviceId: number;
 }
 export interface SignedToken {
     kid: string;
@@ -188,6 +197,7 @@ export interface FireflyGroupExtension {
     roles: FireflyGroupRole[];
     channels: FireflyGroupChannel[];
     members: FireflyGroupMember[];
+    defaultPermissions: number;
 }
 export interface FireflyGroupRole {
     id: number;
@@ -203,6 +213,7 @@ export interface FireflyGroupChannel {
     name: string;
     type: number;
     roles: FireflyGroupRole[];
+    defaultPermissions: number;
 }
 export interface PreKeyBundle {
     registrationId: number;
@@ -246,8 +257,8 @@ export interface Conversations {
 }
 export interface EncryptedFile {
     url: string;
-    contentType: number;
     secretKey: Uint8Array;
+    contentType: number;
     contentLength: number;
 }
 export interface EncryptedFiles {
@@ -260,9 +271,9 @@ export interface MessagePayload {
 }
 export interface CallMessage {
     message: Uint8Array;
-    sessionId: number;
     type: CallMessageType;
     jsonBody: string;
+    sessionId: number;
 }
 export interface SelfUserMessage {
     to: string;
@@ -292,6 +303,11 @@ export declare const GroupKeyPackages: MessageFns<GroupKeyPackages>;
 export declare const GroupMessages: MessageFns<GroupMessages>;
 export declare const GroupSyncRequest: MessageFns<GroupSyncRequest>;
 export declare const GroupSyncRequests: MessageFns<GroupSyncRequests>;
+export declare const GroupMemberUpdate: MessageFns<GroupMemberUpdate>;
+export declare const GroupMemberUpdates: MessageFns<GroupMemberUpdates>;
+export declare const GroupCommit: MessageFns<GroupCommit>;
+export declare const GroupCommits: MessageFns<GroupCommits>;
+export declare const GroupCommitSyncRequest: MessageFns<GroupCommitSyncRequest>;
 export declare const GroupReAddRequest: MessageFns<GroupReAddRequest>;
 export declare const GroupReAddRequests: MessageFns<GroupReAddRequests>;
 export declare const Error: MessageFns<Error>;
@@ -304,8 +320,6 @@ export declare const UserMessageUploaded: MessageFns<UserMessageUploaded>;
 export declare const Request: MessageFns<Request>;
 export declare const Response: MessageFns<Response>;
 export declare const ServerMessage: MessageFns<ServerMessage>;
-export declare const SubscribeGroup: MessageFns<SubscribeGroup>;
-export declare const UnSubscribeGroup: MessageFns<UnSubscribeGroup>;
 export declare const ClientMessage: MessageFns<ClientMessage>;
 export declare const GroupId: MessageFns<GroupId>;
 export declare const AuthToken: MessageFns<AuthToken>;
