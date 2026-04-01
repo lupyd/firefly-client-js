@@ -24,6 +24,7 @@ export interface UserMessage {
     type: number;
     /** flags for server to notify or just send or don't send */
     settings: number;
+    hashValue: bigint;
     /** optional sends these for decryption purposes */
     fromUsername: string;
     fromDeviceId: number;
@@ -64,6 +65,7 @@ export interface GroupMessage {
     id: bigint;
     groupId: bigint;
     message: Uint8Array;
+    epoch: number;
 }
 export interface GroupKeyPackage {
     address: bigint;
@@ -168,6 +170,7 @@ export interface ServerMessage {
 export interface ClientMessage {
     userMessage?: UserMessage | undefined;
     groupMessage?: GroupMessage | undefined;
+    verifiedUserMessage?: UserMessage | undefined;
     request?: Request | undefined;
     ping?: Uint8Array | undefined;
     pong?: Uint8Array | undefined;
@@ -285,6 +288,7 @@ export interface UserMessageInner {
     callMessage?: CallMessage | undefined;
     messagePayload?: MessagePayload | undefined;
     selfMessage?: SelfUserMessage | undefined;
+    nonce: number;
 }
 export interface GroupMessageInner {
     channelId: number;
