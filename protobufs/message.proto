@@ -9,6 +9,7 @@ message UserMessage {
   bytes text = 4;
   uint32 type = 6;
   uint32 settings = 7; // flags for server to notify or just send or don't send
+  fixed64 hashValue = 10;
 
   // optional sends these for decryption purposes
   string fromUsername = 8;
@@ -59,6 +60,7 @@ message GroupMessage {
   fixed64 id = 1;
   uint64 groupId = 2;
   bytes message = 3;
+  uint32 epoch = 4;
 }
 
 message GroupKeyPackage {
@@ -177,6 +179,7 @@ message Response {
   }
 }
 
+
 message ServerMessage {
   oneof message {
     UserMessage userMessage = 1;
@@ -194,6 +197,7 @@ message ClientMessage {
   oneof message {
     UserMessage userMessage = 1;
     GroupMessage groupMessage = 2;
+    UserMessage verifiedUserMessage = 3;
     Request request = 10;
     bytes ping = 11;
     bytes pong = 12;
@@ -349,6 +353,8 @@ message UserMessageInner {
     MessagePayload messagePayload = 3;
     SelfUserMessage selfMessage = 4;
   }
+
+  fixed32 nonce = 10;
 }
 
 message GroupMessageInner {
