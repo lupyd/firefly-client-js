@@ -47,8 +47,7 @@ message GroupCommitAndWelcome {
 
   string inviter = 4;
   string invitee = 5;
-  bytes welcomeMessage = 6;
-
+  repeated bytes welcomeMessages = 6;
   repeated uint64 inviteeAddresses = 7;
 }
 
@@ -166,6 +165,8 @@ message Request {
     UserMessage createUserMessage = 2;
     UploadUserMessage uploadUserMessage = 3;
     GroupMessage uploadGroupMessage = 4;
+    RequestGroupReAdds requestGroupReAdds = 5;
+    RequestGroupSync requestGroupSync = 6;
   }
 }
 
@@ -176,6 +177,7 @@ message Response {
     UserMessage createdUserMessage = 3;
     UserMessageUploaded userMessageUploaded = 4;
     GroupMessage groupMessageUploaded = 5;
+    GroupReAddRequestSuccess groupReAddRequestSuccess = 6;
   }
 }
 
@@ -190,8 +192,13 @@ message ServerMessage {
 
     bytes ping = 11;
     bytes pong = 12;
+
+    GroupInvite groupInvite = 15;
+    GroupCommits groupCommits = 16;
+    GroupReAddRequests groupReAddRequests = 17;
   }
 }
+
 
 message ClientMessage {
   oneof message {
@@ -363,3 +370,13 @@ message GroupMessageInner {
     MessagePayload messagePayload = 2;
   }
 }
+message RequestGroupReAdds {
+  repeated uint64 group_ids = 1;
+}
+
+message RequestGroupSync {
+  uint64 group_id = 1;
+  uint32 epoch = 2;
+}
+
+message GroupReAddRequestSuccess {}

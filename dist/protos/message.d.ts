@@ -55,7 +55,7 @@ export interface GroupCommitAndWelcome {
     commitMessage: Uint8Array;
     inviter: string;
     invitee: string;
-    welcomeMessage: Uint8Array;
+    welcomeMessages: Uint8Array[];
     inviteeAddresses: bigint[];
 }
 export interface GroupInvites {
@@ -150,6 +150,8 @@ export interface Request {
     createUserMessage?: UserMessage | undefined;
     uploadUserMessage?: UploadUserMessage | undefined;
     uploadGroupMessage?: GroupMessage | undefined;
+    requestGroupReAdds?: RequestGroupReAdds | undefined;
+    requestGroupSync?: RequestGroupSync | undefined;
 }
 export interface Response {
     id: number;
@@ -157,6 +159,7 @@ export interface Response {
     createdUserMessage?: UserMessage | undefined;
     userMessageUploaded?: UserMessageUploaded | undefined;
     groupMessageUploaded?: GroupMessage | undefined;
+    groupReAddRequestSuccess?: GroupReAddRequestSuccess | undefined;
 }
 export interface ServerMessage {
     userMessage?: UserMessage | undefined;
@@ -166,6 +169,9 @@ export interface ServerMessage {
     response?: Response | undefined;
     ping?: Uint8Array | undefined;
     pong?: Uint8Array | undefined;
+    groupInvite?: GroupInvite | undefined;
+    groupCommits?: GroupCommits | undefined;
+    groupReAddRequests?: GroupReAddRequests | undefined;
 }
 export interface ClientMessage {
     userMessage?: UserMessage | undefined;
@@ -294,6 +300,15 @@ export interface GroupMessageInner {
     channelId: number;
     messagePayload?: MessagePayload | undefined;
 }
+export interface RequestGroupReAdds {
+    groupIds: bigint[];
+}
+export interface RequestGroupSync {
+    groupId: bigint;
+    epoch: number;
+}
+export interface GroupReAddRequestSuccess {
+}
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
 export declare const Groups: MessageFns<Groups>;
@@ -347,6 +362,9 @@ export declare const CallMessage: MessageFns<CallMessage>;
 export declare const SelfUserMessage: MessageFns<SelfUserMessage>;
 export declare const UserMessageInner: MessageFns<UserMessageInner>;
 export declare const GroupMessageInner: MessageFns<GroupMessageInner>;
+export declare const RequestGroupReAdds: MessageFns<RequestGroupReAdds>;
+export declare const RequestGroupSync: MessageFns<RequestGroupSync>;
+export declare const GroupReAddRequestSuccess: MessageFns<GroupReAddRequestSuccess>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
     [K in keyof T]?: DeepPartial<T[K]>;

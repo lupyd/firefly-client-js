@@ -6,7 +6,7 @@
 // source: message.proto
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncryptedFiles = exports.EncryptedFile = exports.Conversations = exports.Conversation = exports.PreKeyBundles = exports.ConversationStart = exports.PreKeyBundleEntries = exports.PreKeyBundleEntry = exports.PreKeyBundle = exports.FireflyGroupChannel = exports.FireflyGroupMember = exports.FireflyGroupRole = exports.FireflyGroupExtension = exports.FireflyIdentity = exports.SignedToken = exports.AuthToken = exports.GroupId = exports.ClientMessage = exports.ServerMessage = exports.Response = exports.Request = exports.UserMessageUploaded = exports.MessageIdAndTo = exports.UploadUserMessage = exports.Addresses = exports.Address = exports.Result = exports.Error = exports.GroupReAddRequests = exports.GroupReAddRequest = exports.GroupCommitSyncRequest = exports.GroupCommits = exports.GroupCommit = exports.GroupMemberUpdates = exports.GroupMemberUpdate = exports.GroupSyncRequests = exports.GroupSyncRequest = exports.GroupMessages = exports.GroupKeyPackages = exports.GroupKeyPackage = exports.GroupMessage = exports.GroupInvites = exports.GroupCommitAndWelcome = exports.GroupInvite = exports.UserMessages = exports.Groups = exports.Group = exports.UserMessage = exports.CallMessageType = exports.protobufPackage = void 0;
-exports.GroupMessageInner = exports.UserMessageInner = exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = void 0;
+exports.GroupReAddRequestSuccess = exports.RequestGroupSync = exports.RequestGroupReAdds = exports.GroupMessageInner = exports.UserMessageInner = exports.SelfUserMessage = exports.CallMessage = exports.MessagePayload = void 0;
 exports.callMessageTypeFromJSON = callMessageTypeFromJSON;
 exports.callMessageTypeToJSON = callMessageTypeToJSON;
 /* eslint-disable */
@@ -630,7 +630,7 @@ function createBaseGroupCommitAndWelcome() {
         commitMessage: new Uint8Array(0),
         inviter: "",
         invitee: "",
-        welcomeMessage: new Uint8Array(0),
+        welcomeMessages: [],
         inviteeAddresses: [],
     };
 }
@@ -657,8 +657,8 @@ exports.GroupCommitAndWelcome = {
         if (message.invitee !== "") {
             writer.uint32(42).string(message.invitee);
         }
-        if (message.welcomeMessage.length !== 0) {
-            writer.uint32(50).bytes(message.welcomeMessage);
+        for (const v of message.welcomeMessages) {
+            writer.uint32(50).bytes(v);
         }
         writer.uint32(58).fork();
         for (const v of message.inviteeAddresses) {
@@ -716,7 +716,7 @@ exports.GroupCommitAndWelcome = {
                     if (tag !== 50) {
                         break;
                     }
-                    message.welcomeMessage = reader.bytes();
+                    message.welcomeMessages.push(reader.bytes());
                     continue;
                 }
                 case 7: {
@@ -748,7 +748,9 @@ exports.GroupCommitAndWelcome = {
             commitMessage: isSet(object.commitMessage) ? bytesFromBase64(object.commitMessage) : new Uint8Array(0),
             inviter: isSet(object.inviter) ? globalThis.String(object.inviter) : "",
             invitee: isSet(object.invitee) ? globalThis.String(object.invitee) : "",
-            welcomeMessage: isSet(object.welcomeMessage) ? bytesFromBase64(object.welcomeMessage) : new Uint8Array(0),
+            welcomeMessages: globalThis.Array.isArray(object?.welcomeMessages)
+                ? object.welcomeMessages.map((e) => bytesFromBase64(e))
+                : [],
             inviteeAddresses: globalThis.Array.isArray(object?.inviteeAddresses)
                 ? object.inviteeAddresses.map((e) => BigInt(e))
                 : [],
@@ -771,8 +773,8 @@ exports.GroupCommitAndWelcome = {
         if (message.invitee !== "") {
             obj.invitee = message.invitee;
         }
-        if (message.welcomeMessage.length !== 0) {
-            obj.welcomeMessage = base64FromBytes(message.welcomeMessage);
+        if (message.welcomeMessages?.length) {
+            obj.welcomeMessages = message.welcomeMessages.map((e) => base64FromBytes(e));
         }
         if (message.inviteeAddresses?.length) {
             obj.inviteeAddresses = message.inviteeAddresses.map((e) => e.toString());
@@ -789,7 +791,7 @@ exports.GroupCommitAndWelcome = {
         message.commitMessage = object.commitMessage ?? new Uint8Array(0);
         message.inviter = object.inviter ?? "";
         message.invitee = object.invitee ?? "";
-        message.welcomeMessage = object.welcomeMessage ?? new Uint8Array(0);
+        message.welcomeMessages = object.welcomeMessages?.map((e) => e) || [];
         message.inviteeAddresses = object.inviteeAddresses?.map((e) => e) || [];
         return message;
     },
@@ -2332,7 +2334,14 @@ exports.UserMessageUploaded = {
     },
 };
 function createBaseRequest() {
-    return { id: 0, createUserMessage: undefined, uploadUserMessage: undefined, uploadGroupMessage: undefined };
+    return {
+        id: 0,
+        createUserMessage: undefined,
+        uploadUserMessage: undefined,
+        uploadGroupMessage: undefined,
+        requestGroupReAdds: undefined,
+        requestGroupSync: undefined,
+    };
 }
 exports.Request = {
     encode(message, writer = new wire_1.BinaryWriter()) {
@@ -2347,6 +2356,12 @@ exports.Request = {
         }
         if (message.uploadGroupMessage !== undefined) {
             exports.GroupMessage.encode(message.uploadGroupMessage, writer.uint32(34).fork()).join();
+        }
+        if (message.requestGroupReAdds !== undefined) {
+            exports.RequestGroupReAdds.encode(message.requestGroupReAdds, writer.uint32(42).fork()).join();
+        }
+        if (message.requestGroupSync !== undefined) {
+            exports.RequestGroupSync.encode(message.requestGroupSync, writer.uint32(50).fork()).join();
         }
         return writer;
     },
@@ -2385,6 +2400,20 @@ exports.Request = {
                     message.uploadGroupMessage = exports.GroupMessage.decode(reader, reader.uint32());
                     continue;
                 }
+                case 5: {
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.requestGroupReAdds = exports.RequestGroupReAdds.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.requestGroupSync = exports.RequestGroupSync.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -2403,6 +2432,10 @@ exports.Request = {
             uploadGroupMessage: isSet(object.uploadGroupMessage)
                 ? exports.GroupMessage.fromJSON(object.uploadGroupMessage)
                 : undefined,
+            requestGroupReAdds: isSet(object.requestGroupReAdds)
+                ? exports.RequestGroupReAdds.fromJSON(object.requestGroupReAdds)
+                : undefined,
+            requestGroupSync: isSet(object.requestGroupSync) ? exports.RequestGroupSync.fromJSON(object.requestGroupSync) : undefined,
         };
     },
     toJSON(message) {
@@ -2418,6 +2451,12 @@ exports.Request = {
         }
         if (message.uploadGroupMessage !== undefined) {
             obj.uploadGroupMessage = exports.GroupMessage.toJSON(message.uploadGroupMessage);
+        }
+        if (message.requestGroupReAdds !== undefined) {
+            obj.requestGroupReAdds = exports.RequestGroupReAdds.toJSON(message.requestGroupReAdds);
+        }
+        if (message.requestGroupSync !== undefined) {
+            obj.requestGroupSync = exports.RequestGroupSync.toJSON(message.requestGroupSync);
         }
         return obj;
     },
@@ -2436,6 +2475,12 @@ exports.Request = {
         message.uploadGroupMessage = (object.uploadGroupMessage !== undefined && object.uploadGroupMessage !== null)
             ? exports.GroupMessage.fromPartial(object.uploadGroupMessage)
             : undefined;
+        message.requestGroupReAdds = (object.requestGroupReAdds !== undefined && object.requestGroupReAdds !== null)
+            ? exports.RequestGroupReAdds.fromPartial(object.requestGroupReAdds)
+            : undefined;
+        message.requestGroupSync = (object.requestGroupSync !== undefined && object.requestGroupSync !== null)
+            ? exports.RequestGroupSync.fromPartial(object.requestGroupSync)
+            : undefined;
         return message;
     },
 };
@@ -2446,6 +2491,7 @@ function createBaseResponse() {
         createdUserMessage: undefined,
         userMessageUploaded: undefined,
         groupMessageUploaded: undefined,
+        groupReAddRequestSuccess: undefined,
     };
 }
 exports.Response = {
@@ -2464,6 +2510,9 @@ exports.Response = {
         }
         if (message.groupMessageUploaded !== undefined) {
             exports.GroupMessage.encode(message.groupMessageUploaded, writer.uint32(42).fork()).join();
+        }
+        if (message.groupReAddRequestSuccess !== undefined) {
+            exports.GroupReAddRequestSuccess.encode(message.groupReAddRequestSuccess, writer.uint32(50).fork()).join();
         }
         return writer;
     },
@@ -2509,6 +2558,13 @@ exports.Response = {
                     message.groupMessageUploaded = exports.GroupMessage.decode(reader, reader.uint32());
                     continue;
                 }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.groupReAddRequestSuccess = exports.GroupReAddRequestSuccess.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -2530,6 +2586,9 @@ exports.Response = {
             groupMessageUploaded: isSet(object.groupMessageUploaded)
                 ? exports.GroupMessage.fromJSON(object.groupMessageUploaded)
                 : undefined,
+            groupReAddRequestSuccess: isSet(object.groupReAddRequestSuccess)
+                ? exports.GroupReAddRequestSuccess.fromJSON(object.groupReAddRequestSuccess)
+                : undefined,
         };
     },
     toJSON(message) {
@@ -2549,6 +2608,9 @@ exports.Response = {
         if (message.groupMessageUploaded !== undefined) {
             obj.groupMessageUploaded = exports.GroupMessage.toJSON(message.groupMessageUploaded);
         }
+        if (message.groupReAddRequestSuccess !== undefined) {
+            obj.groupReAddRequestSuccess = exports.GroupReAddRequestSuccess.toJSON(message.groupReAddRequestSuccess);
+        }
         return obj;
     },
     create(base) {
@@ -2567,6 +2629,10 @@ exports.Response = {
         message.groupMessageUploaded = (object.groupMessageUploaded !== undefined && object.groupMessageUploaded !== null)
             ? exports.GroupMessage.fromPartial(object.groupMessageUploaded)
             : undefined;
+        message.groupReAddRequestSuccess =
+            (object.groupReAddRequestSuccess !== undefined && object.groupReAddRequestSuccess !== null)
+                ? exports.GroupReAddRequestSuccess.fromPartial(object.groupReAddRequestSuccess)
+                : undefined;
         return message;
     },
 };
@@ -2579,6 +2645,9 @@ function createBaseServerMessage() {
         response: undefined,
         ping: undefined,
         pong: undefined,
+        groupInvite: undefined,
+        groupCommits: undefined,
+        groupReAddRequests: undefined,
     };
 }
 exports.ServerMessage = {
@@ -2603,6 +2672,15 @@ exports.ServerMessage = {
         }
         if (message.pong !== undefined) {
             writer.uint32(98).bytes(message.pong);
+        }
+        if (message.groupInvite !== undefined) {
+            exports.GroupInvite.encode(message.groupInvite, writer.uint32(122).fork()).join();
+        }
+        if (message.groupCommits !== undefined) {
+            exports.GroupCommits.encode(message.groupCommits, writer.uint32(130).fork()).join();
+        }
+        if (message.groupReAddRequests !== undefined) {
+            exports.GroupReAddRequests.encode(message.groupReAddRequests, writer.uint32(138).fork()).join();
         }
         return writer;
     },
@@ -2662,6 +2740,27 @@ exports.ServerMessage = {
                     message.pong = reader.bytes();
                     continue;
                 }
+                case 15: {
+                    if (tag !== 122) {
+                        break;
+                    }
+                    message.groupInvite = exports.GroupInvite.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 16: {
+                    if (tag !== 130) {
+                        break;
+                    }
+                    message.groupCommits = exports.GroupCommits.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 17: {
+                    if (tag !== 138) {
+                        break;
+                    }
+                    message.groupReAddRequests = exports.GroupReAddRequests.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -2679,6 +2778,11 @@ exports.ServerMessage = {
             response: isSet(object.response) ? exports.Response.fromJSON(object.response) : undefined,
             ping: isSet(object.ping) ? bytesFromBase64(object.ping) : undefined,
             pong: isSet(object.pong) ? bytesFromBase64(object.pong) : undefined,
+            groupInvite: isSet(object.groupInvite) ? exports.GroupInvite.fromJSON(object.groupInvite) : undefined,
+            groupCommits: isSet(object.groupCommits) ? exports.GroupCommits.fromJSON(object.groupCommits) : undefined,
+            groupReAddRequests: isSet(object.groupReAddRequests)
+                ? exports.GroupReAddRequests.fromJSON(object.groupReAddRequests)
+                : undefined,
         };
     },
     toJSON(message) {
@@ -2704,6 +2808,15 @@ exports.ServerMessage = {
         if (message.pong !== undefined) {
             obj.pong = base64FromBytes(message.pong);
         }
+        if (message.groupInvite !== undefined) {
+            obj.groupInvite = exports.GroupInvite.toJSON(message.groupInvite);
+        }
+        if (message.groupCommits !== undefined) {
+            obj.groupCommits = exports.GroupCommits.toJSON(message.groupCommits);
+        }
+        if (message.groupReAddRequests !== undefined) {
+            obj.groupReAddRequests = exports.GroupReAddRequests.toJSON(message.groupReAddRequests);
+        }
         return obj;
     },
     create(base) {
@@ -2728,6 +2841,15 @@ exports.ServerMessage = {
             : undefined;
         message.ping = object.ping ?? undefined;
         message.pong = object.pong ?? undefined;
+        message.groupInvite = (object.groupInvite !== undefined && object.groupInvite !== null)
+            ? exports.GroupInvite.fromPartial(object.groupInvite)
+            : undefined;
+        message.groupCommits = (object.groupCommits !== undefined && object.groupCommits !== null)
+            ? exports.GroupCommits.fromPartial(object.groupCommits)
+            : undefined;
+        message.groupReAddRequests = (object.groupReAddRequests !== undefined && object.groupReAddRequests !== null)
+            ? exports.GroupReAddRequests.fromPartial(object.groupReAddRequests)
+            : undefined;
         return message;
     },
 };
@@ -4882,6 +5004,177 @@ exports.GroupMessageInner = {
         message.messagePayload = (object.messagePayload !== undefined && object.messagePayload !== null)
             ? exports.MessagePayload.fromPartial(object.messagePayload)
             : undefined;
+        return message;
+    },
+};
+function createBaseRequestGroupReAdds() {
+    return { groupIds: [] };
+}
+exports.RequestGroupReAdds = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        writer.uint32(10).fork();
+        for (const v of message.groupIds) {
+            if (BigInt.asUintN(64, v) !== v) {
+                throw new globalThis.Error("a value provided in array field groupIds of type uint64 is too large");
+            }
+            writer.uint64(v);
+        }
+        writer.join();
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseRequestGroupReAdds();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag === 8) {
+                        message.groupIds.push(reader.uint64());
+                        continue;
+                    }
+                    if (tag === 10) {
+                        const end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2) {
+                            message.groupIds.push(reader.uint64());
+                        }
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return { groupIds: globalThis.Array.isArray(object?.groupIds) ? object.groupIds.map((e) => BigInt(e)) : [] };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.groupIds?.length) {
+            obj.groupIds = message.groupIds.map((e) => e.toString());
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.RequestGroupReAdds.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseRequestGroupReAdds();
+        message.groupIds = object.groupIds?.map((e) => e) || [];
+        return message;
+    },
+};
+function createBaseRequestGroupSync() {
+    return { groupId: 0n, epoch: 0 };
+}
+exports.RequestGroupSync = {
+    encode(message, writer = new wire_1.BinaryWriter()) {
+        if (message.groupId !== 0n) {
+            if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+                throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+            }
+            writer.uint32(8).uint64(message.groupId);
+        }
+        if (message.epoch !== 0) {
+            writer.uint32(16).uint32(message.epoch);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseRequestGroupSync();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.groupId = reader.uint64();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.epoch = reader.uint32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+            epoch: isSet(object.epoch) ? globalThis.Number(object.epoch) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.groupId !== 0n) {
+            obj.groupId = message.groupId.toString();
+        }
+        if (message.epoch !== 0) {
+            obj.epoch = Math.round(message.epoch);
+        }
+        return obj;
+    },
+    create(base) {
+        return exports.RequestGroupSync.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseRequestGroupSync();
+        message.groupId = object.groupId ?? 0n;
+        message.epoch = object.epoch ?? 0;
+        return message;
+    },
+};
+function createBaseGroupReAddRequestSuccess() {
+    return {};
+}
+exports.GroupReAddRequestSuccess = {
+    encode(_, writer = new wire_1.BinaryWriter()) {
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGroupReAddRequestSuccess();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(_) {
+        return {};
+    },
+    toJSON(_) {
+        const obj = {};
+        return obj;
+    },
+    create(base) {
+        return exports.GroupReAddRequestSuccess.fromPartial(base ?? {});
+    },
+    fromPartial(_) {
+        const message = createBaseGroupReAddRequestSuccess();
         return message;
     },
 };
