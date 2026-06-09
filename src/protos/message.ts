@@ -9,6 +9,76 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "firefly";
 
+export enum CallSignalType {
+  /** CALL_REQUEST - Call invitation (contains SDP Offer) */
+  CALL_REQUEST = 0,
+  /** CALL_ANSWER - Call accepted (contains SDP Answer) */
+  CALL_ANSWER = 1,
+  /** CALL_REJECT - Call declined by receiver */
+  CALL_REJECT = 2,
+  /** CALL_CANCEL - Call canceled by caller before answer */
+  CALL_CANCEL = 3,
+  /** CALL_HANGUP - Call ended by either party during or after session */
+  CALL_HANGUP = 4,
+  /** CALL_DISMISS - Server-sent notification to dismiss call on other devices */
+  CALL_DISMISS = 5,
+  /** CALL_ICECANDIDATE - Dynamic ICE candidates signaling */
+  CALL_ICECANDIDATE = 6,
+  UNRECOGNIZED = -1,
+}
+
+export function callSignalTypeFromJSON(object: any): CallSignalType {
+  switch (object) {
+    case 0:
+    case "CALL_REQUEST":
+      return CallSignalType.CALL_REQUEST;
+    case 1:
+    case "CALL_ANSWER":
+      return CallSignalType.CALL_ANSWER;
+    case 2:
+    case "CALL_REJECT":
+      return CallSignalType.CALL_REJECT;
+    case 3:
+    case "CALL_CANCEL":
+      return CallSignalType.CALL_CANCEL;
+    case 4:
+    case "CALL_HANGUP":
+      return CallSignalType.CALL_HANGUP;
+    case 5:
+    case "CALL_DISMISS":
+      return CallSignalType.CALL_DISMISS;
+    case 6:
+    case "CALL_ICECANDIDATE":
+      return CallSignalType.CALL_ICECANDIDATE;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return CallSignalType.UNRECOGNIZED;
+  }
+}
+
+export function callSignalTypeToJSON(object: CallSignalType): string {
+  switch (object) {
+    case CallSignalType.CALL_REQUEST:
+      return "CALL_REQUEST";
+    case CallSignalType.CALL_ANSWER:
+      return "CALL_ANSWER";
+    case CallSignalType.CALL_REJECT:
+      return "CALL_REJECT";
+    case CallSignalType.CALL_CANCEL:
+      return "CALL_CANCEL";
+    case CallSignalType.CALL_HANGUP:
+      return "CALL_HANGUP";
+    case CallSignalType.CALL_DISMISS:
+      return "CALL_DISMISS";
+    case CallSignalType.CALL_ICECANDIDATE:
+      return "CALL_ICECANDIDATE";
+    case CallSignalType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export enum CallMessageType {
   none = 0,
   request = 1,
@@ -86,6 +156,88 @@ export function callMessageTypeToJSON(object: CallMessageType): string {
   }
 }
 
+export enum MeetingSessionStatus {
+  MEETING_STATUS_ACTIVE = 0,
+  MEETING_STATUS_ENDED = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function meetingSessionStatusFromJSON(object: any): MeetingSessionStatus {
+  switch (object) {
+    case 0:
+    case "MEETING_STATUS_ACTIVE":
+      return MeetingSessionStatus.MEETING_STATUS_ACTIVE;
+    case 1:
+    case "MEETING_STATUS_ENDED":
+      return MeetingSessionStatus.MEETING_STATUS_ENDED;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MeetingSessionStatus.UNRECOGNIZED;
+  }
+}
+
+export function meetingSessionStatusToJSON(object: MeetingSessionStatus): string {
+  switch (object) {
+    case MeetingSessionStatus.MEETING_STATUS_ACTIVE:
+      return "MEETING_STATUS_ACTIVE";
+    case MeetingSessionStatus.MEETING_STATUS_ENDED:
+      return "MEETING_STATUS_ENDED";
+    case MeetingSessionStatus.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export enum MeetingSignalType {
+  /** MEETING_SIGNAL_STARTED - New meeting created in a channel */
+  MEETING_SIGNAL_STARTED = 0,
+  /** MEETING_SIGNAL_JOINED - A user joined */
+  MEETING_SIGNAL_JOINED = 1,
+  /** MEETING_SIGNAL_LEFT - A user left */
+  MEETING_SIGNAL_LEFT = 2,
+  /** MEETING_SIGNAL_ENDED - Meeting ended (by creator or last participant) */
+  MEETING_SIGNAL_ENDED = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function meetingSignalTypeFromJSON(object: any): MeetingSignalType {
+  switch (object) {
+    case 0:
+    case "MEETING_SIGNAL_STARTED":
+      return MeetingSignalType.MEETING_SIGNAL_STARTED;
+    case 1:
+    case "MEETING_SIGNAL_JOINED":
+      return MeetingSignalType.MEETING_SIGNAL_JOINED;
+    case 2:
+    case "MEETING_SIGNAL_LEFT":
+      return MeetingSignalType.MEETING_SIGNAL_LEFT;
+    case 3:
+    case "MEETING_SIGNAL_ENDED":
+      return MeetingSignalType.MEETING_SIGNAL_ENDED;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MeetingSignalType.UNRECOGNIZED;
+  }
+}
+
+export function meetingSignalTypeToJSON(object: MeetingSignalType): string {
+  switch (object) {
+    case MeetingSignalType.MEETING_SIGNAL_STARTED:
+      return "MEETING_SIGNAL_STARTED";
+    case MeetingSignalType.MEETING_SIGNAL_JOINED:
+      return "MEETING_SIGNAL_JOINED";
+    case MeetingSignalType.MEETING_SIGNAL_LEFT:
+      return "MEETING_SIGNAL_LEFT";
+    case MeetingSignalType.MEETING_SIGNAL_ENDED:
+      return "MEETING_SIGNAL_ENDED";
+    case MeetingSignalType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export interface UserMessage {
   id: bigint;
   toId: bigint;
@@ -106,6 +258,7 @@ export interface Group {
   description: string;
   state: Uint8Array;
   settings: number;
+  upgraded: boolean;
 }
 
 export interface Groups {
@@ -242,6 +395,16 @@ export interface UserMessageUploaded {
   messageIds: MessageIdAndTo[];
 }
 
+export interface UserOnlineStatusRequest {
+  /** max 32 usernames */
+  usernames: string[];
+}
+
+export interface UserOnlineStatusResponse {
+  /** bit i is 1 if usernames[i] is online */
+  onlineBits: number;
+}
+
 export interface Request {
   id: number;
   createUserMessage?: UserMessage | undefined;
@@ -249,6 +412,14 @@ export interface Request {
   uploadGroupMessage?: GroupMessage | undefined;
   requestGroupReAdds?: RequestGroupReAdds | undefined;
   requestGroupSync?: RequestGroupSync | undefined;
+  userOnlineStatus?: UserOnlineStatusRequest | undefined;
+  createJoinLink?: CreateJoinLinkRequest | undefined;
+  joinViaLink?: JoinViaLinkRequest | undefined;
+  createMeeting?: CreateMeetingRequest | undefined;
+  joinMeeting?: JoinMeetingRequest | undefined;
+  leaveMeeting?: LeaveMeetingRequest | undefined;
+  endMeeting?: EndMeetingRequest | undefined;
+  getActiveSession?: GetActiveSessionRequest | undefined;
 }
 
 export interface Response {
@@ -258,6 +429,12 @@ export interface Response {
   userMessageUploaded?: UserMessageUploaded | undefined;
   groupMessageUploaded?: GroupMessage | undefined;
   groupReAddRequestSuccess?: GroupReAddRequestSuccess | undefined;
+  userOnlineStatus?: UserOnlineStatusResponse | undefined;
+  createJoinLink?: CreateJoinLinkResponse | undefined;
+  joinViaLinkSuccess?: JoinViaLinkSuccess | undefined;
+  createMeetingResponse?: CreateMeetingResponse | undefined;
+  joinMeetingResponse?: JoinMeetingResponse | undefined;
+  getActiveSessionResponse?: GetActiveSessionResponse | undefined;
 }
 
 export interface ServerMessage {
@@ -271,6 +448,9 @@ export interface ServerMessage {
   groupInvite?: GroupInvite | undefined;
   groupCommits?: GroupCommits | undefined;
   groupReAddRequests?: GroupReAddRequests | undefined;
+  groupJoinRequests?: GroupJoinRequests | undefined;
+  callSignal?: CallSignal | undefined;
+  groupMeetingSignal?: GroupMeetingSignal | undefined;
 }
 
 export interface ClientMessage {
@@ -280,6 +460,20 @@ export interface ClientMessage {
   request?: Request | undefined;
   ping?: Uint8Array | undefined;
   pong?: Uint8Array | undefined;
+  callSignal?: CallSignal | undefined;
+  groupMeetingSignal?: GroupMeetingSignal | undefined;
+}
+
+export interface CallSignal {
+  callId: bigint;
+  senderUsername: string;
+  receiverUsername: string;
+  type: CallSignalType;
+  sdp: string;
+  candidate: string;
+  sdpMLineIndex: number;
+  sdpMid: string;
+  senderDeviceId: number;
 }
 
 export interface GroupId {
@@ -433,6 +627,109 @@ export interface RequestGroupSync {
 }
 
 export interface GroupReAddRequestSuccess {
+}
+
+export interface CreateJoinLinkRequest {
+  groupId: bigint;
+  expiresInSeconds: bigint;
+  maxUses: number;
+}
+
+export interface CreateJoinLinkResponse {
+  token: string;
+}
+
+export interface JoinViaLinkRequest {
+  token: string;
+}
+
+export interface JoinViaLinkSuccess {
+}
+
+export interface GroupJoinRequest {
+  groupId: bigint;
+  addressId: bigint;
+  username: string;
+}
+
+export interface GroupJoinRequests {
+  requests: GroupJoinRequest[];
+}
+
+export interface GroupMeetingSession {
+  /** UUIDv7 timestamp-based ID */
+  sessionId: bigint;
+  groupId: bigint;
+  /** Which voice/text channel this meeting is in */
+  channelId: number;
+  creatorUsername: string;
+  status: MeetingSessionStatus;
+  /** Microsecond timestamp */
+  createdAt: bigint;
+  endedAt: bigint;
+  /** Current participant usernames */
+  participants: string[];
+  /** Cloudflare RealtimeKit meeting ID */
+  cfMeetingId: string;
+  e2eeEnabled: boolean;
+}
+
+export interface CreateMeetingRequest {
+  groupId: bigint;
+  channelId: number;
+  e2eeEnabled: boolean;
+}
+
+export interface CreateMeetingResponse {
+  session:
+    | GroupMeetingSession
+    | undefined;
+  /** CF RealtimeKit auth token for creator */
+  participantToken: string;
+}
+
+export interface JoinMeetingRequest {
+  groupId: bigint;
+  sessionId: bigint;
+}
+
+export interface JoinMeetingResponse {
+  session:
+    | GroupMeetingSession
+    | undefined;
+  /** CF RealtimeKit auth token for joiner */
+  participantToken: string;
+}
+
+export interface LeaveMeetingRequest {
+  groupId: bigint;
+  sessionId: bigint;
+}
+
+export interface EndMeetingRequest {
+  groupId: bigint;
+  sessionId: bigint;
+}
+
+export interface GetActiveSessionRequest {
+  groupId: bigint;
+  channelId: number;
+}
+
+export interface GetActiveSessionResponse {
+  /** null/empty if no active session */
+  session: GroupMeetingSession | undefined;
+}
+
+/** Signal sent over WebSocket to notify group members of meeting events */
+export interface GroupMeetingSignal {
+  groupId: bigint;
+  channelId: number;
+  sessionId: bigint;
+  type: MeetingSignalType;
+  /** Who triggered the event */
+  username: string;
+  cfMeetingId: string;
 }
 
 function createBaseUserMessage(): UserMessage {
@@ -646,7 +943,7 @@ export const UserMessage: MessageFns<UserMessage> = {
 };
 
 function createBaseGroup(): Group {
-  return { id: 0n, name: "", description: "", state: new Uint8Array(0), settings: 0 };
+  return { id: 0n, name: "", description: "", state: new Uint8Array(0), settings: 0, upgraded: false };
 }
 
 export const Group: MessageFns<Group> = {
@@ -668,6 +965,9 @@ export const Group: MessageFns<Group> = {
     }
     if (message.settings !== 0) {
       writer.uint32(48).uint32(message.settings);
+    }
+    if (message.upgraded !== false) {
+      writer.uint32(56).bool(message.upgraded);
     }
     return writer;
   },
@@ -719,6 +1019,14 @@ export const Group: MessageFns<Group> = {
           message.settings = reader.uint32();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.upgraded = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -735,6 +1043,7 @@ export const Group: MessageFns<Group> = {
       description: isSet(object.description) ? globalThis.String(object.description) : "",
       state: isSet(object.state) ? bytesFromBase64(object.state) : new Uint8Array(0),
       settings: isSet(object.settings) ? globalThis.Number(object.settings) : 0,
+      upgraded: isSet(object.upgraded) ? globalThis.Boolean(object.upgraded) : false,
     };
   },
 
@@ -755,6 +1064,9 @@ export const Group: MessageFns<Group> = {
     if (message.settings !== 0) {
       obj.settings = Math.round(message.settings);
     }
+    if (message.upgraded !== false) {
+      obj.upgraded = message.upgraded;
+    }
     return obj;
   },
 
@@ -768,6 +1080,7 @@ export const Group: MessageFns<Group> = {
     message.description = object.description ?? "";
     message.state = object.state ?? new Uint8Array(0);
     message.settings = object.settings ?? 0;
+    message.upgraded = object.upgraded ?? false;
     return message;
   },
 };
@@ -2919,6 +3232,126 @@ export const UserMessageUploaded: MessageFns<UserMessageUploaded> = {
   },
 };
 
+function createBaseUserOnlineStatusRequest(): UserOnlineStatusRequest {
+  return { usernames: [] };
+}
+
+export const UserOnlineStatusRequest: MessageFns<UserOnlineStatusRequest> = {
+  encode(message: UserOnlineStatusRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.usernames) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserOnlineStatusRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserOnlineStatusRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.usernames.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserOnlineStatusRequest {
+    return {
+      usernames: globalThis.Array.isArray(object?.usernames)
+        ? object.usernames.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: UserOnlineStatusRequest): unknown {
+    const obj: any = {};
+    if (message.usernames?.length) {
+      obj.usernames = message.usernames;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserOnlineStatusRequest>, I>>(base?: I): UserOnlineStatusRequest {
+    return UserOnlineStatusRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserOnlineStatusRequest>, I>>(object: I): UserOnlineStatusRequest {
+    const message = createBaseUserOnlineStatusRequest();
+    message.usernames = object.usernames?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseUserOnlineStatusResponse(): UserOnlineStatusResponse {
+  return { onlineBits: 0 };
+}
+
+export const UserOnlineStatusResponse: MessageFns<UserOnlineStatusResponse> = {
+  encode(message: UserOnlineStatusResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.onlineBits !== 0) {
+      writer.uint32(13).fixed32(message.onlineBits);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserOnlineStatusResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserOnlineStatusResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 13) {
+            break;
+          }
+
+          message.onlineBits = reader.fixed32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserOnlineStatusResponse {
+    return { onlineBits: isSet(object.onlineBits) ? globalThis.Number(object.onlineBits) : 0 };
+  },
+
+  toJSON(message: UserOnlineStatusResponse): unknown {
+    const obj: any = {};
+    if (message.onlineBits !== 0) {
+      obj.onlineBits = Math.round(message.onlineBits);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserOnlineStatusResponse>, I>>(base?: I): UserOnlineStatusResponse {
+    return UserOnlineStatusResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserOnlineStatusResponse>, I>>(object: I): UserOnlineStatusResponse {
+    const message = createBaseUserOnlineStatusResponse();
+    message.onlineBits = object.onlineBits ?? 0;
+    return message;
+  },
+};
+
 function createBaseRequest(): Request {
   return {
     id: 0,
@@ -2927,6 +3360,14 @@ function createBaseRequest(): Request {
     uploadGroupMessage: undefined,
     requestGroupReAdds: undefined,
     requestGroupSync: undefined,
+    userOnlineStatus: undefined,
+    createJoinLink: undefined,
+    joinViaLink: undefined,
+    createMeeting: undefined,
+    joinMeeting: undefined,
+    leaveMeeting: undefined,
+    endMeeting: undefined,
+    getActiveSession: undefined,
   };
 }
 
@@ -2949,6 +3390,30 @@ export const Request: MessageFns<Request> = {
     }
     if (message.requestGroupSync !== undefined) {
       RequestGroupSync.encode(message.requestGroupSync, writer.uint32(50).fork()).join();
+    }
+    if (message.userOnlineStatus !== undefined) {
+      UserOnlineStatusRequest.encode(message.userOnlineStatus, writer.uint32(58).fork()).join();
+    }
+    if (message.createJoinLink !== undefined) {
+      CreateJoinLinkRequest.encode(message.createJoinLink, writer.uint32(66).fork()).join();
+    }
+    if (message.joinViaLink !== undefined) {
+      JoinViaLinkRequest.encode(message.joinViaLink, writer.uint32(74).fork()).join();
+    }
+    if (message.createMeeting !== undefined) {
+      CreateMeetingRequest.encode(message.createMeeting, writer.uint32(82).fork()).join();
+    }
+    if (message.joinMeeting !== undefined) {
+      JoinMeetingRequest.encode(message.joinMeeting, writer.uint32(90).fork()).join();
+    }
+    if (message.leaveMeeting !== undefined) {
+      LeaveMeetingRequest.encode(message.leaveMeeting, writer.uint32(98).fork()).join();
+    }
+    if (message.endMeeting !== undefined) {
+      EndMeetingRequest.encode(message.endMeeting, writer.uint32(106).fork()).join();
+    }
+    if (message.getActiveSession !== undefined) {
+      GetActiveSessionRequest.encode(message.getActiveSession, writer.uint32(114).fork()).join();
     }
     return writer;
   },
@@ -3008,6 +3473,70 @@ export const Request: MessageFns<Request> = {
           message.requestGroupSync = RequestGroupSync.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.userOnlineStatus = UserOnlineStatusRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.createJoinLink = CreateJoinLinkRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.joinViaLink = JoinViaLinkRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.createMeeting = CreateMeetingRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.joinMeeting = JoinMeetingRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.leaveMeeting = LeaveMeetingRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.endMeeting = EndMeetingRequest.decode(reader, reader.uint32());
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.getActiveSession = GetActiveSessionRequest.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3031,6 +3560,18 @@ export const Request: MessageFns<Request> = {
         ? RequestGroupReAdds.fromJSON(object.requestGroupReAdds)
         : undefined,
       requestGroupSync: isSet(object.requestGroupSync) ? RequestGroupSync.fromJSON(object.requestGroupSync) : undefined,
+      userOnlineStatus: isSet(object.userOnlineStatus)
+        ? UserOnlineStatusRequest.fromJSON(object.userOnlineStatus)
+        : undefined,
+      createJoinLink: isSet(object.createJoinLink) ? CreateJoinLinkRequest.fromJSON(object.createJoinLink) : undefined,
+      joinViaLink: isSet(object.joinViaLink) ? JoinViaLinkRequest.fromJSON(object.joinViaLink) : undefined,
+      createMeeting: isSet(object.createMeeting) ? CreateMeetingRequest.fromJSON(object.createMeeting) : undefined,
+      joinMeeting: isSet(object.joinMeeting) ? JoinMeetingRequest.fromJSON(object.joinMeeting) : undefined,
+      leaveMeeting: isSet(object.leaveMeeting) ? LeaveMeetingRequest.fromJSON(object.leaveMeeting) : undefined,
+      endMeeting: isSet(object.endMeeting) ? EndMeetingRequest.fromJSON(object.endMeeting) : undefined,
+      getActiveSession: isSet(object.getActiveSession)
+        ? GetActiveSessionRequest.fromJSON(object.getActiveSession)
+        : undefined,
     };
   },
 
@@ -3053,6 +3594,30 @@ export const Request: MessageFns<Request> = {
     }
     if (message.requestGroupSync !== undefined) {
       obj.requestGroupSync = RequestGroupSync.toJSON(message.requestGroupSync);
+    }
+    if (message.userOnlineStatus !== undefined) {
+      obj.userOnlineStatus = UserOnlineStatusRequest.toJSON(message.userOnlineStatus);
+    }
+    if (message.createJoinLink !== undefined) {
+      obj.createJoinLink = CreateJoinLinkRequest.toJSON(message.createJoinLink);
+    }
+    if (message.joinViaLink !== undefined) {
+      obj.joinViaLink = JoinViaLinkRequest.toJSON(message.joinViaLink);
+    }
+    if (message.createMeeting !== undefined) {
+      obj.createMeeting = CreateMeetingRequest.toJSON(message.createMeeting);
+    }
+    if (message.joinMeeting !== undefined) {
+      obj.joinMeeting = JoinMeetingRequest.toJSON(message.joinMeeting);
+    }
+    if (message.leaveMeeting !== undefined) {
+      obj.leaveMeeting = LeaveMeetingRequest.toJSON(message.leaveMeeting);
+    }
+    if (message.endMeeting !== undefined) {
+      obj.endMeeting = EndMeetingRequest.toJSON(message.endMeeting);
+    }
+    if (message.getActiveSession !== undefined) {
+      obj.getActiveSession = GetActiveSessionRequest.toJSON(message.getActiveSession);
     }
     return obj;
   },
@@ -3078,6 +3643,30 @@ export const Request: MessageFns<Request> = {
     message.requestGroupSync = (object.requestGroupSync !== undefined && object.requestGroupSync !== null)
       ? RequestGroupSync.fromPartial(object.requestGroupSync)
       : undefined;
+    message.userOnlineStatus = (object.userOnlineStatus !== undefined && object.userOnlineStatus !== null)
+      ? UserOnlineStatusRequest.fromPartial(object.userOnlineStatus)
+      : undefined;
+    message.createJoinLink = (object.createJoinLink !== undefined && object.createJoinLink !== null)
+      ? CreateJoinLinkRequest.fromPartial(object.createJoinLink)
+      : undefined;
+    message.joinViaLink = (object.joinViaLink !== undefined && object.joinViaLink !== null)
+      ? JoinViaLinkRequest.fromPartial(object.joinViaLink)
+      : undefined;
+    message.createMeeting = (object.createMeeting !== undefined && object.createMeeting !== null)
+      ? CreateMeetingRequest.fromPartial(object.createMeeting)
+      : undefined;
+    message.joinMeeting = (object.joinMeeting !== undefined && object.joinMeeting !== null)
+      ? JoinMeetingRequest.fromPartial(object.joinMeeting)
+      : undefined;
+    message.leaveMeeting = (object.leaveMeeting !== undefined && object.leaveMeeting !== null)
+      ? LeaveMeetingRequest.fromPartial(object.leaveMeeting)
+      : undefined;
+    message.endMeeting = (object.endMeeting !== undefined && object.endMeeting !== null)
+      ? EndMeetingRequest.fromPartial(object.endMeeting)
+      : undefined;
+    message.getActiveSession = (object.getActiveSession !== undefined && object.getActiveSession !== null)
+      ? GetActiveSessionRequest.fromPartial(object.getActiveSession)
+      : undefined;
     return message;
   },
 };
@@ -3090,6 +3679,12 @@ function createBaseResponse(): Response {
     userMessageUploaded: undefined,
     groupMessageUploaded: undefined,
     groupReAddRequestSuccess: undefined,
+    userOnlineStatus: undefined,
+    createJoinLink: undefined,
+    joinViaLinkSuccess: undefined,
+    createMeetingResponse: undefined,
+    joinMeetingResponse: undefined,
+    getActiveSessionResponse: undefined,
   };
 }
 
@@ -3112,6 +3707,24 @@ export const Response: MessageFns<Response> = {
     }
     if (message.groupReAddRequestSuccess !== undefined) {
       GroupReAddRequestSuccess.encode(message.groupReAddRequestSuccess, writer.uint32(50).fork()).join();
+    }
+    if (message.userOnlineStatus !== undefined) {
+      UserOnlineStatusResponse.encode(message.userOnlineStatus, writer.uint32(58).fork()).join();
+    }
+    if (message.createJoinLink !== undefined) {
+      CreateJoinLinkResponse.encode(message.createJoinLink, writer.uint32(66).fork()).join();
+    }
+    if (message.joinViaLinkSuccess !== undefined) {
+      JoinViaLinkSuccess.encode(message.joinViaLinkSuccess, writer.uint32(74).fork()).join();
+    }
+    if (message.createMeetingResponse !== undefined) {
+      CreateMeetingResponse.encode(message.createMeetingResponse, writer.uint32(82).fork()).join();
+    }
+    if (message.joinMeetingResponse !== undefined) {
+      JoinMeetingResponse.encode(message.joinMeetingResponse, writer.uint32(90).fork()).join();
+    }
+    if (message.getActiveSessionResponse !== undefined) {
+      GetActiveSessionResponse.encode(message.getActiveSessionResponse, writer.uint32(114).fork()).join();
     }
     return writer;
   },
@@ -3171,6 +3784,54 @@ export const Response: MessageFns<Response> = {
           message.groupReAddRequestSuccess = GroupReAddRequestSuccess.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.userOnlineStatus = UserOnlineStatusResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.createJoinLink = CreateJoinLinkResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.joinViaLinkSuccess = JoinViaLinkSuccess.decode(reader, reader.uint32());
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.createMeetingResponse = CreateMeetingResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.joinMeetingResponse = JoinMeetingResponse.decode(reader, reader.uint32());
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.getActiveSessionResponse = GetActiveSessionResponse.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3196,6 +3857,22 @@ export const Response: MessageFns<Response> = {
       groupReAddRequestSuccess: isSet(object.groupReAddRequestSuccess)
         ? GroupReAddRequestSuccess.fromJSON(object.groupReAddRequestSuccess)
         : undefined,
+      userOnlineStatus: isSet(object.userOnlineStatus)
+        ? UserOnlineStatusResponse.fromJSON(object.userOnlineStatus)
+        : undefined,
+      createJoinLink: isSet(object.createJoinLink) ? CreateJoinLinkResponse.fromJSON(object.createJoinLink) : undefined,
+      joinViaLinkSuccess: isSet(object.joinViaLinkSuccess)
+        ? JoinViaLinkSuccess.fromJSON(object.joinViaLinkSuccess)
+        : undefined,
+      createMeetingResponse: isSet(object.createMeetingResponse)
+        ? CreateMeetingResponse.fromJSON(object.createMeetingResponse)
+        : undefined,
+      joinMeetingResponse: isSet(object.joinMeetingResponse)
+        ? JoinMeetingResponse.fromJSON(object.joinMeetingResponse)
+        : undefined,
+      getActiveSessionResponse: isSet(object.getActiveSessionResponse)
+        ? GetActiveSessionResponse.fromJSON(object.getActiveSessionResponse)
+        : undefined,
     };
   },
 
@@ -3218,6 +3895,24 @@ export const Response: MessageFns<Response> = {
     }
     if (message.groupReAddRequestSuccess !== undefined) {
       obj.groupReAddRequestSuccess = GroupReAddRequestSuccess.toJSON(message.groupReAddRequestSuccess);
+    }
+    if (message.userOnlineStatus !== undefined) {
+      obj.userOnlineStatus = UserOnlineStatusResponse.toJSON(message.userOnlineStatus);
+    }
+    if (message.createJoinLink !== undefined) {
+      obj.createJoinLink = CreateJoinLinkResponse.toJSON(message.createJoinLink);
+    }
+    if (message.joinViaLinkSuccess !== undefined) {
+      obj.joinViaLinkSuccess = JoinViaLinkSuccess.toJSON(message.joinViaLinkSuccess);
+    }
+    if (message.createMeetingResponse !== undefined) {
+      obj.createMeetingResponse = CreateMeetingResponse.toJSON(message.createMeetingResponse);
+    }
+    if (message.joinMeetingResponse !== undefined) {
+      obj.joinMeetingResponse = JoinMeetingResponse.toJSON(message.joinMeetingResponse);
+    }
+    if (message.getActiveSessionResponse !== undefined) {
+      obj.getActiveSessionResponse = GetActiveSessionResponse.toJSON(message.getActiveSessionResponse);
     }
     return obj;
   },
@@ -3242,6 +3937,26 @@ export const Response: MessageFns<Response> = {
       (object.groupReAddRequestSuccess !== undefined && object.groupReAddRequestSuccess !== null)
         ? GroupReAddRequestSuccess.fromPartial(object.groupReAddRequestSuccess)
         : undefined;
+    message.userOnlineStatus = (object.userOnlineStatus !== undefined && object.userOnlineStatus !== null)
+      ? UserOnlineStatusResponse.fromPartial(object.userOnlineStatus)
+      : undefined;
+    message.createJoinLink = (object.createJoinLink !== undefined && object.createJoinLink !== null)
+      ? CreateJoinLinkResponse.fromPartial(object.createJoinLink)
+      : undefined;
+    message.joinViaLinkSuccess = (object.joinViaLinkSuccess !== undefined && object.joinViaLinkSuccess !== null)
+      ? JoinViaLinkSuccess.fromPartial(object.joinViaLinkSuccess)
+      : undefined;
+    message.createMeetingResponse =
+      (object.createMeetingResponse !== undefined && object.createMeetingResponse !== null)
+        ? CreateMeetingResponse.fromPartial(object.createMeetingResponse)
+        : undefined;
+    message.joinMeetingResponse = (object.joinMeetingResponse !== undefined && object.joinMeetingResponse !== null)
+      ? JoinMeetingResponse.fromPartial(object.joinMeetingResponse)
+      : undefined;
+    message.getActiveSessionResponse =
+      (object.getActiveSessionResponse !== undefined && object.getActiveSessionResponse !== null)
+        ? GetActiveSessionResponse.fromPartial(object.getActiveSessionResponse)
+        : undefined;
     return message;
   },
 };
@@ -3258,6 +3973,9 @@ function createBaseServerMessage(): ServerMessage {
     groupInvite: undefined,
     groupCommits: undefined,
     groupReAddRequests: undefined,
+    groupJoinRequests: undefined,
+    callSignal: undefined,
+    groupMeetingSignal: undefined,
   };
 }
 
@@ -3292,6 +4010,15 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     }
     if (message.groupReAddRequests !== undefined) {
       GroupReAddRequests.encode(message.groupReAddRequests, writer.uint32(138).fork()).join();
+    }
+    if (message.groupJoinRequests !== undefined) {
+      GroupJoinRequests.encode(message.groupJoinRequests, writer.uint32(146).fork()).join();
+    }
+    if (message.callSignal !== undefined) {
+      CallSignal.encode(message.callSignal, writer.uint32(162).fork()).join();
+    }
+    if (message.groupMeetingSignal !== undefined) {
+      GroupMeetingSignal.encode(message.groupMeetingSignal, writer.uint32(170).fork()).join();
     }
     return writer;
   },
@@ -3383,6 +4110,30 @@ export const ServerMessage: MessageFns<ServerMessage> = {
           message.groupReAddRequests = GroupReAddRequests.decode(reader, reader.uint32());
           continue;
         }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.groupJoinRequests = GroupJoinRequests.decode(reader, reader.uint32());
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.callSignal = CallSignal.decode(reader, reader.uint32());
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.groupMeetingSignal = GroupMeetingSignal.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3405,6 +4156,13 @@ export const ServerMessage: MessageFns<ServerMessage> = {
       groupCommits: isSet(object.groupCommits) ? GroupCommits.fromJSON(object.groupCommits) : undefined,
       groupReAddRequests: isSet(object.groupReAddRequests)
         ? GroupReAddRequests.fromJSON(object.groupReAddRequests)
+        : undefined,
+      groupJoinRequests: isSet(object.groupJoinRequests)
+        ? GroupJoinRequests.fromJSON(object.groupJoinRequests)
+        : undefined,
+      callSignal: isSet(object.callSignal) ? CallSignal.fromJSON(object.callSignal) : undefined,
+      groupMeetingSignal: isSet(object.groupMeetingSignal)
+        ? GroupMeetingSignal.fromJSON(object.groupMeetingSignal)
         : undefined,
     };
   },
@@ -3441,6 +4199,15 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     if (message.groupReAddRequests !== undefined) {
       obj.groupReAddRequests = GroupReAddRequests.toJSON(message.groupReAddRequests);
     }
+    if (message.groupJoinRequests !== undefined) {
+      obj.groupJoinRequests = GroupJoinRequests.toJSON(message.groupJoinRequests);
+    }
+    if (message.callSignal !== undefined) {
+      obj.callSignal = CallSignal.toJSON(message.callSignal);
+    }
+    if (message.groupMeetingSignal !== undefined) {
+      obj.groupMeetingSignal = GroupMeetingSignal.toJSON(message.groupMeetingSignal);
+    }
     return obj;
   },
 
@@ -3475,6 +4242,15 @@ export const ServerMessage: MessageFns<ServerMessage> = {
     message.groupReAddRequests = (object.groupReAddRequests !== undefined && object.groupReAddRequests !== null)
       ? GroupReAddRequests.fromPartial(object.groupReAddRequests)
       : undefined;
+    message.groupJoinRequests = (object.groupJoinRequests !== undefined && object.groupJoinRequests !== null)
+      ? GroupJoinRequests.fromPartial(object.groupJoinRequests)
+      : undefined;
+    message.callSignal = (object.callSignal !== undefined && object.callSignal !== null)
+      ? CallSignal.fromPartial(object.callSignal)
+      : undefined;
+    message.groupMeetingSignal = (object.groupMeetingSignal !== undefined && object.groupMeetingSignal !== null)
+      ? GroupMeetingSignal.fromPartial(object.groupMeetingSignal)
+      : undefined;
     return message;
   },
 };
@@ -3487,6 +4263,8 @@ function createBaseClientMessage(): ClientMessage {
     request: undefined,
     ping: undefined,
     pong: undefined,
+    callSignal: undefined,
+    groupMeetingSignal: undefined,
   };
 }
 
@@ -3509,6 +4287,12 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     }
     if (message.pong !== undefined) {
       writer.uint32(98).bytes(message.pong);
+    }
+    if (message.callSignal !== undefined) {
+      CallSignal.encode(message.callSignal, writer.uint32(162).fork()).join();
+    }
+    if (message.groupMeetingSignal !== undefined) {
+      GroupMeetingSignal.encode(message.groupMeetingSignal, writer.uint32(170).fork()).join();
     }
     return writer;
   },
@@ -3568,6 +4352,22 @@ export const ClientMessage: MessageFns<ClientMessage> = {
           message.pong = reader.bytes();
           continue;
         }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.callSignal = CallSignal.decode(reader, reader.uint32());
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.groupMeetingSignal = GroupMeetingSignal.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3587,6 +4387,10 @@ export const ClientMessage: MessageFns<ClientMessage> = {
       request: isSet(object.request) ? Request.fromJSON(object.request) : undefined,
       ping: isSet(object.ping) ? bytesFromBase64(object.ping) : undefined,
       pong: isSet(object.pong) ? bytesFromBase64(object.pong) : undefined,
+      callSignal: isSet(object.callSignal) ? CallSignal.fromJSON(object.callSignal) : undefined,
+      groupMeetingSignal: isSet(object.groupMeetingSignal)
+        ? GroupMeetingSignal.fromJSON(object.groupMeetingSignal)
+        : undefined,
     };
   },
 
@@ -3610,6 +4414,12 @@ export const ClientMessage: MessageFns<ClientMessage> = {
     if (message.pong !== undefined) {
       obj.pong = base64FromBytes(message.pong);
     }
+    if (message.callSignal !== undefined) {
+      obj.callSignal = CallSignal.toJSON(message.callSignal);
+    }
+    if (message.groupMeetingSignal !== undefined) {
+      obj.groupMeetingSignal = GroupMeetingSignal.toJSON(message.groupMeetingSignal);
+    }
     return obj;
   },
 
@@ -3632,6 +4442,213 @@ export const ClientMessage: MessageFns<ClientMessage> = {
       : undefined;
     message.ping = object.ping ?? undefined;
     message.pong = object.pong ?? undefined;
+    message.callSignal = (object.callSignal !== undefined && object.callSignal !== null)
+      ? CallSignal.fromPartial(object.callSignal)
+      : undefined;
+    message.groupMeetingSignal = (object.groupMeetingSignal !== undefined && object.groupMeetingSignal !== null)
+      ? GroupMeetingSignal.fromPartial(object.groupMeetingSignal)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseCallSignal(): CallSignal {
+  return {
+    callId: 0n,
+    senderUsername: "",
+    receiverUsername: "",
+    type: 0,
+    sdp: "",
+    candidate: "",
+    sdpMLineIndex: 0,
+    sdpMid: "",
+    senderDeviceId: 0,
+  };
+}
+
+export const CallSignal: MessageFns<CallSignal> = {
+  encode(message: CallSignal, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.callId !== 0n) {
+      if (BigInt.asUintN(64, message.callId) !== message.callId) {
+        throw new globalThis.Error("value provided for field message.callId of type fixed64 too large");
+      }
+      writer.uint32(9).fixed64(message.callId);
+    }
+    if (message.senderUsername !== "") {
+      writer.uint32(18).string(message.senderUsername);
+    }
+    if (message.receiverUsername !== "") {
+      writer.uint32(26).string(message.receiverUsername);
+    }
+    if (message.type !== 0) {
+      writer.uint32(32).int32(message.type);
+    }
+    if (message.sdp !== "") {
+      writer.uint32(42).string(message.sdp);
+    }
+    if (message.candidate !== "") {
+      writer.uint32(50).string(message.candidate);
+    }
+    if (message.sdpMLineIndex !== 0) {
+      writer.uint32(56).int32(message.sdpMLineIndex);
+    }
+    if (message.sdpMid !== "") {
+      writer.uint32(66).string(message.sdpMid);
+    }
+    if (message.senderDeviceId !== 0) {
+      writer.uint32(72).uint32(message.senderDeviceId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CallSignal {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCallSignal();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.callId = reader.fixed64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.senderUsername = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.receiverUsername = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.sdp = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.candidate = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.sdpMLineIndex = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.sdpMid = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.senderDeviceId = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CallSignal {
+    return {
+      callId: isSet(object.callId) ? BigInt(object.callId) : 0n,
+      senderUsername: isSet(object.senderUsername) ? globalThis.String(object.senderUsername) : "",
+      receiverUsername: isSet(object.receiverUsername) ? globalThis.String(object.receiverUsername) : "",
+      type: isSet(object.type) ? callSignalTypeFromJSON(object.type) : 0,
+      sdp: isSet(object.sdp) ? globalThis.String(object.sdp) : "",
+      candidate: isSet(object.candidate) ? globalThis.String(object.candidate) : "",
+      sdpMLineIndex: isSet(object.sdpMLineIndex) ? globalThis.Number(object.sdpMLineIndex) : 0,
+      sdpMid: isSet(object.sdpMid) ? globalThis.String(object.sdpMid) : "",
+      senderDeviceId: isSet(object.senderDeviceId) ? globalThis.Number(object.senderDeviceId) : 0,
+    };
+  },
+
+  toJSON(message: CallSignal): unknown {
+    const obj: any = {};
+    if (message.callId !== 0n) {
+      obj.callId = message.callId.toString();
+    }
+    if (message.senderUsername !== "") {
+      obj.senderUsername = message.senderUsername;
+    }
+    if (message.receiverUsername !== "") {
+      obj.receiverUsername = message.receiverUsername;
+    }
+    if (message.type !== 0) {
+      obj.type = callSignalTypeToJSON(message.type);
+    }
+    if (message.sdp !== "") {
+      obj.sdp = message.sdp;
+    }
+    if (message.candidate !== "") {
+      obj.candidate = message.candidate;
+    }
+    if (message.sdpMLineIndex !== 0) {
+      obj.sdpMLineIndex = Math.round(message.sdpMLineIndex);
+    }
+    if (message.sdpMid !== "") {
+      obj.sdpMid = message.sdpMid;
+    }
+    if (message.senderDeviceId !== 0) {
+      obj.senderDeviceId = Math.round(message.senderDeviceId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CallSignal>, I>>(base?: I): CallSignal {
+    return CallSignal.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CallSignal>, I>>(object: I): CallSignal {
+    const message = createBaseCallSignal();
+    message.callId = object.callId ?? 0n;
+    message.senderUsername = object.senderUsername ?? "";
+    message.receiverUsername = object.receiverUsername ?? "";
+    message.type = object.type ?? 0;
+    message.sdp = object.sdp ?? "";
+    message.candidate = object.candidate ?? "";
+    message.sdpMLineIndex = object.sdpMLineIndex ?? 0;
+    message.sdpMid = object.sdpMid ?? "";
+    message.senderDeviceId = object.senderDeviceId ?? 0;
     return message;
   },
 };
@@ -6042,6 +7059,1434 @@ export const GroupReAddRequestSuccess: MessageFns<GroupReAddRequestSuccess> = {
   },
   fromPartial<I extends Exact<DeepPartial<GroupReAddRequestSuccess>, I>>(_: I): GroupReAddRequestSuccess {
     const message = createBaseGroupReAddRequestSuccess();
+    return message;
+  },
+};
+
+function createBaseCreateJoinLinkRequest(): CreateJoinLinkRequest {
+  return { groupId: 0n, expiresInSeconds: 0n, maxUses: 0 };
+}
+
+export const CreateJoinLinkRequest: MessageFns<CreateJoinLinkRequest> = {
+  encode(message: CreateJoinLinkRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.expiresInSeconds !== 0n) {
+      if (BigInt.asUintN(64, message.expiresInSeconds) !== message.expiresInSeconds) {
+        throw new globalThis.Error("value provided for field message.expiresInSeconds of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.expiresInSeconds);
+    }
+    if (message.maxUses !== 0) {
+      writer.uint32(24).uint32(message.maxUses);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateJoinLinkRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateJoinLinkRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.expiresInSeconds = reader.uint64() as bigint;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.maxUses = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateJoinLinkRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      expiresInSeconds: isSet(object.expiresInSeconds) ? BigInt(object.expiresInSeconds) : 0n,
+      maxUses: isSet(object.maxUses) ? globalThis.Number(object.maxUses) : 0,
+    };
+  },
+
+  toJSON(message: CreateJoinLinkRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.expiresInSeconds !== 0n) {
+      obj.expiresInSeconds = message.expiresInSeconds.toString();
+    }
+    if (message.maxUses !== 0) {
+      obj.maxUses = Math.round(message.maxUses);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateJoinLinkRequest>, I>>(base?: I): CreateJoinLinkRequest {
+    return CreateJoinLinkRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateJoinLinkRequest>, I>>(object: I): CreateJoinLinkRequest {
+    const message = createBaseCreateJoinLinkRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.expiresInSeconds = object.expiresInSeconds ?? 0n;
+    message.maxUses = object.maxUses ?? 0;
+    return message;
+  },
+};
+
+function createBaseCreateJoinLinkResponse(): CreateJoinLinkResponse {
+  return { token: "" };
+}
+
+export const CreateJoinLinkResponse: MessageFns<CreateJoinLinkResponse> = {
+  encode(message: CreateJoinLinkResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateJoinLinkResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateJoinLinkResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateJoinLinkResponse {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: CreateJoinLinkResponse): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateJoinLinkResponse>, I>>(base?: I): CreateJoinLinkResponse {
+    return CreateJoinLinkResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateJoinLinkResponse>, I>>(object: I): CreateJoinLinkResponse {
+    const message = createBaseCreateJoinLinkResponse();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseJoinViaLinkRequest(): JoinViaLinkRequest {
+  return { token: "" };
+}
+
+export const JoinViaLinkRequest: MessageFns<JoinViaLinkRequest> = {
+  encode(message: JoinViaLinkRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): JoinViaLinkRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseJoinViaLinkRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): JoinViaLinkRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: JoinViaLinkRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<JoinViaLinkRequest>, I>>(base?: I): JoinViaLinkRequest {
+    return JoinViaLinkRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<JoinViaLinkRequest>, I>>(object: I): JoinViaLinkRequest {
+    const message = createBaseJoinViaLinkRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseJoinViaLinkSuccess(): JoinViaLinkSuccess {
+  return {};
+}
+
+export const JoinViaLinkSuccess: MessageFns<JoinViaLinkSuccess> = {
+  encode(_: JoinViaLinkSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): JoinViaLinkSuccess {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseJoinViaLinkSuccess();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): JoinViaLinkSuccess {
+    return {};
+  },
+
+  toJSON(_: JoinViaLinkSuccess): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<JoinViaLinkSuccess>, I>>(base?: I): JoinViaLinkSuccess {
+    return JoinViaLinkSuccess.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<JoinViaLinkSuccess>, I>>(_: I): JoinViaLinkSuccess {
+    const message = createBaseJoinViaLinkSuccess();
+    return message;
+  },
+};
+
+function createBaseGroupJoinRequest(): GroupJoinRequest {
+  return { groupId: 0n, addressId: 0n, username: "" };
+}
+
+export const GroupJoinRequest: MessageFns<GroupJoinRequest> = {
+  encode(message: GroupJoinRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.addressId !== 0n) {
+      if (BigInt.asUintN(64, message.addressId) !== message.addressId) {
+        throw new globalThis.Error("value provided for field message.addressId of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.addressId);
+    }
+    if (message.username !== "") {
+      writer.uint32(26).string(message.username);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupJoinRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupJoinRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.addressId = reader.uint64() as bigint;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupJoinRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      addressId: isSet(object.addressId) ? BigInt(object.addressId) : 0n,
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+    };
+  },
+
+  toJSON(message: GroupJoinRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.addressId !== 0n) {
+      obj.addressId = message.addressId.toString();
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupJoinRequest>, I>>(base?: I): GroupJoinRequest {
+    return GroupJoinRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupJoinRequest>, I>>(object: I): GroupJoinRequest {
+    const message = createBaseGroupJoinRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.addressId = object.addressId ?? 0n;
+    message.username = object.username ?? "";
+    return message;
+  },
+};
+
+function createBaseGroupJoinRequests(): GroupJoinRequests {
+  return { requests: [] };
+}
+
+export const GroupJoinRequests: MessageFns<GroupJoinRequests> = {
+  encode(message: GroupJoinRequests, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.requests) {
+      GroupJoinRequest.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupJoinRequests {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupJoinRequests();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.requests.push(GroupJoinRequest.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupJoinRequests {
+    return {
+      requests: globalThis.Array.isArray(object?.requests)
+        ? object.requests.map((e: any) => GroupJoinRequest.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GroupJoinRequests): unknown {
+    const obj: any = {};
+    if (message.requests?.length) {
+      obj.requests = message.requests.map((e) => GroupJoinRequest.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupJoinRequests>, I>>(base?: I): GroupJoinRequests {
+    return GroupJoinRequests.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupJoinRequests>, I>>(object: I): GroupJoinRequests {
+    const message = createBaseGroupJoinRequests();
+    message.requests = object.requests?.map((e) => GroupJoinRequest.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGroupMeetingSession(): GroupMeetingSession {
+  return {
+    sessionId: 0n,
+    groupId: 0n,
+    channelId: 0,
+    creatorUsername: "",
+    status: 0,
+    createdAt: 0n,
+    endedAt: 0n,
+    participants: [],
+    cfMeetingId: "",
+    e2eeEnabled: false,
+  };
+}
+
+export const GroupMeetingSession: MessageFns<GroupMeetingSession> = {
+  encode(message: GroupMeetingSession, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sessionId !== 0n) {
+      if (BigInt.asUintN(64, message.sessionId) !== message.sessionId) {
+        throw new globalThis.Error("value provided for field message.sessionId of type fixed64 too large");
+      }
+      writer.uint32(9).fixed64(message.sessionId);
+    }
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(16).uint64(message.groupId);
+    }
+    if (message.channelId !== 0) {
+      writer.uint32(24).uint32(message.channelId);
+    }
+    if (message.creatorUsername !== "") {
+      writer.uint32(34).string(message.creatorUsername);
+    }
+    if (message.status !== 0) {
+      writer.uint32(40).int32(message.status);
+    }
+    if (message.createdAt !== 0n) {
+      if (BigInt.asUintN(64, message.createdAt) !== message.createdAt) {
+        throw new globalThis.Error("value provided for field message.createdAt of type fixed64 too large");
+      }
+      writer.uint32(49).fixed64(message.createdAt);
+    }
+    if (message.endedAt !== 0n) {
+      if (BigInt.asUintN(64, message.endedAt) !== message.endedAt) {
+        throw new globalThis.Error("value provided for field message.endedAt of type fixed64 too large");
+      }
+      writer.uint32(57).fixed64(message.endedAt);
+    }
+    for (const v of message.participants) {
+      writer.uint32(66).string(v!);
+    }
+    if (message.cfMeetingId !== "") {
+      writer.uint32(74).string(message.cfMeetingId);
+    }
+    if (message.e2eeEnabled !== false) {
+      writer.uint32(80).bool(message.e2eeEnabled);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupMeetingSession {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMeetingSession();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.sessionId = reader.fixed64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.channelId = reader.uint32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.creatorUsername = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.createdAt = reader.fixed64() as bigint;
+          continue;
+        }
+        case 7: {
+          if (tag !== 57) {
+            break;
+          }
+
+          message.endedAt = reader.fixed64() as bigint;
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.participants.push(reader.string());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.cfMeetingId = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.e2eeEnabled = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMeetingSession {
+    return {
+      sessionId: isSet(object.sessionId) ? BigInt(object.sessionId) : 0n,
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+      creatorUsername: isSet(object.creatorUsername) ? globalThis.String(object.creatorUsername) : "",
+      status: isSet(object.status) ? meetingSessionStatusFromJSON(object.status) : 0,
+      createdAt: isSet(object.createdAt) ? BigInt(object.createdAt) : 0n,
+      endedAt: isSet(object.endedAt) ? BigInt(object.endedAt) : 0n,
+      participants: globalThis.Array.isArray(object?.participants)
+        ? object.participants.map((e: any) => globalThis.String(e))
+        : [],
+      cfMeetingId: isSet(object.cfMeetingId) ? globalThis.String(object.cfMeetingId) : "",
+      e2eeEnabled: isSet(object.e2eeEnabled) ? globalThis.Boolean(object.e2eeEnabled) : false,
+    };
+  },
+
+  toJSON(message: GroupMeetingSession): unknown {
+    const obj: any = {};
+    if (message.sessionId !== 0n) {
+      obj.sessionId = message.sessionId.toString();
+    }
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.channelId !== 0) {
+      obj.channelId = Math.round(message.channelId);
+    }
+    if (message.creatorUsername !== "") {
+      obj.creatorUsername = message.creatorUsername;
+    }
+    if (message.status !== 0) {
+      obj.status = meetingSessionStatusToJSON(message.status);
+    }
+    if (message.createdAt !== 0n) {
+      obj.createdAt = message.createdAt.toString();
+    }
+    if (message.endedAt !== 0n) {
+      obj.endedAt = message.endedAt.toString();
+    }
+    if (message.participants?.length) {
+      obj.participants = message.participants;
+    }
+    if (message.cfMeetingId !== "") {
+      obj.cfMeetingId = message.cfMeetingId;
+    }
+    if (message.e2eeEnabled !== false) {
+      obj.e2eeEnabled = message.e2eeEnabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMeetingSession>, I>>(base?: I): GroupMeetingSession {
+    return GroupMeetingSession.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMeetingSession>, I>>(object: I): GroupMeetingSession {
+    const message = createBaseGroupMeetingSession();
+    message.sessionId = object.sessionId ?? 0n;
+    message.groupId = object.groupId ?? 0n;
+    message.channelId = object.channelId ?? 0;
+    message.creatorUsername = object.creatorUsername ?? "";
+    message.status = object.status ?? 0;
+    message.createdAt = object.createdAt ?? 0n;
+    message.endedAt = object.endedAt ?? 0n;
+    message.participants = object.participants?.map((e) => e) || [];
+    message.cfMeetingId = object.cfMeetingId ?? "";
+    message.e2eeEnabled = object.e2eeEnabled ?? false;
+    return message;
+  },
+};
+
+function createBaseCreateMeetingRequest(): CreateMeetingRequest {
+  return { groupId: 0n, channelId: 0, e2eeEnabled: false };
+}
+
+export const CreateMeetingRequest: MessageFns<CreateMeetingRequest> = {
+  encode(message: CreateMeetingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.channelId !== 0) {
+      writer.uint32(16).uint32(message.channelId);
+    }
+    if (message.e2eeEnabled !== false) {
+      writer.uint32(24).bool(message.e2eeEnabled);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateMeetingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateMeetingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.channelId = reader.uint32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.e2eeEnabled = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateMeetingRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+      e2eeEnabled: isSet(object.e2eeEnabled) ? globalThis.Boolean(object.e2eeEnabled) : false,
+    };
+  },
+
+  toJSON(message: CreateMeetingRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.channelId !== 0) {
+      obj.channelId = Math.round(message.channelId);
+    }
+    if (message.e2eeEnabled !== false) {
+      obj.e2eeEnabled = message.e2eeEnabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateMeetingRequest>, I>>(base?: I): CreateMeetingRequest {
+    return CreateMeetingRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateMeetingRequest>, I>>(object: I): CreateMeetingRequest {
+    const message = createBaseCreateMeetingRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.channelId = object.channelId ?? 0;
+    message.e2eeEnabled = object.e2eeEnabled ?? false;
+    return message;
+  },
+};
+
+function createBaseCreateMeetingResponse(): CreateMeetingResponse {
+  return { session: undefined, participantToken: "" };
+}
+
+export const CreateMeetingResponse: MessageFns<CreateMeetingResponse> = {
+  encode(message: CreateMeetingResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      GroupMeetingSession.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.participantToken !== "") {
+      writer.uint32(18).string(message.participantToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateMeetingResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateMeetingResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = GroupMeetingSession.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.participantToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateMeetingResponse {
+    return {
+      session: isSet(object.session) ? GroupMeetingSession.fromJSON(object.session) : undefined,
+      participantToken: isSet(object.participantToken) ? globalThis.String(object.participantToken) : "",
+    };
+  },
+
+  toJSON(message: CreateMeetingResponse): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = GroupMeetingSession.toJSON(message.session);
+    }
+    if (message.participantToken !== "") {
+      obj.participantToken = message.participantToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CreateMeetingResponse>, I>>(base?: I): CreateMeetingResponse {
+    return CreateMeetingResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CreateMeetingResponse>, I>>(object: I): CreateMeetingResponse {
+    const message = createBaseCreateMeetingResponse();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? GroupMeetingSession.fromPartial(object.session)
+      : undefined;
+    message.participantToken = object.participantToken ?? "";
+    return message;
+  },
+};
+
+function createBaseJoinMeetingRequest(): JoinMeetingRequest {
+  return { groupId: 0n, sessionId: 0n };
+}
+
+export const JoinMeetingRequest: MessageFns<JoinMeetingRequest> = {
+  encode(message: JoinMeetingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.sessionId !== 0n) {
+      if (BigInt.asUintN(64, message.sessionId) !== message.sessionId) {
+        throw new globalThis.Error("value provided for field message.sessionId of type fixed64 too large");
+      }
+      writer.uint32(17).fixed64(message.sessionId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): JoinMeetingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseJoinMeetingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.sessionId = reader.fixed64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): JoinMeetingRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      sessionId: isSet(object.sessionId) ? BigInt(object.sessionId) : 0n,
+    };
+  },
+
+  toJSON(message: JoinMeetingRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.sessionId !== 0n) {
+      obj.sessionId = message.sessionId.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<JoinMeetingRequest>, I>>(base?: I): JoinMeetingRequest {
+    return JoinMeetingRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<JoinMeetingRequest>, I>>(object: I): JoinMeetingRequest {
+    const message = createBaseJoinMeetingRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.sessionId = object.sessionId ?? 0n;
+    return message;
+  },
+};
+
+function createBaseJoinMeetingResponse(): JoinMeetingResponse {
+  return { session: undefined, participantToken: "" };
+}
+
+export const JoinMeetingResponse: MessageFns<JoinMeetingResponse> = {
+  encode(message: JoinMeetingResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      GroupMeetingSession.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.participantToken !== "") {
+      writer.uint32(18).string(message.participantToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): JoinMeetingResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseJoinMeetingResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = GroupMeetingSession.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.participantToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): JoinMeetingResponse {
+    return {
+      session: isSet(object.session) ? GroupMeetingSession.fromJSON(object.session) : undefined,
+      participantToken: isSet(object.participantToken) ? globalThis.String(object.participantToken) : "",
+    };
+  },
+
+  toJSON(message: JoinMeetingResponse): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = GroupMeetingSession.toJSON(message.session);
+    }
+    if (message.participantToken !== "") {
+      obj.participantToken = message.participantToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<JoinMeetingResponse>, I>>(base?: I): JoinMeetingResponse {
+    return JoinMeetingResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<JoinMeetingResponse>, I>>(object: I): JoinMeetingResponse {
+    const message = createBaseJoinMeetingResponse();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? GroupMeetingSession.fromPartial(object.session)
+      : undefined;
+    message.participantToken = object.participantToken ?? "";
+    return message;
+  },
+};
+
+function createBaseLeaveMeetingRequest(): LeaveMeetingRequest {
+  return { groupId: 0n, sessionId: 0n };
+}
+
+export const LeaveMeetingRequest: MessageFns<LeaveMeetingRequest> = {
+  encode(message: LeaveMeetingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.sessionId !== 0n) {
+      if (BigInt.asUintN(64, message.sessionId) !== message.sessionId) {
+        throw new globalThis.Error("value provided for field message.sessionId of type fixed64 too large");
+      }
+      writer.uint32(17).fixed64(message.sessionId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LeaveMeetingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLeaveMeetingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.sessionId = reader.fixed64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LeaveMeetingRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      sessionId: isSet(object.sessionId) ? BigInt(object.sessionId) : 0n,
+    };
+  },
+
+  toJSON(message: LeaveMeetingRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.sessionId !== 0n) {
+      obj.sessionId = message.sessionId.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<LeaveMeetingRequest>, I>>(base?: I): LeaveMeetingRequest {
+    return LeaveMeetingRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<LeaveMeetingRequest>, I>>(object: I): LeaveMeetingRequest {
+    const message = createBaseLeaveMeetingRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.sessionId = object.sessionId ?? 0n;
+    return message;
+  },
+};
+
+function createBaseEndMeetingRequest(): EndMeetingRequest {
+  return { groupId: 0n, sessionId: 0n };
+}
+
+export const EndMeetingRequest: MessageFns<EndMeetingRequest> = {
+  encode(message: EndMeetingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.sessionId !== 0n) {
+      if (BigInt.asUintN(64, message.sessionId) !== message.sessionId) {
+        throw new globalThis.Error("value provided for field message.sessionId of type fixed64 too large");
+      }
+      writer.uint32(17).fixed64(message.sessionId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EndMeetingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEndMeetingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.sessionId = reader.fixed64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EndMeetingRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      sessionId: isSet(object.sessionId) ? BigInt(object.sessionId) : 0n,
+    };
+  },
+
+  toJSON(message: EndMeetingRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.sessionId !== 0n) {
+      obj.sessionId = message.sessionId.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EndMeetingRequest>, I>>(base?: I): EndMeetingRequest {
+    return EndMeetingRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EndMeetingRequest>, I>>(object: I): EndMeetingRequest {
+    const message = createBaseEndMeetingRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.sessionId = object.sessionId ?? 0n;
+    return message;
+  },
+};
+
+function createBaseGetActiveSessionRequest(): GetActiveSessionRequest {
+  return { groupId: 0n, channelId: 0 };
+}
+
+export const GetActiveSessionRequest: MessageFns<GetActiveSessionRequest> = {
+  encode(message: GetActiveSessionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.channelId !== 0) {
+      writer.uint32(16).uint32(message.channelId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetActiveSessionRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetActiveSessionRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.channelId = reader.uint32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetActiveSessionRequest {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+    };
+  },
+
+  toJSON(message: GetActiveSessionRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.channelId !== 0) {
+      obj.channelId = Math.round(message.channelId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetActiveSessionRequest>, I>>(base?: I): GetActiveSessionRequest {
+    return GetActiveSessionRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetActiveSessionRequest>, I>>(object: I): GetActiveSessionRequest {
+    const message = createBaseGetActiveSessionRequest();
+    message.groupId = object.groupId ?? 0n;
+    message.channelId = object.channelId ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetActiveSessionResponse(): GetActiveSessionResponse {
+  return { session: undefined };
+}
+
+export const GetActiveSessionResponse: MessageFns<GetActiveSessionResponse> = {
+  encode(message: GetActiveSessionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      GroupMeetingSession.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetActiveSessionResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetActiveSessionResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = GroupMeetingSession.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetActiveSessionResponse {
+    return { session: isSet(object.session) ? GroupMeetingSession.fromJSON(object.session) : undefined };
+  },
+
+  toJSON(message: GetActiveSessionResponse): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = GroupMeetingSession.toJSON(message.session);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetActiveSessionResponse>, I>>(base?: I): GetActiveSessionResponse {
+    return GetActiveSessionResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetActiveSessionResponse>, I>>(object: I): GetActiveSessionResponse {
+    const message = createBaseGetActiveSessionResponse();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? GroupMeetingSession.fromPartial(object.session)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGroupMeetingSignal(): GroupMeetingSignal {
+  return { groupId: 0n, channelId: 0, sessionId: 0n, type: 0, username: "", cfMeetingId: "" };
+}
+
+export const GroupMeetingSignal: MessageFns<GroupMeetingSignal> = {
+  encode(message: GroupMeetingSignal, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.groupId !== 0n) {
+      if (BigInt.asUintN(64, message.groupId) !== message.groupId) {
+        throw new globalThis.Error("value provided for field message.groupId of type uint64 too large");
+      }
+      writer.uint32(8).uint64(message.groupId);
+    }
+    if (message.channelId !== 0) {
+      writer.uint32(16).uint32(message.channelId);
+    }
+    if (message.sessionId !== 0n) {
+      if (BigInt.asUintN(64, message.sessionId) !== message.sessionId) {
+        throw new globalThis.Error("value provided for field message.sessionId of type fixed64 too large");
+      }
+      writer.uint32(25).fixed64(message.sessionId);
+    }
+    if (message.type !== 0) {
+      writer.uint32(32).int32(message.type);
+    }
+    if (message.username !== "") {
+      writer.uint32(42).string(message.username);
+    }
+    if (message.cfMeetingId !== "") {
+      writer.uint32(50).string(message.cfMeetingId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GroupMeetingSignal {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMeetingSignal();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.groupId = reader.uint64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.channelId = reader.uint32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.sessionId = reader.fixed64() as bigint;
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.cfMeetingId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMeetingSignal {
+    return {
+      groupId: isSet(object.groupId) ? BigInt(object.groupId) : 0n,
+      channelId: isSet(object.channelId) ? globalThis.Number(object.channelId) : 0,
+      sessionId: isSet(object.sessionId) ? BigInt(object.sessionId) : 0n,
+      type: isSet(object.type) ? meetingSignalTypeFromJSON(object.type) : 0,
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+      cfMeetingId: isSet(object.cfMeetingId) ? globalThis.String(object.cfMeetingId) : "",
+    };
+  },
+
+  toJSON(message: GroupMeetingSignal): unknown {
+    const obj: any = {};
+    if (message.groupId !== 0n) {
+      obj.groupId = message.groupId.toString();
+    }
+    if (message.channelId !== 0) {
+      obj.channelId = Math.round(message.channelId);
+    }
+    if (message.sessionId !== 0n) {
+      obj.sessionId = message.sessionId.toString();
+    }
+    if (message.type !== 0) {
+      obj.type = meetingSignalTypeToJSON(message.type);
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    if (message.cfMeetingId !== "") {
+      obj.cfMeetingId = message.cfMeetingId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMeetingSignal>, I>>(base?: I): GroupMeetingSignal {
+    return GroupMeetingSignal.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMeetingSignal>, I>>(object: I): GroupMeetingSignal {
+    const message = createBaseGroupMeetingSignal();
+    message.groupId = object.groupId ?? 0n;
+    message.channelId = object.channelId ?? 0;
+    message.sessionId = object.sessionId ?? 0n;
+    message.type = object.type ?? 0;
+    message.username = object.username ?? "";
+    message.cfMeetingId = object.cfMeetingId ?? "";
     return message;
   },
 };

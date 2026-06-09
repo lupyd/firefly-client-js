@@ -1,24 +1,5 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 export declare const protobufPackage = "firefly";
-export declare enum CallSignalType {
-    /** CALL_REQUEST - Call invitation (contains SDP Offer) */
-    CALL_REQUEST = 0,
-    /** CALL_ANSWER - Call accepted (contains SDP Answer) */
-    CALL_ANSWER = 1,
-    /** CALL_REJECT - Call declined by receiver */
-    CALL_REJECT = 2,
-    /** CALL_CANCEL - Call canceled by caller before answer */
-    CALL_CANCEL = 3,
-    /** CALL_HANGUP - Call ended by either party during or after session */
-    CALL_HANGUP = 4,
-    /** CALL_DISMISS - Server-sent notification to dismiss call on other devices */
-    CALL_DISMISS = 5,
-    /** CALL_ICECANDIDATE - Dynamic ICE candidates signaling */
-    CALL_ICECANDIDATE = 6,
-    UNRECOGNIZED = -1
-}
-export declare function callSignalTypeFromJSON(object: any): CallSignalType;
-export declare function callSignalTypeToJSON(object: CallSignalType): string;
 export declare enum CallMessageType {
     none = 0,
     request = 1,
@@ -35,26 +16,6 @@ export declare enum CallMessageType {
 }
 export declare function callMessageTypeFromJSON(object: any): CallMessageType;
 export declare function callMessageTypeToJSON(object: CallMessageType): string;
-export declare enum MeetingSessionStatus {
-    MEETING_STATUS_ACTIVE = 0,
-    MEETING_STATUS_ENDED = 1,
-    UNRECOGNIZED = -1
-}
-export declare function meetingSessionStatusFromJSON(object: any): MeetingSessionStatus;
-export declare function meetingSessionStatusToJSON(object: MeetingSessionStatus): string;
-export declare enum MeetingSignalType {
-    /** MEETING_SIGNAL_STARTED - New meeting created in a channel */
-    MEETING_SIGNAL_STARTED = 0,
-    /** MEETING_SIGNAL_JOINED - A user joined */
-    MEETING_SIGNAL_JOINED = 1,
-    /** MEETING_SIGNAL_LEFT - A user left */
-    MEETING_SIGNAL_LEFT = 2,
-    /** MEETING_SIGNAL_ENDED - Meeting ended (by creator or last participant) */
-    MEETING_SIGNAL_ENDED = 3,
-    UNRECOGNIZED = -1
-}
-export declare function meetingSignalTypeFromJSON(object: any): MeetingSignalType;
-export declare function meetingSignalTypeToJSON(object: MeetingSignalType): string;
 export interface UserMessage {
     id: bigint;
     toId: bigint;
@@ -74,7 +35,6 @@ export interface Group {
     description: string;
     state: Uint8Array;
     settings: number;
-    upgraded: boolean;
 }
 export interface Groups {
     groups: Group[];
@@ -185,14 +145,6 @@ export interface MessageIdAndTo {
 export interface UserMessageUploaded {
     messageIds: MessageIdAndTo[];
 }
-export interface UserOnlineStatusRequest {
-    /** max 32 usernames */
-    usernames: string[];
-}
-export interface UserOnlineStatusResponse {
-    /** bit i is 1 if usernames[i] is online */
-    onlineBits: number;
-}
 export interface Request {
     id: number;
     createUserMessage?: UserMessage | undefined;
@@ -200,14 +152,6 @@ export interface Request {
     uploadGroupMessage?: GroupMessage | undefined;
     requestGroupReAdds?: RequestGroupReAdds | undefined;
     requestGroupSync?: RequestGroupSync | undefined;
-    userOnlineStatus?: UserOnlineStatusRequest | undefined;
-    createJoinLink?: CreateJoinLinkRequest | undefined;
-    joinViaLink?: JoinViaLinkRequest | undefined;
-    createMeeting?: CreateMeetingRequest | undefined;
-    joinMeeting?: JoinMeetingRequest | undefined;
-    leaveMeeting?: LeaveMeetingRequest | undefined;
-    endMeeting?: EndMeetingRequest | undefined;
-    getActiveSession?: GetActiveSessionRequest | undefined;
 }
 export interface Response {
     id: number;
@@ -216,12 +160,6 @@ export interface Response {
     userMessageUploaded?: UserMessageUploaded | undefined;
     groupMessageUploaded?: GroupMessage | undefined;
     groupReAddRequestSuccess?: GroupReAddRequestSuccess | undefined;
-    userOnlineStatus?: UserOnlineStatusResponse | undefined;
-    createJoinLink?: CreateJoinLinkResponse | undefined;
-    joinViaLinkSuccess?: JoinViaLinkSuccess | undefined;
-    createMeetingResponse?: CreateMeetingResponse | undefined;
-    joinMeetingResponse?: JoinMeetingResponse | undefined;
-    getActiveSessionResponse?: GetActiveSessionResponse | undefined;
 }
 export interface ServerMessage {
     userMessage?: UserMessage | undefined;
@@ -234,9 +172,6 @@ export interface ServerMessage {
     groupInvite?: GroupInvite | undefined;
     groupCommits?: GroupCommits | undefined;
     groupReAddRequests?: GroupReAddRequests | undefined;
-    groupJoinRequests?: GroupJoinRequests | undefined;
-    callSignal?: CallSignal | undefined;
-    groupMeetingSignal?: GroupMeetingSignal | undefined;
 }
 export interface ClientMessage {
     userMessage?: UserMessage | undefined;
@@ -245,19 +180,6 @@ export interface ClientMessage {
     request?: Request | undefined;
     ping?: Uint8Array | undefined;
     pong?: Uint8Array | undefined;
-    callSignal?: CallSignal | undefined;
-    groupMeetingSignal?: GroupMeetingSignal | undefined;
-}
-export interface CallSignal {
-    callId: bigint;
-    senderUsername: string;
-    receiverUsername: string;
-    type: CallSignalType;
-    sdp: string;
-    candidate: string;
-    sdpMLineIndex: number;
-    sdpMid: string;
-    senderDeviceId: number;
 }
 export interface GroupId {
     id: bigint;
@@ -387,89 +309,6 @@ export interface RequestGroupSync {
 }
 export interface GroupReAddRequestSuccess {
 }
-export interface CreateJoinLinkRequest {
-    groupId: bigint;
-    expiresInSeconds: bigint;
-    maxUses: number;
-}
-export interface CreateJoinLinkResponse {
-    token: string;
-}
-export interface JoinViaLinkRequest {
-    token: string;
-}
-export interface JoinViaLinkSuccess {
-}
-export interface GroupJoinRequest {
-    groupId: bigint;
-    addressId: bigint;
-    username: string;
-}
-export interface GroupJoinRequests {
-    requests: GroupJoinRequest[];
-}
-export interface GroupMeetingSession {
-    /** UUIDv7 timestamp-based ID */
-    sessionId: bigint;
-    groupId: bigint;
-    /** Which voice/text channel this meeting is in */
-    channelId: number;
-    creatorUsername: string;
-    status: MeetingSessionStatus;
-    /** Microsecond timestamp */
-    createdAt: bigint;
-    endedAt: bigint;
-    /** Current participant usernames */
-    participants: string[];
-    /** Cloudflare RealtimeKit meeting ID */
-    cfMeetingId: string;
-    e2eeEnabled: boolean;
-}
-export interface CreateMeetingRequest {
-    groupId: bigint;
-    channelId: number;
-    e2eeEnabled: boolean;
-}
-export interface CreateMeetingResponse {
-    session: GroupMeetingSession | undefined;
-    /** CF RealtimeKit auth token for creator */
-    participantToken: string;
-}
-export interface JoinMeetingRequest {
-    groupId: bigint;
-    sessionId: bigint;
-}
-export interface JoinMeetingResponse {
-    session: GroupMeetingSession | undefined;
-    /** CF RealtimeKit auth token for joiner */
-    participantToken: string;
-}
-export interface LeaveMeetingRequest {
-    groupId: bigint;
-    sessionId: bigint;
-}
-export interface EndMeetingRequest {
-    groupId: bigint;
-    sessionId: bigint;
-}
-export interface GetActiveSessionRequest {
-    groupId: bigint;
-    channelId: number;
-}
-export interface GetActiveSessionResponse {
-    /** null/empty if no active session */
-    session: GroupMeetingSession | undefined;
-}
-/** Signal sent over WebSocket to notify group members of meeting events */
-export interface GroupMeetingSignal {
-    groupId: bigint;
-    channelId: number;
-    sessionId: bigint;
-    type: MeetingSignalType;
-    /** Who triggered the event */
-    username: string;
-    cfMeetingId: string;
-}
 export declare const UserMessage: MessageFns<UserMessage>;
 export declare const Group: MessageFns<Group>;
 export declare const Groups: MessageFns<Groups>;
@@ -497,13 +336,10 @@ export declare const Addresses: MessageFns<Addresses>;
 export declare const UploadUserMessage: MessageFns<UploadUserMessage>;
 export declare const MessageIdAndTo: MessageFns<MessageIdAndTo>;
 export declare const UserMessageUploaded: MessageFns<UserMessageUploaded>;
-export declare const UserOnlineStatusRequest: MessageFns<UserOnlineStatusRequest>;
-export declare const UserOnlineStatusResponse: MessageFns<UserOnlineStatusResponse>;
 export declare const Request: MessageFns<Request>;
 export declare const Response: MessageFns<Response>;
 export declare const ServerMessage: MessageFns<ServerMessage>;
 export declare const ClientMessage: MessageFns<ClientMessage>;
-export declare const CallSignal: MessageFns<CallSignal>;
 export declare const GroupId: MessageFns<GroupId>;
 export declare const AuthToken: MessageFns<AuthToken>;
 export declare const SignedToken: MessageFns<SignedToken>;
@@ -529,22 +365,6 @@ export declare const GroupMessageInner: MessageFns<GroupMessageInner>;
 export declare const RequestGroupReAdds: MessageFns<RequestGroupReAdds>;
 export declare const RequestGroupSync: MessageFns<RequestGroupSync>;
 export declare const GroupReAddRequestSuccess: MessageFns<GroupReAddRequestSuccess>;
-export declare const CreateJoinLinkRequest: MessageFns<CreateJoinLinkRequest>;
-export declare const CreateJoinLinkResponse: MessageFns<CreateJoinLinkResponse>;
-export declare const JoinViaLinkRequest: MessageFns<JoinViaLinkRequest>;
-export declare const JoinViaLinkSuccess: MessageFns<JoinViaLinkSuccess>;
-export declare const GroupJoinRequest: MessageFns<GroupJoinRequest>;
-export declare const GroupJoinRequests: MessageFns<GroupJoinRequests>;
-export declare const GroupMeetingSession: MessageFns<GroupMeetingSession>;
-export declare const CreateMeetingRequest: MessageFns<CreateMeetingRequest>;
-export declare const CreateMeetingResponse: MessageFns<CreateMeetingResponse>;
-export declare const JoinMeetingRequest: MessageFns<JoinMeetingRequest>;
-export declare const JoinMeetingResponse: MessageFns<JoinMeetingResponse>;
-export declare const LeaveMeetingRequest: MessageFns<LeaveMeetingRequest>;
-export declare const EndMeetingRequest: MessageFns<EndMeetingRequest>;
-export declare const GetActiveSessionRequest: MessageFns<GetActiveSessionRequest>;
-export declare const GetActiveSessionResponse: MessageFns<GetActiveSessionResponse>;
-export declare const GroupMeetingSignal: MessageFns<GroupMeetingSignal>;
 type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {
     [K in keyof T]?: DeepPartial<T[K]>;

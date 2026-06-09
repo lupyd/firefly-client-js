@@ -1,4 +1,4 @@
-import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle, CreateMeetingRequest, CreateMeetingResponse, JoinMeetingRequest, JoinMeetingResponse, LeaveMeetingRequest, EndMeetingRequest, GetActiveSessionResponse } from "./protos/message";
+import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle } from "./protos/message";
 export declare class HttpError extends Error {
     statusCode: number;
     responseText: string;
@@ -44,9 +44,4 @@ export declare class FireflyService {
     recreateConversations(): Promise<void>;
     getWebrtcConfig(): Promise<RTCConfiguration>;
     deleteUserMessage(convoId: bigint, msgId: bigint): Promise<Response>;
-    createMeeting(request: CreateMeetingRequest): Promise<CreateMeetingResponse>;
-    joinMeeting(request: JoinMeetingRequest): Promise<JoinMeetingResponse>;
-    leaveMeeting(request: LeaveMeetingRequest): Promise<void>;
-    endMeeting(request: EndMeetingRequest): Promise<void>;
-    getActiveSession(groupId: number, channelId: number): Promise<GetActiveSessionResponse>;
 }

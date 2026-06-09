@@ -15,6 +15,13 @@ import {
   Group,
   GroupId,
   PreKeyBundle,
+  CreateMeetingRequest,
+  CreateMeetingResponse,
+  JoinMeetingRequest,
+  JoinMeetingResponse,
+  LeaveMeetingRequest,
+  EndMeetingRequest,
+  GetActiveSessionResponse,
 } from "./protos/message";
 
 /**
@@ -345,5 +352,55 @@ export class FireflyService {
       `/user/message?conversationId=${convoId}&messageId=${msgId}`,
       { method: "DELETE" },
     );
+  }
+
+  async createMeeting(request: CreateMeetingRequest): Promise<CreateMeetingResponse> {
+    const res = await this.req("/meeting/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-protobuf; proto=firefly.CreateMeetingRequest",
+      },
+      body: new Uint8Array(CreateMeetingRequest.encode(request).finish()),
+    });
+    return CreateMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
+  }
+
+  async joinMeeting(request: JoinMeetingRequest): Promise<JoinMeetingResponse> {
+    const res = await this.req("/meeting/join", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-protobuf; proto=firefly.JoinMeetingRequest",
+      },
+      body: new Uint8Array(JoinMeetingRequest.encode(request).finish()),
+    });
+    return JoinMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
+  }
+
+  async leaveMeeting(request: LeaveMeetingRequest): Promise<void> {
+    await this.req("/meeting/leave", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-protobuf; proto=firefly.LeaveMeetingRequest",
+      },
+      body: new Uint8Array(LeaveMeetingRequest.encode(request).finish()),
+    });
+  }
+
+  async endMeeting(request: EndMeetingRequest): Promise<void> {
+    await this.req("/meeting/end", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-protobuf; proto=firefly.EndMeetingRequest",
+      },
+      body: new Uint8Array(EndMeetingRequest.encode(request).finish()),
+    });
+  }
+
+  async getActiveSession(groupId: number, channelId: number): Promise<GetActiveSessionResponse> {
+    const url = new URL("/meeting/active", this.baseUrl);
+    url.searchParams.set("groupId", String(groupId));
+    url.searchParams.set("channelId", String(channelId));
+    const res = await this.req(url.pathname + url.search);
+    return GetActiveSessionResponse.decode(new Uint8Array(await res.arrayBuffer()));
   }
 }

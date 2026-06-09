@@ -276,50 +276,5 @@ class FireflyService {
     async deleteUserMessage(convoId, msgId) {
         return await this.req(`/user/message?conversationId=${convoId}&messageId=${msgId}`, { method: "DELETE" });
     }
-    async createMeeting(request) {
-        const res = await this.req("/meeting/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-protobuf; proto=firefly.CreateMeetingRequest",
-            },
-            body: new Uint8Array(message_1.CreateMeetingRequest.encode(request).finish()),
-        });
-        return message_1.CreateMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
-    }
-    async joinMeeting(request) {
-        const res = await this.req("/meeting/join", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-protobuf; proto=firefly.JoinMeetingRequest",
-            },
-            body: new Uint8Array(message_1.JoinMeetingRequest.encode(request).finish()),
-        });
-        return message_1.JoinMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
-    }
-    async leaveMeeting(request) {
-        await this.req("/meeting/leave", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-protobuf; proto=firefly.LeaveMeetingRequest",
-            },
-            body: new Uint8Array(message_1.LeaveMeetingRequest.encode(request).finish()),
-        });
-    }
-    async endMeeting(request) {
-        await this.req("/meeting/end", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-protobuf; proto=firefly.EndMeetingRequest",
-            },
-            body: new Uint8Array(message_1.EndMeetingRequest.encode(request).finish()),
-        });
-    }
-    async getActiveSession(groupId, channelId) {
-        const url = new URL("/meeting/active", this.baseUrl);
-        url.searchParams.set("groupId", String(groupId));
-        url.searchParams.set("channelId", String(channelId));
-        const res = await this.req(url.pathname + url.search);
-        return message_1.GetActiveSessionResponse.decode(new Uint8Array(await res.arrayBuffer()));
-    }
 }
 exports.FireflyService = FireflyService;

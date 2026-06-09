@@ -131,16 +131,16 @@ export class FireflyWsClient extends EventTarget {
     this.dispatchEvent(new CustomEvent("onMessage", { detail: message }));
   }
 
-  private sendData(data: ArrayBufferLike) {
+  private sendData(data: Uint8Array) {
     if (this.ws) {
-      this.ws!.send(data);
+      this.ws.send(data as any);
     } else {
       console.warn(`websocket not initialized`);
     }
   }
 
   sendClientMessage(message: protos.ClientMessage) {
-    this.sendData(protos.ClientMessage.encode(message).finish().buffer);
+    this.sendData(protos.ClientMessage.encode(message).finish());
   }
 
   private readonly pendingRequests = new Map<
@@ -174,7 +174,7 @@ export class FireflyWsClient extends EventTarget {
     });
   }
 
-  newRequestId() {
+  newRequestId(): number {
     const newId = Math.floor(Math.random() * 2 ** 16);
     if (this.pendingRequests.has(newId)) {
       return this.newRequestId();

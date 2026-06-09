@@ -139,7 +139,7 @@ class FireflyWsClient extends EventTarget {
         }
     }
     sendClientMessage(message) {
-        this.sendData(protos.ClientMessage.encode(message).finish());
+        this.sendData(protos.ClientMessage.encode(message).finish().buffer);
     }
     pendingRequests = new Map();
     sendRequest(request, responseTimeout) {
