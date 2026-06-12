@@ -397,9 +397,14 @@ export class FireflyService {
   }
 
   async getActiveSession(groupId: number, channelId: number): Promise<GetActiveSessionResponse> {
+    const gId = Number(groupId);
+    const cId = Number(channelId);
+    if (Number.isNaN(gId) || Number.isNaN(cId) || gId <= 0 || cId <= 0) {
+      return { session: undefined };
+    }
     const url = new URL("/meeting/active", this.baseUrl);
-    url.searchParams.set("groupId", String(groupId));
-    url.searchParams.set("channelId", String(channelId));
+    url.searchParams.set("groupId", String(gId));
+    url.searchParams.set("channelId", String(cId));
     const res = await this.req(url.pathname + url.search);
     return GetActiveSessionResponse.decode(new Uint8Array(await res.arrayBuffer()));
   }
