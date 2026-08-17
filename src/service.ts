@@ -5,7 +5,6 @@ import {
   GroupKeyPackages,
   GroupInvite,
   PreKeyBundles,
-  UserMessage,
   UserMessages,
   ConversationStart,
   Conversations,
@@ -22,7 +21,7 @@ import {
   LeaveMeetingRequest,
   EndMeetingRequest,
   GetActiveSessionResponse,
-} from "./protos/message";
+} from "firefly-protos-js";
 
 /**
  * Minimal ULID validator (Crockford alphabet, 26 chars)
@@ -239,6 +238,10 @@ export class FireflyService {
       method: "POST",
       body: GroupInvite.encode(invite).finish(),
     });
+
+    if (!res.ok) {
+      throw new Error(`failed to send invite, [${res.status}], ${await res.text()}`,)
+    }
   }
 
   async requestReAdd(groupId: number) {

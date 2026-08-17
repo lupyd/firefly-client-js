@@ -15,6 +15,9 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 var __importStar = (this && this.__importStar) || (function () {
     var ownKeys = function(o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
@@ -32,11 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.protos = void 0;
-exports.protos = __importStar(require("./protos/message"));
 __exportStar(require("./service"), exports);
-__exportStar(require("./websocket"), exports);
+exports.protos = __importStar(require("firefly-protos-js"));

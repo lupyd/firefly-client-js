@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FireflyService = exports.HttpError = void 0;
 // import { crockfordDecode, ULID } from "ulid";
-const message_1 = require("./protos/message");
+const firefly_protos_js_1 = require("firefly-protos-js");
 /**
  * Minimal ULID validator (Crockford alphabet, 26 chars)
  */
@@ -69,11 +69,11 @@ class FireflyService {
         if (opts.limit != null)
             url.searchParams.set("limit", String(Math.max(1, Math.min(1000, Math.floor(opts.limit)))));
         const res = await this.req(url.pathname + url.search);
-        return message_1.GroupMessages.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.GroupMessages.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getKeyPackages() {
         const res = await this.req("/group/keyPackages");
-        return message_1.GroupKeyPackages.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.GroupKeyPackages.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getKeyPackage(username) {
         if (!username)
@@ -82,11 +82,11 @@ class FireflyService {
         url.searchParams.set("username", username);
         const res = await this.req(url.pathname + url.search);
         const arr = new Uint8Array(await res.arrayBuffer());
-        return message_1.GroupKeyPackage.decode(arr);
+        return firefly_protos_js_1.GroupKeyPackage.decode(arr);
     }
     async getPreKeyBundles() {
         const res = await this.req("/user/preKeyBundles");
-        return message_1.PreKeyBundles.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.PreKeyBundles.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getUserMessages(opts) {
         if (!opts.conversationId && !opts.startAfter)
@@ -101,11 +101,11 @@ class FireflyService {
         if (opts.limit != null)
             url.searchParams.set("limit", String(Math.max(1, Math.min(1000, Math.floor(opts.limit)))));
         const res = await this.req(url.pathname + url.search);
-        return message_1.UserMessages.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.UserMessages.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getConversations() {
         const res = await this.req("/user/conversations");
-        return message_1.Conversations.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.Conversations.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getConversation(other, preKeyBundleRequired = false) {
         const url = new URL("/user/conversation", this.baseUrl);
@@ -114,17 +114,17 @@ class FireflyService {
             url.searchParams.set("preKeyBundleRequired", "true");
         }
         const res = await this.req(url.pathname + url.search);
-        return message_1.ConversationStart.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.ConversationStart.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getPreKeyBundle(other) {
         const url = new URL("/user/preKeyBundle", this.baseUrl);
         url.searchParams.set("other", other);
         const res = await this.req(url.pathname + url.search);
-        return message_1.PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.PreKeyBundle.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async getGroups() {
         const res = await this.req("/groups");
-        return message_1.Groups.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.Groups.decode(new Uint8Array(await res.arrayBuffer()));
     }
     // ---------- POSTs ----------
     async sign(credential) {
@@ -133,7 +133,7 @@ class FireflyService {
             headers: { "Content-Type": "application/octet-stream" },
             body: new Uint8Array(credential),
         });
-        return message_1.SignedToken.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.SignedToken.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async createGroup(group) {
         const res = await this.req("/group", {
@@ -141,36 +141,36 @@ class FireflyService {
             headers: {
                 "Content-Type": "application/x-protobuf; proto=firefly.Group",
             },
-            body: new Uint8Array(message_1.Group.encode(group).finish()),
+            body: new Uint8Array(firefly_protos_js_1.Group.encode(group).finish()),
         });
         const buf = await res.arrayBuffer();
-        return message_1.GroupId.decode(new Uint8Array(buf)).id;
+        return firefly_protos_js_1.GroupId.decode(new Uint8Array(buf)).id;
     }
     async uploadKeyPackages(packages) {
-        const body = message_1.GroupKeyPackages.encode(packages).finish();
+        const body = firefly_protos_js_1.GroupKeyPackages.encode(packages).finish();
         const res = await this.req("/group/keyPackages", { method: "POST", body });
-        return message_1.GroupKeyPackages.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.GroupKeyPackages.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async postGroupMessage(groupId, message) {
-        const msg = message_1.GroupMessage.create({ groupId, message });
+        const msg = firefly_protos_js_1.GroupMessage.create({ groupId, message });
         const res = await this.req("/group/message", {
             method: "POST",
-            body: message_1.GroupMessage.encode(msg).finish(),
+            body: firefly_protos_js_1.GroupMessage.encode(msg).finish(),
         });
-        return message_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async postCommit(groupId, message) {
-        const msg = message_1.GroupMessage.create({ groupId, message });
+        const msg = firefly_protos_js_1.GroupMessage.create({ groupId, message });
         const res = await this.req("/group/commit", {
             method: "POST",
-            body: message_1.GroupMessage.encode(msg).finish(),
+            body: firefly_protos_js_1.GroupMessage.encode(msg).finish(),
         });
-        return message_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer())); // commit id bytes
+        return firefly_protos_js_1.GroupMessage.decode(new Uint8Array(await res.arrayBuffer())); // commit id bytes
     }
     async invite(groupId, invitee, welcomeMessage, commitId) {
         if (commitId < 0n)
             throw new Error("invalid commitId ULID");
-        const invite = message_1.GroupInvite.create({
+        const invite = firefly_protos_js_1.GroupInvite.create({
             groupId,
             invitee,
             welcomeMessage,
@@ -178,8 +178,11 @@ class FireflyService {
         });
         const res = await this.req("/group/invite", {
             method: "POST",
-            body: message_1.GroupInvite.encode(invite).finish(),
+            body: firefly_protos_js_1.GroupInvite.encode(invite).finish(),
         });
+        if (!res.ok) {
+            throw new Error(`failed to send invite, [${res.status}], ${await res.text()}`);
+        }
     }
     async requestReAdd(groupId) {
         const url = new URL("/group/reAdd", this.baseUrl);
@@ -282,9 +285,9 @@ class FireflyService {
             headers: {
                 "Content-Type": "application/x-protobuf; proto=firefly.CreateMeetingRequest",
             },
-            body: new Uint8Array(message_1.CreateMeetingRequest.encode(request).finish()),
+            body: new Uint8Array(firefly_protos_js_1.CreateMeetingRequest.encode(request).finish()),
         });
-        return message_1.CreateMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.CreateMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async joinMeeting(request) {
         const res = await this.req("/meeting/join", {
@@ -292,9 +295,9 @@ class FireflyService {
             headers: {
                 "Content-Type": "application/x-protobuf; proto=firefly.JoinMeetingRequest",
             },
-            body: new Uint8Array(message_1.JoinMeetingRequest.encode(request).finish()),
+            body: new Uint8Array(firefly_protos_js_1.JoinMeetingRequest.encode(request).finish()),
         });
-        return message_1.JoinMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.JoinMeetingResponse.decode(new Uint8Array(await res.arrayBuffer()));
     }
     async leaveMeeting(request) {
         await this.req("/meeting/leave", {
@@ -302,7 +305,7 @@ class FireflyService {
             headers: {
                 "Content-Type": "application/x-protobuf; proto=firefly.LeaveMeetingRequest",
             },
-            body: new Uint8Array(message_1.LeaveMeetingRequest.encode(request).finish()),
+            body: new Uint8Array(firefly_protos_js_1.LeaveMeetingRequest.encode(request).finish()),
         });
     }
     async endMeeting(request) {
@@ -311,7 +314,7 @@ class FireflyService {
             headers: {
                 "Content-Type": "application/x-protobuf; proto=firefly.EndMeetingRequest",
             },
-            body: new Uint8Array(message_1.EndMeetingRequest.encode(request).finish()),
+            body: new Uint8Array(firefly_protos_js_1.EndMeetingRequest.encode(request).finish()),
         });
     }
     async getActiveSession(groupId, channelId) {
@@ -324,7 +327,7 @@ class FireflyService {
         url.searchParams.set("groupId", String(gId));
         url.searchParams.set("channelId", String(cId));
         const res = await this.req(url.pathname + url.search);
-        return message_1.GetActiveSessionResponse.decode(new Uint8Array(await res.arrayBuffer()));
+        return firefly_protos_js_1.GetActiveSessionResponse.decode(new Uint8Array(await res.arrayBuffer()));
     }
 }
 exports.FireflyService = FireflyService;

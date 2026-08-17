@@ -23,4 +23,7 @@
     "idb": "^8.0.3",
     "ulid": "https://github.com/ash-hashtag/ulid-js"
   },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
 }

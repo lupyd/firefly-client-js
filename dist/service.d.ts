@@ -1,4 +1,4 @@
-import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle, CreateMeetingRequest, CreateMeetingResponse, JoinMeetingRequest, JoinMeetingResponse, LeaveMeetingRequest, EndMeetingRequest, GetActiveSessionResponse } from "./protos/message";
+import { GroupMessages, GroupMessage, GroupKeyPackages, PreKeyBundles, UserMessages, ConversationStart, Conversations, Groups, SignedToken, GroupKeyPackage, Group, PreKeyBundle, CreateMeetingRequest, CreateMeetingResponse, JoinMeetingRequest, JoinMeetingResponse, LeaveMeetingRequest, EndMeetingRequest, GetActiveSessionResponse } from "firefly-protos-js";
 export declare class HttpError extends Error {
     statusCode: number;
     responseText: string;
