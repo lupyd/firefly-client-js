@@ -1,3 +1,4 @@
-export * as protos from "./protos/message";
 export * from "./service";
 export * from "./websocket";
+export * as protos from "firefly-protos-js"
+
