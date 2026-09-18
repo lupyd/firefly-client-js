@@ -1,6 +1,6 @@
 {
   "name": "firefly-client-js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -19,7 +19,7 @@
   "Type": "module",
   "license": "MIT",
   "dependencies": {
-    "firefly-protos-js": "^0.0.5",
+    "firefly-protos-js": "^0.0.7",
     "idb": "^8.0.3",
     "ulid": "https://github.com/ash-hashtag/ulid-js"
   },
